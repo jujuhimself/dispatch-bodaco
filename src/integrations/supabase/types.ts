@@ -9,7 +9,207 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      communications: {
+        Row: {
+          emergency_id: string | null
+          id: string
+          message: string
+          responder_id: string | null
+          sender: string
+          sent_at: string
+          type: string
+        }
+        Insert: {
+          emergency_id?: string | null
+          id?: string
+          message: string
+          responder_id?: string | null
+          sender: string
+          sent_at?: string
+          type: string
+        }
+        Update: {
+          emergency_id?: string | null
+          id?: string
+          message?: string
+          responder_id?: string | null
+          sender?: string
+          sent_at?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "communications_emergency_id_fkey"
+            columns: ["emergency_id"]
+            isOneToOne: false
+            referencedRelation: "emergencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "communications_responder_id_fkey"
+            columns: ["responder_id"]
+            isOneToOne: false
+            referencedRelation: "responders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      emergencies: {
+        Row: {
+          assigned_at: string | null
+          coordinates: unknown | null
+          description: string | null
+          id: string
+          location: string
+          notes: string | null
+          priority: number
+          reported_at: string
+          resolved_at: string | null
+          status: Database["public"]["Enums"]["emergency_status"]
+          type: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          coordinates?: unknown | null
+          description?: string | null
+          id?: string
+          location: string
+          notes?: string | null
+          priority?: number
+          reported_at?: string
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["emergency_status"]
+          type: string
+        }
+        Update: {
+          assigned_at?: string | null
+          coordinates?: unknown | null
+          description?: string | null
+          id?: string
+          location?: string
+          notes?: string | null
+          priority?: number
+          reported_at?: string
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["emergency_status"]
+          type?: string
+        }
+        Relationships: []
+      }
+      emergency_assignments: {
+        Row: {
+          assigned_at: string
+          emergency_id: string
+          eta: string | null
+          id: string
+          notes: string | null
+          responder_id: string
+          status: string | null
+        }
+        Insert: {
+          assigned_at?: string
+          emergency_id: string
+          eta?: string | null
+          id?: string
+          notes?: string | null
+          responder_id: string
+          status?: string | null
+        }
+        Update: {
+          assigned_at?: string
+          emergency_id?: string
+          eta?: string | null
+          id?: string
+          notes?: string | null
+          responder_id?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emergency_assignments_emergency_id_fkey"
+            columns: ["emergency_id"]
+            isOneToOne: false
+            referencedRelation: "emergencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emergency_assignments_responder_id_fkey"
+            columns: ["responder_id"]
+            isOneToOne: false
+            referencedRelation: "responders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hospitals: {
+        Row: {
+          available_beds: number
+          coordinates: unknown | null
+          id: string
+          location: string
+          name: string
+          notes: string | null
+          specialist_available: boolean | null
+          total_beds: number
+        }
+        Insert: {
+          available_beds: number
+          coordinates?: unknown | null
+          id?: string
+          location: string
+          name: string
+          notes?: string | null
+          specialist_available?: boolean | null
+          total_beds: number
+        }
+        Update: {
+          available_beds?: number
+          coordinates?: unknown | null
+          id?: string
+          location?: string
+          name?: string
+          notes?: string | null
+          specialist_available?: boolean | null
+          total_beds?: number
+        }
+        Relationships: []
+      }
+      responders: {
+        Row: {
+          coordinates: unknown | null
+          current_location: string | null
+          id: string
+          last_active: string | null
+          name: string
+          notes: string | null
+          phone: string | null
+          status: Database["public"]["Enums"]["responder_status"] | null
+          type: Database["public"]["Enums"]["responder_type"]
+        }
+        Insert: {
+          coordinates?: unknown | null
+          current_location?: string | null
+          id?: string
+          last_active?: string | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          status?: Database["public"]["Enums"]["responder_status"] | null
+          type: Database["public"]["Enums"]["responder_type"]
+        }
+        Update: {
+          coordinates?: unknown | null
+          current_location?: string | null
+          id?: string
+          last_active?: string | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          status?: Database["public"]["Enums"]["responder_status"] | null
+          type?: Database["public"]["Enums"]["responder_type"]
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +218,15 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      emergency_status:
+        | "pending"
+        | "assigned"
+        | "in_transit"
+        | "on_site"
+        | "resolved"
+        | "canceled"
+      responder_status: "available" | "on_call" | "off_duty"
+      responder_type: "ambulance" | "bajaj" | "traffic"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +341,17 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      emergency_status: [
+        "pending",
+        "assigned",
+        "in_transit",
+        "on_site",
+        "resolved",
+        "canceled",
+      ],
+      responder_status: ["available", "on_call", "off_duty"],
+      responder_type: ["ambulance", "bajaj", "traffic"],
+    },
   },
 } as const

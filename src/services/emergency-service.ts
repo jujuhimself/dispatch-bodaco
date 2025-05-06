@@ -1,0 +1,161 @@
+
+import { supabase } from '@/integrations/supabase/client';
+import { Emergency, Responder, Hospital, Communication, EmergencyAssignment } from '@/types/emergency-types';
+
+export const fetchEmergencies = async (): Promise<Emergency[]> => {
+  const { data, error } = await supabase
+    .from('emergencies')
+    .select('*')
+    .order('priority', { ascending: true })
+    .order('reported_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching emergencies:', error);
+    throw new Error('Failed to fetch emergencies');
+  }
+
+  return data || [];
+};
+
+export const fetchActiveEmergencies = async (): Promise<Emergency[]> => {
+  const { data, error } = await supabase
+    .from('emergencies')
+    .select('*')
+    .in('status', ['pending', 'assigned', 'in_transit', 'on_site'])
+    .order('priority', { ascending: true })
+    .order('reported_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching active emergencies:', error);
+    throw new Error('Failed to fetch active emergencies');
+  }
+
+  return data || [];
+};
+
+export const fetchResponders = async (): Promise<Responder[]> => {
+  const { data, error } = await supabase
+    .from('responders')
+    .select('*')
+    .order('status', { ascending: true })
+    .order('last_active', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching responders:', error);
+    throw new Error('Failed to fetch responders');
+  }
+
+  return data || [];
+};
+
+export const fetchAvailableResponders = async (): Promise<Responder[]> => {
+  const { data, error } = await supabase
+    .from('responders')
+    .select('*')
+    .eq('status', 'available')
+    .order('last_active', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching available responders:', error);
+    throw new Error('Failed to fetch available responders');
+  }
+
+  return data || [];
+};
+
+export const fetchHospitals = async (): Promise<Hospital[]> => {
+  const { data, error } = await supabase
+    .from('hospitals')
+    .select('*')
+    .order('available_beds', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching hospitals:', error);
+    throw new Error('Failed to fetch hospitals');
+  }
+
+  return data || [];
+};
+
+export const fetchEmergencyAssignments = async (emergencyId?: string): Promise<EmergencyAssignment[]> => {
+  let query = supabase.from('emergency_assignments').select('*, responders(*)');
+  
+  if (emergencyId) {
+    query = query.eq('emergency_id', emergencyId);
+  }
+  
+  const { data, error } = await query;
+
+  if (error) {
+    console.error('Error fetching emergency assignments:', error);
+    throw new Error('Failed to fetch emergency assignments');
+  }
+
+  return data || [];
+};
+
+export const fetchRecentCommunications = async (limit = 5): Promise<Communication[]> => {
+  const { data, error } = await supabase
+    .from('communications')
+    .select('*')
+    .order('sent_at', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error('Error fetching communications:', error);
+    throw new Error('Failed to fetch communications');
+  }
+
+  return data || [];
+};
+
+export const getEmergencyStatistics = async () => {
+  // Get count of total emergencies
+  const { count: totalCount, error: totalError } = await supabase
+    .from('emergencies')
+    .select('*', { count: 'exact', head: true });
+
+  // Get count of active emergencies
+  const { count: activeCount, error: activeError } = await supabase
+    .from('emergencies')
+    .select('*', { count: 'exact', head: true })
+    .in('status', ['pending', 'assigned', 'in_transit', 'on_site']);
+
+  // Get count of available responders
+  const { count: availableRespondersCount, error: respondersError } = await supabase
+    .from('responders')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'available');
+
+  // Get total hospital beds and available beds
+  const { data: hospitalData, error: hospitalError } = await supabase
+    .from('hospitals')
+    .select('total_beds, available_beds');
+
+  if (totalError || activeError || respondersError || hospitalError) {
+    console.error('Error fetching statistics:', { totalError, activeError, respondersError, hospitalError });
+    throw new Error('Failed to fetch emergency statistics');
+  }
+
+  // Calculate average response time (for demo purposes, we'll use a placeholder)
+  const avgResponseTime = "4:32"; // In a real app, this would be calculated from actual data
+
+  // Calculate hospital capacity
+  const totalBeds = hospitalData?.reduce((sum, hospital) => sum + hospital.total_beds, 0) || 0;
+  const availableBeds = hospitalData?.reduce((sum, hospital) => sum + hospital.available_beds, 0) || 0;
+  const capacityPercentage = totalBeds > 0 ? Math.round((1 - (availableBeds / totalBeds)) * 100) : 0;
+  
+  // Calculate hospitals at capacity
+  const hospitalsAtCapacity = hospitalData?.filter(h => h.available_beds === 0).length || 0;
+
+  return {
+    totalEmergencies: totalCount || 0,
+    activeEmergencies: activeCount || 0,
+    availableResponders: availableRespondersCount || 0,
+    avgResponseTime,
+    hospitalCapacity: capacityPercentage,
+    hospitalsAtCapacity,
+    availableBeds,
+    totalBeds
+  };
+};
