@@ -26,6 +26,11 @@ const transformCoordinates = (coordinates: any): { x: number; y: number } | null
   return null;
 };
 
+// Helper function to convert our coordinates for Postgres
+const formatCoordinatesForPostgres = (coordinates: { x: number; y: number }) => {
+  return `(${coordinates.x},${coordinates.y})`;
+};
+
 export const fetchEmergencies = async (): Promise<Emergency[]> => {
   const { data, error } = await supabase
     .from('emergencies')
@@ -61,6 +66,41 @@ export const fetchActiveEmergencies = async (): Promise<Emergency[]> => {
     ...item,
     coordinates: transformCoordinates(item.coordinates)
   })) as Emergency[];
+};
+
+export const createEmergency = async (emergencyData: {
+  type: string;
+  description: string;
+  location: string;
+  priority: number;
+  coordinates: { x: number; y: number };
+}): Promise<Emergency> => {
+  // Convert coordinates to Postgres point format if provided
+  const formattedCoordinates = emergencyData.coordinates 
+    ? formatCoordinatesForPostgres(emergencyData.coordinates) 
+    : null;
+  
+  const { data, error } = await supabase
+    .from('emergencies')
+    .insert({
+      type: emergencyData.type,
+      description: emergencyData.description,
+      location: emergencyData.location,
+      priority: emergencyData.priority,
+      coordinates: formattedCoordinates
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating emergency:', error);
+    throw new Error('Failed to create emergency');
+  }
+
+  return {
+    ...data,
+    coordinates: transformCoordinates(data.coordinates)
+  } as Emergency;
 };
 
 export const fetchResponders = async (): Promise<Responder[]> => {
@@ -116,6 +156,38 @@ export const fetchHospitals = async (): Promise<Hospital[]> => {
   })) as Hospital[];
 };
 
+export const assignResponder = async (emergencyId: string, responderId: string, notes?: string): Promise<EmergencyAssignment> => {
+  const { data, error } = await supabase
+    .from('emergency_assignments')
+    .insert({
+      emergency_id: emergencyId,
+      responder_id: responderId,
+      notes: notes || null,
+      status: 'assigned'
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error assigning responder:', error);
+    throw new Error('Failed to assign responder');
+  }
+
+  // Update the emergency status
+  await supabase
+    .from('emergencies')
+    .update({ status: 'assigned', assigned_at: new Date().toISOString() })
+    .eq('id', emergencyId);
+
+  // Update the responder status
+  await supabase
+    .from('responders')
+    .update({ status: 'on_call' })
+    .eq('id', responderId);
+
+  return data as EmergencyAssignment;
+};
+
 export const fetchEmergencyAssignments = async (emergencyId?: string): Promise<EmergencyAssignment[]> => {
   let query = supabase.from('emergency_assignments').select('*, responders(*)');
   
@@ -164,6 +236,39 @@ export const fetchRecentCommunications = async (limit = 5): Promise<Communicatio
   }
 
   return data || [];
+};
+
+export const sendCommunication = async (message: string, sender: string, emergencyId?: string, responderId?: string): Promise<Communication> => {
+  const { data, error } = await supabase
+    .from('communications')
+    .insert({
+      message,
+      sender,
+      type: 'message',
+      emergency_id: emergencyId || null,
+      responder_id: responderId || null
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error sending communication:', error);
+    throw new Error('Failed to send communication');
+  }
+
+  return data as Communication;
+};
+
+export const updateHospitalCapacity = async (hospitalId: string, availableBeds: number): Promise<void> => {
+  const { error } = await supabase
+    .from('hospitals')
+    .update({ available_beds: availableBeds })
+    .eq('id', hospitalId);
+
+  if (error) {
+    console.error('Error updating hospital capacity:', error);
+    throw new Error('Failed to update hospital capacity');
+  }
 };
 
 export const getEmergencyStatistics = async () => {
