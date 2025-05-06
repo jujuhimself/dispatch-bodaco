@@ -7,6 +7,14 @@ import { Button } from '@/components/ui/button';
 import { AlertCircle } from 'lucide-react';
 import { Loader } from '@/components/ui/loader';
 
+// Add type declaration for the Google Maps API
+declare global {
+  interface Window {
+    google: typeof google;
+    initMap: () => void;
+  }
+}
+
 // Default coordinates for Dar es Salaam
 const DAR_ES_SALAAM_COORDS = { lat: -6.1725, lng: 39.2083 };
 const GOOGLE_MAPS_API_KEY = "AIzaSyDN8Pf0Gn5Z-hKAn-STdYCxrmIU2ECmcf0";
