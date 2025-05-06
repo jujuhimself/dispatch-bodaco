@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Emergency, Responder, Hospital, Communication, EmergencyAssignment } from '@/types/emergency-types';
 
@@ -131,7 +130,25 @@ export const fetchEmergencyAssignments = async (emergencyId?: string): Promise<E
     throw new Error('Failed to fetch emergency assignments');
   }
 
-  return data || [];
+  // Transform the returned data to match our EmergencyAssignment type
+  return data.map((item: any) => {
+    // If responders data exists, transform its coordinates
+    const responders = item.responders ? {
+      ...item.responders,
+      coordinates: transformCoordinates(item.responders.coordinates)
+    } : undefined;
+
+    return {
+      id: item.id,
+      emergency_id: item.emergency_id,
+      responder_id: item.responder_id,
+      assigned_at: item.assigned_at,
+      eta: item.eta,
+      status: item.status,
+      notes: item.notes,
+      responders
+    };
+  }) as EmergencyAssignment[];
 };
 
 export const fetchRecentCommunications = async (limit = 5): Promise<Communication[]> => {
