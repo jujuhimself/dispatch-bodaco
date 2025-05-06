@@ -5,8 +5,10 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useQuery } from '@tanstack/react-query';
 import { fetchActiveEmergencies, fetchAvailableResponders } from '@/services/emergency-service';
-import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+
+// Default coordinates for Dar es Salaam
+const DAR_ES_SALAAM_COORDS: [number, number] = [39.2083, -6.1725];
 
 const EmergencyMap = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -26,21 +28,6 @@ const EmergencyMap = () => {
     refetchInterval: 30000,
   });
   
-  // Mock coordinates for display (in a real app, these would come from your database)
-  const mockLocations = {
-    center: [39.2083, -6.1725], // Dar es Salaam coordinates
-    emergencies: [
-      { id: 1, coordinates: [39.2183, -6.1625], type: 'Traffic Accident', severity: 'high' },
-      { id: 2, coordinates: [39.2133, -6.1825], type: 'Medical Emergency', severity: 'medium' },
-      { id: 3, coordinates: [39.1983, -6.1525], type: 'Building Fire', severity: 'high' },
-    ],
-    responders: [
-      { id: 1, coordinates: [39.2053, -6.1695], type: 'ambulance' },
-      { id: 2, coordinates: [39.2153, -6.1795], type: 'bajaj' },
-      { id: 3, coordinates: [39.1953, -6.1595], type: 'traffic' },
-    ]
-  };
-
   const handleMapboxTokenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setMapboxToken(e.target.value);
   };
@@ -52,42 +39,104 @@ const EmergencyMap = () => {
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/streets-v11',
-      center: mockLocations.center,
+      center: DAR_ES_SALAAM_COORDS,
       zoom: 12
     });
 
     map.current.on('load', () => {
-      // Add emergency markers
-      mockLocations.emergencies.forEach(emergency => {
-        const el = document.createElement('div');
-        el.className = 'emergency-marker';
-        el.style.width = '20px';
-        el.style.height = '20px';
-        el.style.borderRadius = '50%';
-        el.style.background = emergency.severity === 'high' ? '#f44336' : '#ff9800';
-        el.style.border = '2px solid white';
+      // Add emergency markers if we have emergency data
+      if (emergencies) {
+        emergencies.forEach(emergency => {
+          if (!emergency.coordinates) return;
+          
+          const coordinates: [number, number] = [
+            emergency.coordinates.x, 
+            emergency.coordinates.y
+          ];
+          
+          const el = document.createElement('div');
+          el.className = 'emergency-marker';
+          el.style.width = '20px';
+          el.style.height = '20px';
+          el.style.borderRadius = '50%';
+          el.style.background = emergency.priority <= 2 ? '#f44336' : '#ff9800';
+          el.style.border = '2px solid white';
+          
+          new mapboxgl.Marker(el)
+            .setLngLat(coordinates)
+            .setPopup(new mapboxgl.Popup().setHTML(`<h3>${emergency.type}</h3><p>${emergency.location}</p>`))
+            .addTo(map.current!);
+        });
+      } else {
+        // Use mock data if no real data is available
+        const mockEmergencies = [
+          { coordinates: [39.2183, -6.1625], type: 'Traffic Accident', severity: 'high' },
+          { coordinates: [39.2133, -6.1825], type: 'Medical Emergency', severity: 'medium' },
+          { coordinates: [39.1983, -6.1525], type: 'Building Fire', severity: 'high' },
+        ];
         
-        new mapboxgl.Marker(el)
-          .setLngLat(emergency.coordinates)
-          .setPopup(new mapboxgl.Popup().setHTML(`<h3>${emergency.type}</h3>`))
-          .addTo(map.current!);
-      });
+        mockEmergencies.forEach(emergency => {
+          const el = document.createElement('div');
+          el.className = 'emergency-marker';
+          el.style.width = '20px';
+          el.style.height = '20px';
+          el.style.borderRadius = '50%';
+          el.style.background = emergency.severity === 'high' ? '#f44336' : '#ff9800';
+          el.style.border = '2px solid white';
+          
+          new mapboxgl.Marker(el)
+            .setLngLat(emergency.coordinates as [number, number])
+            .setPopup(new mapboxgl.Popup().setHTML(`<h3>${emergency.type}</h3>`))
+            .addTo(map.current!);
+        });
+      }
 
-      // Add responder markers
-      mockLocations.responders.forEach(responder => {
-        const el = document.createElement('div');
-        el.className = 'responder-marker';
-        el.style.width = '16px';
-        el.style.height = '16px';
-        el.style.borderRadius = '50%';
-        el.style.background = responder.type === 'ambulance' ? '#4caf50' : '#2196f3';
-        el.style.border = '2px solid white';
+      // Add responder markers if we have responder data
+      if (responders) {
+        responders.forEach(responder => {
+          if (!responder.coordinates) return;
+          
+          const coordinates: [number, number] = [
+            responder.coordinates.x, 
+            responder.coordinates.y
+          ];
+          
+          const el = document.createElement('div');
+          el.className = 'responder-marker';
+          el.style.width = '16px';
+          el.style.height = '16px';
+          el.style.borderRadius = '50%';
+          el.style.background = responder.type === 'ambulance' ? '#4caf50' : '#2196f3';
+          el.style.border = '2px solid white';
+          
+          new mapboxgl.Marker(el)
+            .setLngLat(coordinates)
+            .setPopup(new mapboxgl.Popup().setHTML(`<h3>${responder.name}</h3><p>${responder.type}</p>`))
+            .addTo(map.current!);
+        });
+      } else {
+        // Use mock data if no real data is available
+        const mockResponders = [
+          { coordinates: [39.2053, -6.1695], type: 'ambulance' },
+          { coordinates: [39.2153, -6.1795], type: 'bajaj' },
+          { coordinates: [39.1953, -6.1595], type: 'traffic' },
+        ];
         
-        new mapboxgl.Marker(el)
-          .setLngLat(responder.coordinates)
-          .setPopup(new mapboxgl.Popup().setHTML(`<h3>${responder.type}</h3>`))
-          .addTo(map.current!);
-      });
+        mockResponders.forEach(responder => {
+          const el = document.createElement('div');
+          el.className = 'responder-marker';
+          el.style.width = '16px';
+          el.style.height = '16px';
+          el.style.borderRadius = '50%';
+          el.style.background = responder.type === 'ambulance' ? '#4caf50' : '#2196f3';
+          el.style.border = '2px solid white';
+          
+          new mapboxgl.Marker(el)
+            .setLngLat(responder.coordinates as [number, number])
+            .setPopup(new mapboxgl.Popup().setHTML(`<h3>${responder.type}</h3>`))
+            .addTo(map.current!);
+        });
+      }
     });
 
     map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
@@ -104,7 +153,7 @@ const EmergencyMap = () => {
         map.current = null;
       }
     };
-  }, [mapboxToken]);
+  }, [mapboxToken, emergencies, responders]);
 
   return (
     <Card className="col-span-1 lg:col-span-2 h-[400px]">

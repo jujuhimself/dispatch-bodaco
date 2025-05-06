@@ -4,7 +4,7 @@ export interface Emergency {
   type: string;
   description: string | null;
   location: string;
-  coordinates?: { x: number; y: number } | null;
+  coordinates: { x: number; y: number } | null;
   status: 'pending' | 'assigned' | 'in_transit' | 'on_site' | 'resolved' | 'canceled';
   priority: number;
   reported_at: string;
@@ -20,7 +20,7 @@ export interface Responder {
   type: 'ambulance' | 'bajaj' | 'traffic';
   status: 'available' | 'on_call' | 'off_duty';
   current_location: string | null;
-  coordinates?: { x: number; y: number } | null;
+  coordinates: { x: number; y: number } | null;
   last_active: string;
   notes: string | null;
 }
@@ -29,7 +29,7 @@ export interface Hospital {
   id: string;
   name: string;
   location: string;
-  coordinates?: { x: number; y: number } | null;
+  coordinates: { x: number; y: number } | null;
   total_beds: number;
   available_beds: number;
   specialist_available: boolean;
@@ -44,6 +44,7 @@ export interface EmergencyAssignment {
   eta: string | null;
   status: string | null;
   notes: string | null;
+  responders?: Responder;
 }
 
 export interface Communication {

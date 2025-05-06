@@ -2,6 +2,31 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Emergency, Responder, Hospital, Communication, EmergencyAssignment } from '@/types/emergency-types';
 
+// Helper function to transform coordinates from Postgres point type
+const transformCoordinates = (coordinates: any): { x: number; y: number } | null => {
+  if (!coordinates) return null;
+  // If we get a string like "(x,y)" from the database
+  if (typeof coordinates === 'string') {
+    const match = coordinates.match(/\((-?\d+\.?\d*),(-?\d+\.?\d*)\)/);
+    if (match) {
+      return {
+        x: parseFloat(match[1]),
+        y: parseFloat(match[2])
+      };
+    }
+  } 
+  // If we get an object with x,y properties
+  else if (typeof coordinates === 'object' && coordinates !== null) {
+    if ('x' in coordinates && 'y' in coordinates) {
+      return {
+        x: parseFloat(coordinates.x),
+        y: parseFloat(coordinates.y)
+      };
+    }
+  }
+  return null;
+};
+
 export const fetchEmergencies = async (): Promise<Emergency[]> => {
   const { data, error } = await supabase
     .from('emergencies')
@@ -14,7 +39,10 @@ export const fetchEmergencies = async (): Promise<Emergency[]> => {
     throw new Error('Failed to fetch emergencies');
   }
 
-  return data || [];
+  return data.map((item: any) => ({
+    ...item,
+    coordinates: transformCoordinates(item.coordinates)
+  })) as Emergency[];
 };
 
 export const fetchActiveEmergencies = async (): Promise<Emergency[]> => {
@@ -30,7 +58,10 @@ export const fetchActiveEmergencies = async (): Promise<Emergency[]> => {
     throw new Error('Failed to fetch active emergencies');
   }
 
-  return data || [];
+  return data.map((item: any) => ({
+    ...item,
+    coordinates: transformCoordinates(item.coordinates)
+  })) as Emergency[];
 };
 
 export const fetchResponders = async (): Promise<Responder[]> => {
@@ -45,7 +76,10 @@ export const fetchResponders = async (): Promise<Responder[]> => {
     throw new Error('Failed to fetch responders');
   }
 
-  return data || [];
+  return data.map((item: any) => ({
+    ...item,
+    coordinates: transformCoordinates(item.coordinates)
+  })) as Responder[];
 };
 
 export const fetchAvailableResponders = async (): Promise<Responder[]> => {
@@ -60,7 +94,10 @@ export const fetchAvailableResponders = async (): Promise<Responder[]> => {
     throw new Error('Failed to fetch available responders');
   }
 
-  return data || [];
+  return data.map((item: any) => ({
+    ...item,
+    coordinates: transformCoordinates(item.coordinates)
+  })) as Responder[];
 };
 
 export const fetchHospitals = async (): Promise<Hospital[]> => {
@@ -74,7 +111,10 @@ export const fetchHospitals = async (): Promise<Hospital[]> => {
     throw new Error('Failed to fetch hospitals');
   }
 
-  return data || [];
+  return data.map((item: any) => ({
+    ...item,
+    coordinates: transformCoordinates(item.coordinates)
+  })) as Hospital[];
 };
 
 export const fetchEmergencyAssignments = async (emergencyId?: string): Promise<EmergencyAssignment[]> => {

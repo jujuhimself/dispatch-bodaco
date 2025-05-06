@@ -72,8 +72,7 @@ const HospitalStatus = () => {
                 <div className="flex-1">
                   <Progress 
                     value={hospital.occupancy} 
-                    className="h-2"
-                    indicatorClassName={getProgressColor(hospital.occupancy)}
+                    className={`h-2 ${getProgressColor(hospital.occupancy)}`}
                   />
                 </div>
                 <div className="text-xs text-gray-500">

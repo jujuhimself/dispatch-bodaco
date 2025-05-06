@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { PhoneCall, MapPin, Send, Loader2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchActiveEmergencies, fetchEmergencyAssignments } from '@/services/emergency-service';
-import { Emergency, EmergencyAssignment } from '@/types/emergency-types';
 import { formatDistanceToNow } from 'date-fns';
 
 const ActiveEmergencies = () => {
@@ -24,7 +23,7 @@ const ActiveEmergencies = () => {
     isLoading: assignmentsLoading
   } = useQuery({
     queryKey: ['emergencyAssignments'],
-    queryFn: fetchEmergencyAssignments,
+    queryFn: () => fetchEmergencyAssignments(),
     refetchInterval: 30000,
   });
 
@@ -105,7 +104,7 @@ const ActiveEmergencies = () => {
                 {getEmergencyAssignments(emergency.id).length > 0 && (
                   <div className="mt-2 space-y-1">
                     <p className="text-xs text-gray-500">Assigned Responders:</p>
-                    {getEmergencyAssignments(emergency.id).map((assignment: any) => (
+                    {getEmergencyAssignments(emergency.id).map((assignment) => (
                       <div key={assignment.id} className="flex items-center justify-between bg-gray-50 p-1 px-2 rounded text-xs">
                         <span className="font-medium">{assignment.responders?.name || 'Unknown Responder'}</span>
                         <span className="text-green-600">{assignment.eta || 'Unknown ETA'}</span>
