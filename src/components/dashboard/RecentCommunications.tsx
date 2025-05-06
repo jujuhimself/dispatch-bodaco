@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Send, Phone, MessageSquare, Whatsapp } from 'lucide-react';
+import { Send, Phone, MessageSquare, MessageSquareQuote } from 'lucide-react';
 
 const communications = [
   {
@@ -42,7 +42,7 @@ const getCommunicationIcon = (type: string) => {
     case 'voice':
       return <Phone className="h-3 w-3" />;
     case 'whatsapp':
-      return <Whatsapp className="h-3 w-3" />;
+      return <MessageSquareQuote className="h-3 w-3" />; // Changed from Whatsapp to MessageSquareQuote
     default:
       return <MessageSquare className="h-3 w-3" />;
   }
