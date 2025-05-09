@@ -151,7 +151,7 @@ export const getActiveResponders = async () => {
     // Transform the data to ensure coordinates are properly formatted
     return data.map((item: any) => ({
       ...item,
-      coordinates: transformCoordinates(item.coordinates)
+      coordinates: transformCoordinates(item.coordinates) || null
     })) as Responder[];
   } catch (error) {
     console.error('Error fetching active responders:', error);

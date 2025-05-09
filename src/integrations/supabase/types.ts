@@ -360,6 +360,39 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          last_sign_in_at: string | null
+          name: string | null
+          phone_number: string | null
+          role: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          id: string
+          last_sign_in_at?: string | null
+          name?: string | null
+          phone_number?: string | null
+          role?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          last_sign_in_at?: string | null
+          name?: string | null
+          phone_number?: string | null
+          role?: string | null
+        }
+        Relationships: []
+      }
       responders: {
         Row: {
           coordinates: unknown | null

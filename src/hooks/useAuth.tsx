@@ -1,6 +1,6 @@
 
 import { useState, useCallback } from 'react';
-import { UserProfile } from '@/types/auth-types';
+import { UserProfile, UserRole } from '@/types/auth-types';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface UseAuthReturn {
@@ -28,7 +28,7 @@ const useAuth = (): UseAuthReturn => {
         setAuth({
           id: data.session.user.id,
           email: data.session.user.email || '',
-          role: 'user', // Default role
+          role: 'user' as UserRole, // Specify as UserRole type
           name: data.session.user.user_metadata?.name || '',
           phone_number: data.session.user.user_metadata?.phone_number || ''
         } as UserProfile);

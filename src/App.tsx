@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
-import { AuthContext, AuthProvider } from '@/contexts/AuthContext';
+import { AuthContext } from '@/contexts/AuthContext';
 import { useAuth } from '@/contexts/AuthContext';
 import LoginPage from '@/pages/LoginPage';
 import Dashboard from '@/components/dashboard/Dashboard';
@@ -29,62 +29,52 @@ function App() {
   }
 
   return (
-    <AuthContext.Provider value={{ 
-      auth, 
-      setAuth, 
-      checkSession, 
-      user: auth, 
-      loading,
-      signIn: async () => {}, 
-      signUp: async () => {} 
-    }}>
-      <Router>
-        <Routes>
-          <Route path="/" element={<Navigate to="/dashboard" />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/dashboard" element={
-            <RequireAuth>
-              <Dashboard />
-            </RequireAuth>
-          } />
-          <Route path="/responders" element={
-            <RequireAuth>
-              <RespondersPage />
-            </RequireAuth>
-          } />
-          <Route path="/hospitals" element={
-            <RequireAuth>
-              <HospitalsPage />
-            </RequireAuth>
-          } />
-          <Route path="/settings" element={
-            <RequireAuth>
-              <SettingsPage />
-            </RequireAuth>
-          } />
-          <Route path="/iot" element={
-            <RequireAuth>
-              <IoTDevicesPage />
-            </RequireAuth>
-          } />
-          <Route path="/device-registration" element={
-            <RequireAuth>
-              <DeviceRegistrationPage />
-            </RequireAuth>
-          } />
-          <Route path="/responder-tracking" element={
-            <RequireAuth>
-              <ResponderTrackingPage />
-            </RequireAuth>
-          } />
-          <Route path="/analytics" element={
-            <RequireAuth>
-              <AnalyticsPage />
-            </RequireAuth>
-          } />
-        </Routes>
-      </Router>
-    </AuthContext.Provider>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Navigate to="/dashboard" />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/dashboard" element={
+          <RequireAuth>
+            <Dashboard />
+          </RequireAuth>
+        } />
+        <Route path="/responders" element={
+          <RequireAuth>
+            <RespondersPage />
+          </RequireAuth>
+        } />
+        <Route path="/hospitals" element={
+          <RequireAuth>
+            <HospitalsPage />
+          </RequireAuth>
+        } />
+        <Route path="/settings" element={
+          <RequireAuth>
+            <SettingsPage />
+          </RequireAuth>
+        } />
+        <Route path="/iot" element={
+          <RequireAuth>
+            <IoTDevicesPage />
+          </RequireAuth>
+        } />
+        <Route path="/device-registration" element={
+          <RequireAuth>
+            <DeviceRegistrationPage />
+          </RequireAuth>
+        } />
+        <Route path="/responder-tracking" element={
+          <RequireAuth>
+            <ResponderTrackingPage />
+          </RequireAuth>
+        } />
+        <Route path="/analytics" element={
+          <RequireAuth>
+            <AnalyticsPage />
+          </RequireAuth>
+        } />
+      </Routes>
+    </Router>
   );
 }
 
