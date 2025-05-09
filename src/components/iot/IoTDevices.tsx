@@ -16,7 +16,7 @@ const IoTDevices = () => {
     error 
   } = useQuery({
     queryKey: ['iotDevices'],
-    queryFn: fetchIoTDevices,
+    queryFn: () => fetchIoTDevices(), // Wrap in anonymous function to be consistent
     refetchInterval: 30000, // Refetch every 30 seconds
   });
 

@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Emergency, Responder, Hospital, Communication, EmergencyAssignment } from '@/types/emergency-types';
 
@@ -349,6 +350,15 @@ export const getEmergencyStatistics = async () => {
   // Calculate average response time (for demo purposes, we'll use a placeholder)
   const avgResponseTime = "4:32"; // In a real app, this would be calculated from actual data
 
+  // Fetch hospital data for capacity calculations
+  const { data: hospitalData, error: hospitalError } = await supabase
+    .from('hospitals')
+    .select('total_beds, available_beds');
+    
+  if (hospitalError) {
+    console.error('Error fetching hospital data:', hospitalError);
+  }
+  
   // Calculate hospital capacity
   const totalBeds = hospitalData?.reduce((sum, hospital) => sum + hospital.total_beds, 0) || 0;
   const availableBeds = hospitalData?.reduce((sum, hospital) => sum + hospital.available_beds, 0) || 0;

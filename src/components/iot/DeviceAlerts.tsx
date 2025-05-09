@@ -9,13 +9,14 @@ import { fetchDeviceAlerts } from '@/services/iot-service';
 import { formatDistanceToNow } from 'date-fns';
 
 const DeviceAlerts = () => {
+  // Fix the useQuery implementation to not pass the fetchDeviceAlerts function directly
   const { 
     data: alerts, 
     isLoading, 
     error 
   } = useQuery({
     queryKey: ['deviceAlerts'],
-    queryFn: fetchDeviceAlerts,
+    queryFn: () => fetchDeviceAlerts(), // Wrap in anonymous function to avoid parameter mismatch
     refetchInterval: 10000, // Refetch every 10 seconds
   });
 
@@ -143,6 +144,28 @@ const DeviceAlerts = () => {
       </CardContent>
     </Card>
   );
+};
+
+// Helper function that was referenced but was missing
+const getAlertTypeBadge = (type: string) => {
+  switch (type.toLowerCase()) {
+    case 'crash':
+      return <Badge className="bg-red-100 text-red-800 border border-red-200">Crash</Badge>;
+    case 'medical':
+      return <Badge className="bg-purple-100 text-purple-800 border border-purple-200">Medical</Badge>;
+    case 'fire':
+      return <Badge className="bg-orange-100 text-orange-800 border border-orange-200">Fire</Badge>;
+    default:
+      return <Badge className="bg-gray-100 text-gray-800 border border-gray-200">{type}</Badge>;
+  }
+};
+
+const formatTime = (timestamp: string) => {
+  try {
+    return formatDistanceToNow(new Date(timestamp), { addSuffix: true });
+  } catch (e) {
+    return 'Unknown time';
+  }
 };
 
 export default DeviceAlerts;

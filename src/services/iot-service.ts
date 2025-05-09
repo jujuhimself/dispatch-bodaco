@@ -59,16 +59,27 @@ export const fetchIoTDevices = async (): Promise<IoTDevice[]> => {
 };
 
 export const createIoTDevice = async (deviceData: Partial<IoTDevice>): Promise<IoTDevice> => {
+  // Make sure required fields are present
+  if (!deviceData.device_id || !deviceData.name || !deviceData.type) {
+    throw new Error('Required fields missing: device_id, name, and type are required');
+  }
+
   // Convert coordinates to Postgres point format if provided
-  const formattedLocation = deviceData.location 
-    ? formatCoordinatesForPostgres(deviceData.location) 
-    : null;
+  const dataToInsert = { ...deviceData };
+  
+  if (deviceData.location) {
+    // Don't directly include location in the insert object
+    delete dataToInsert.location;
+  }
 
   const { data, error } = await supabase
     .from('iot_devices')
     .insert({
-      ...deviceData,
-      location: formattedLocation
+      ...dataToInsert,
+      // Set location separately if provided
+      ...(deviceData.location && { 
+        location: formatCoordinatesForPostgres(deviceData.location)
+      })
     })
     .select()
     .single();
@@ -85,16 +96,20 @@ export const createIoTDevice = async (deviceData: Partial<IoTDevice>): Promise<I
 };
 
 export const updateIoTDevice = async (id: string, deviceData: Partial<IoTDevice>): Promise<IoTDevice> => {
-  // Convert coordinates to Postgres point format if provided
-  const formattedLocation = deviceData.location 
-    ? formatCoordinatesForPostgres(deviceData.location) 
-    : undefined;
+  const dataToUpdate = { ...deviceData };
+  
+  // Handle location separately
+  if (deviceData.location) {
+    delete dataToUpdate.location;
+  }
 
   const { data, error } = await supabase
     .from('iot_devices')
     .update({
-      ...deviceData,
-      location: formattedLocation,
+      ...dataToUpdate,
+      ...(deviceData.location && { 
+        location: formatCoordinatesForPostgres(deviceData.location)
+      }),
       updated_at: new Date().toISOString()
     })
     .eq('id', id)
@@ -149,20 +164,20 @@ export const fetchDeviceAlerts = async (processed?: boolean): Promise<DeviceAler
 };
 
 export const createDeviceAlert = async (alertData: Partial<DeviceAlert>): Promise<DeviceAlert> => {
-  // Convert coordinates to Postgres point format
-  const formattedLocation = alertData.location 
-    ? formatCoordinatesForPostgres(alertData.location) 
-    : null;
-
-  if (!formattedLocation) {
-    throw new Error('Location is required for device alerts');
+  // Make sure required fields are present
+  if (!alertData.device_id || !alertData.alert_type || !alertData.severity || !alertData.location || !alertData.data) {
+    throw new Error('Required fields missing: device_id, alert_type, severity, location, and data are required');
   }
+  
+  // Handle location separately
+  const dataToInsert = { ...alertData };
+  delete dataToInsert.location;
 
   const { data, error } = await supabase
     .from('device_alerts')
     .insert({
-      ...alertData,
-      location: formattedLocation
+      ...dataToInsert,
+      location: formatCoordinatesForPostgres(alertData.location)
     })
     .select()
     .single();
@@ -200,6 +215,11 @@ export const fetchAlertEscalations = async (resolved?: boolean): Promise<AlertEs
 };
 
 export const createAlertEscalation = async (escalationData: Partial<AlertEscalation>): Promise<AlertEscalation> => {
+  // Make sure required fields are present
+  if (!escalationData.alert_id || !escalationData.level || !escalationData.reason) {
+    throw new Error('Required fields missing: alert_id, level, and reason are required');
+  }
+
   const { data, error } = await supabase
     .from('alert_escalations')
     .insert(escalationData)

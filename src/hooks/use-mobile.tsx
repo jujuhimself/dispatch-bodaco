@@ -1,4 +1,6 @@
+
 import * as React from "react"
+import { create } from 'zustand'
 
 const MOBILE_BREAKPOINT = 768
 
@@ -17,3 +19,12 @@ export function useIsMobile() {
 
   return !!isMobile
 }
+
+// Add the missing mobile menu store
+export const useMobileMenuStore = create<{
+  open: boolean
+  setOpen: (open: boolean) => void
+}>((set) => ({
+  open: false,
+  setOpen: (open) => set({ open })
+}))
