@@ -11,6 +11,7 @@ export interface UserProfile {
   role: UserRole;
   created_at?: string;
   avatar_url?: string;
+  last_sign_in_at?: string;
 }
 
 export interface AuthContextType {

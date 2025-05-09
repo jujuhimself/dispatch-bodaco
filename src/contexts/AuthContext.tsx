@@ -72,7 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string): Promise<void> => {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -82,14 +82,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw error;
       
       navigate('/');
-      return data;
     } catch (error: any) {
       toast.error(error.message || 'Error during sign in');
       throw error;
     }
   };
 
-  const signUp = async (email: string, password: string, userData: any) => {
+  const signUp = async (email: string, password: string, userData: any): Promise<void> => {
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -102,14 +101,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw error;
       
       toast.success('Registration successful! Please check your email for verification.');
-      return data;
     } catch (error: any) {
       toast.error(error.message || 'Error during sign up');
       throw error;
     }
   };
 
-  const signOut = async () => {
+  const signOut = async (): Promise<void> => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
@@ -120,7 +118,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const value = {
+  const value: AuthContextType = {
     user,
     session,
     loading,
