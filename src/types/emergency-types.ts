@@ -11,6 +11,7 @@ export interface Emergency {
   assigned_at: string | null;
   resolved_at: string | null;
   notes: string | null;
+  device_alert_id?: string | null;
 }
 
 export interface Responder {
@@ -55,4 +56,42 @@ export interface Communication {
   sent_at: string;
   emergency_id: string | null;
   responder_id: string | null;
+}
+
+export interface IoTDevice {
+  id: string;
+  device_id: string;
+  name: string;
+  type: string;
+  vehicle_id?: string;
+  owner_id?: string;
+  status?: string;
+  last_heartbeat?: string;
+  location?: { x: number; y: number } | null;
+  metadata?: any;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface DeviceAlert {
+  id: string;
+  device_id: string;
+  alert_type: string;
+  severity: number;
+  location: { x: number; y: number } | null;
+  data: any;
+  processed?: boolean;
+  emergency_id?: string;
+  created_at?: string;
+  processed_at?: string;
+}
+
+export interface AlertEscalation {
+  id: string;
+  alert_id: string;
+  level: 'normal' | 'elevated' | 'critical' | 'emergency';
+  reason: string;
+  resolved: boolean;
+  resolved_at?: string;
+  created_at?: string;
 }

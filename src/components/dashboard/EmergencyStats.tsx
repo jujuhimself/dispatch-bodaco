@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Ambulance, Clock, Users, Hospital } from "lucide-react";
+import { Ambulance, Clock, Users, Hospital, Smartphone, AlertTriangle } from "lucide-react";
 import { getEmergencyStatistics } from '@/services/emergency-service';
 import { useQuery } from '@tanstack/react-query';
 
@@ -15,7 +15,7 @@ const EmergencyStats = () => {
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {[...Array(4)].map((_, index) => (
+        {[...Array(6)].map((_, index) => (
           <Card key={index} className="animate-pulse">
             <CardHeader className="pb-2 space-y-0">
               <div className="h-4 w-24 bg-gray-200 rounded"></div>
@@ -62,11 +62,25 @@ const EmergencyStats = () => {
       change: `${stats?.hospitalsAtCapacity || 0} hospitals at capacity`,
       icon: <Hospital className="h-4 w-4 text-orange-500" />,
       textColor: "text-orange-500"
+    },
+    {
+      title: "Connected IoT Devices",
+      value: "17", // This would be populated from stats in production
+      change: "12 active, 5 inactive",
+      icon: <Smartphone className="h-4 w-4 text-blue-500" />,
+      textColor: "text-blue-500"
+    },
+    {
+      title: "Pending Alert Escalations",
+      value: stats?.pendingEscalations?.toString() ?? "0",
+      change: `${stats?.pendingEscalations && stats.pendingEscalations > 0 ? 'Requires attention' : 'All clear'}`,
+      icon: <AlertTriangle className="h-4 w-4 text-red-500" />,
+      textColor: "text-red-500"
     }
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
       {statsData.map((stat, index) => (
         <Card key={index}>
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">

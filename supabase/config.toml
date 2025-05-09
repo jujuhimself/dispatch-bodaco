@@ -1,1 +1,8 @@
+
 project_id = "avkbfpzmqgrffhdnfewv"
+
+[functions.iot-alert]
+verify_jwt = false
+
+[functions.auto-assign-responder]
+verify_jwt = true

@@ -15,6 +15,7 @@ import EmergencyCreate from "./pages/EmergencyCreate";
 import Responders from "./pages/Responders";
 import Hospitals from "./pages/Hospitals";
 import Communications from "./pages/Communications";
+import IoTDevices from "./pages/IoTDevices";
 
 // Create a client
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const AppRoutes = () => (
     <Route path="/responders" element={<RequireAuth><Responders /></RequireAuth>} />
     <Route path="/hospitals" element={<RequireAuth><Hospitals /></RequireAuth>} />
     <Route path="/communications" element={<RequireAuth><Communications /></RequireAuth>} />
+    <Route path="/iot-devices" element={<RequireAuth roles={['dispatcher', 'admin']}><IoTDevices /></RequireAuth>} />
     
     {/* Catch all */}
     <Route path="*" element={<NotFound />} />

@@ -2,7 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Emergency, Responder, Hospital, Communication, EmergencyAssignment } from '@/types/emergency-types';
 
 // Helper function to transform coordinates from Postgres point type
-const transformCoordinates = (coordinates: any): { x: number; y: number } | null => {
+export const transformCoordinates = (coordinates: any): { x: number; y: number } | null => {
   if (!coordinates) return null;
   // If we get a string like "(x,y)" from the database
   if (typeof coordinates === 'string') {
@@ -27,7 +27,7 @@ const transformCoordinates = (coordinates: any): { x: number; y: number } | null
 };
 
 // Helper function to convert our coordinates for Postgres
-const formatCoordinatesForPostgres = (coordinates: { x: number; y: number }) => {
+export const formatCoordinatesForPostgres = (coordinates: { x: number; y: number }) => {
   return `(${coordinates.x},${coordinates.y})`;
 };
 
@@ -223,6 +223,47 @@ export const fetchEmergencyAssignments = async (emergencyId?: string): Promise<E
   }) as EmergencyAssignment[];
 };
 
+export const fetchEmergencyWithDeviceAlert = async (emergencyId: string): Promise<{ emergency: Emergency; deviceAlert?: any }> => {
+  const { data, error } = await supabase
+    .from('emergencies')
+    .select(`
+      *,
+      device_alerts(*)
+    `)
+    .eq('id', emergencyId)
+    .single();
+
+  if (error) {
+    console.error('Error fetching emergency with device alert:', error);
+    throw new Error('Failed to fetch emergency with device alert');
+  }
+
+  const emergency = {
+    ...data,
+    coordinates: transformCoordinates(data.coordinates)
+  } as Emergency;
+  
+  const deviceAlert = data.device_alerts ? {
+    ...data.device_alerts,
+    location: transformCoordinates(data.device_alerts.location)
+  } : undefined;
+
+  return { emergency, deviceAlert };
+};
+
+export const autoAssignResponder = async (emergencyId: string): Promise<any> => {
+  const { data, error } = await supabase.functions.invoke('auto-assign-responder', {
+    body: { emergency_id: emergencyId }
+  });
+
+  if (error) {
+    console.error('Error auto-assigning responder:', error);
+    throw new Error('Failed to auto-assign responder');
+  }
+
+  return data;
+};
+
 export const fetchRecentCommunications = async (limit = 5): Promise<Communication[]> => {
   const { data, error } = await supabase
     .from('communications')
@@ -289,13 +330,19 @@ export const getEmergencyStatistics = async () => {
     .select('*', { count: 'exact', head: true })
     .eq('status', 'available');
 
-  // Get total hospital beds and available beds
-  const { data: hospitalData, error: hospitalError } = await supabase
-    .from('hospitals')
-    .select('total_beds, available_beds');
+  // Get count of alerts from devices
+  const { count: alertsCount, error: alertsError } = await supabase
+    .from('device_alerts')
+    .select('*', { count: 'exact', head: true });
 
-  if (totalError || activeError || respondersError || hospitalError) {
-    console.error('Error fetching statistics:', { totalError, activeError, respondersError, hospitalError });
+  // Get count of unresolved escalations
+  const { count: escalationsCount, error: escalationsError } = await supabase
+    .from('alert_escalations')
+    .select('*', { count: 'exact', head: true })
+    .eq('resolved', false);
+
+  if (totalError || activeError || respondersError || alertsError || escalationsError) {
+    console.error('Error fetching statistics:', { totalError, activeError, respondersError, alertsError, escalationsError });
     throw new Error('Failed to fetch emergency statistics');
   }
 
@@ -318,6 +365,8 @@ export const getEmergencyStatistics = async () => {
     hospitalCapacity: capacityPercentage,
     hospitalsAtCapacity,
     availableBeds,
-    totalBeds
+    totalBeds,
+    deviceAlerts: alertsCount || 0,
+    pendingEscalations: escalationsCount || 0
   };
 };

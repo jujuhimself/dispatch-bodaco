@@ -9,6 +9,82 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      alert_escalations: {
+        Row: {
+          alert_id: string
+          created_at: string | null
+          id: string
+          level: Database["public"]["Enums"]["escalation_level"]
+          reason: string
+          resolved: boolean | null
+          resolved_at: string | null
+        }
+        Insert: {
+          alert_id: string
+          created_at?: string | null
+          id?: string
+          level: Database["public"]["Enums"]["escalation_level"]
+          reason: string
+          resolved?: boolean | null
+          resolved_at?: string | null
+        }
+        Update: {
+          alert_id?: string
+          created_at?: string | null
+          id?: string
+          level?: Database["public"]["Enums"]["escalation_level"]
+          reason?: string
+          resolved?: boolean | null
+          resolved_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alert_escalations_alert_id_fkey"
+            columns: ["alert_id"]
+            isOneToOne: false
+            referencedRelation: "device_alerts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      alert_processors: {
+        Row: {
+          alert_id: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          processor_type: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          alert_id: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          processor_type: string
+          status: string
+          updated_at?: string | null
+        }
+        Update: {
+          alert_id?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          processor_type?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alert_processors_alert_id_fkey"
+            columns: ["alert_id"]
+            isOneToOne: false
+            referencedRelation: "device_alerts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       communications: {
         Row: {
           emergency_id: string | null
@@ -54,11 +130,66 @@ export type Database = {
           },
         ]
       }
+      device_alerts: {
+        Row: {
+          alert_type: string
+          created_at: string | null
+          data: Json
+          device_id: string
+          emergency_id: string | null
+          id: string
+          location: unknown
+          processed: boolean | null
+          processed_at: string | null
+          severity: number
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string | null
+          data: Json
+          device_id: string
+          emergency_id?: string | null
+          id?: string
+          location: unknown
+          processed?: boolean | null
+          processed_at?: string | null
+          severity: number
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string | null
+          data?: Json
+          device_id?: string
+          emergency_id?: string | null
+          id?: string
+          location?: unknown
+          processed?: boolean | null
+          processed_at?: string | null
+          severity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_alerts_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "iot_devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "device_alerts_emergency_id_fkey"
+            columns: ["emergency_id"]
+            isOneToOne: false
+            referencedRelation: "emergencies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       emergencies: {
         Row: {
           assigned_at: string | null
           coordinates: unknown | null
           description: string | null
+          device_alert_id: string | null
           id: string
           location: string
           notes: string | null
@@ -72,6 +203,7 @@ export type Database = {
           assigned_at?: string | null
           coordinates?: unknown | null
           description?: string | null
+          device_alert_id?: string | null
           id?: string
           location: string
           notes?: string | null
@@ -85,6 +217,7 @@ export type Database = {
           assigned_at?: string | null
           coordinates?: unknown | null
           description?: string | null
+          device_alert_id?: string | null
           id?: string
           location?: string
           notes?: string | null
@@ -94,7 +227,15 @@ export type Database = {
           status?: Database["public"]["Enums"]["emergency_status"]
           type?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "emergencies_device_alert_id_fkey"
+            columns: ["device_alert_id"]
+            isOneToOne: false
+            referencedRelation: "device_alerts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       emergency_assignments: {
         Row: {
@@ -174,6 +315,51 @@ export type Database = {
         }
         Relationships: []
       }
+      iot_devices: {
+        Row: {
+          created_at: string | null
+          device_id: string
+          id: string
+          last_heartbeat: string | null
+          location: unknown | null
+          metadata: Json | null
+          name: string
+          owner_id: string | null
+          status: string | null
+          type: string
+          updated_at: string | null
+          vehicle_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          device_id: string
+          id?: string
+          last_heartbeat?: string | null
+          location?: unknown | null
+          metadata?: Json | null
+          name: string
+          owner_id?: string | null
+          status?: string | null
+          type: string
+          updated_at?: string | null
+          vehicle_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          device_id?: string
+          id?: string
+          last_heartbeat?: string | null
+          location?: unknown | null
+          metadata?: Json | null
+          name?: string
+          owner_id?: string | null
+          status?: string | null
+          type?: string
+          updated_at?: string | null
+          vehicle_id?: string | null
+        }
+        Relationships: []
+      }
       responders: {
         Row: {
           coordinates: unknown | null
@@ -225,6 +411,7 @@ export type Database = {
         | "on_site"
         | "resolved"
         | "canceled"
+      escalation_level: "normal" | "elevated" | "critical" | "emergency"
       responder_status: "available" | "on_call" | "off_duty"
       responder_type: "ambulance" | "bajaj" | "traffic"
     }
@@ -350,6 +537,7 @@ export const Constants = {
         "resolved",
         "canceled",
       ],
+      escalation_level: ["normal", "elevated", "critical", "emergency"],
       responder_status: ["available", "on_call", "off_duty"],
       responder_type: ["ambulance", "bajaj", "traffic"],
     },
