@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { AuthContext, AuthProvider } from '@/contexts/AuthContext';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import LoginPage from '@/pages/LoginPage';
 import Dashboard from '@/components/dashboard/Dashboard';
 import RequireAuth from '@/components/auth/RequireAuth';

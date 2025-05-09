@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext } from 'react';
 import { UserProfile } from '@/types/auth-types';
-import useAuth, { UseAuthReturn } from '@/hooks/useAuth';
+import useAuthHook, { UseAuthReturn } from '@/hooks/useAuth';
 
 // Create the auth context
 export const AuthContext = createContext<UseAuthReturn>({
@@ -16,7 +16,7 @@ export const AuthContext = createContext<UseAuthReturn>({
 
 // Provider component
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const auth = useAuth();
+  const auth = useAuthHook();
   
   return (
     <AuthContext.Provider value={auth}>
@@ -34,5 +34,5 @@ export const useAuth = () => {
   return context;
 };
 
-// Export the custom hook for backward compatibility
-export { default } from '@/hooks/useAuth';
+// Export the original hook for backward compatibility
+export { default as useAuthHook } from '@/hooks/useAuth';

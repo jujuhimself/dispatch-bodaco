@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Smartphone, AlertCircle } from 'lucide-react';
 import IoTDevices from '@/components/iot/IoTDevices';
 import DeviceAlerts from '@/components/iot/DeviceAlerts';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
 
 const IoTDevicesPage = () => {

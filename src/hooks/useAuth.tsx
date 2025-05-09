@@ -23,17 +23,19 @@ const useAuth = (): UseAuthReturn => {
       const { data } = await supabase.auth.getSession();
       
       if (data.session?.user) {
-        const { data: userData } = await supabase
+        // Use the user's ID from the session to query profiles
+        const { data: userData, error } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', data.session.user.id)
           .single();
           
-        if (userData) {
+        if (userData && !error) {
           setAuth({
             ...userData,
             email: data.session.user.email || '',
-          });
+            role: userData.role || 'user' // Ensure role has a default value
+          } as UserProfile);
         }
       }
     } catch (error) {
