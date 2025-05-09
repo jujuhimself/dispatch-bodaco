@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Emergency, Responder, Hospital, Communication, EmergencyAssignment } from '@/types/emergency-types';
 
@@ -379,4 +378,23 @@ export const getEmergencyStatistics = async () => {
     deviceAlerts: alertsCount || 0,
     pendingEscalations: escalationsCount || 0
   };
+};
+
+export const fetchHospitalData = async (): Promise<any[]> => {
+  const { data, error } = await supabase
+    .from('hospitals')
+    .select('*');
+  
+  if (error) {
+    console.error('Error fetching hospital data:', error);
+    throw error;
+  }
+
+  return data.map(hospital => ({
+    ...hospital,
+    coordinates: hospital.coordinates ? {
+      x: parseFloat(hospital.coordinates.toString().split('(')[1].split(',')[0]),
+      y: parseFloat(hospital.coordinates.toString().split(',')[1].split(')')[0])
+    } : undefined
+  }));
 };

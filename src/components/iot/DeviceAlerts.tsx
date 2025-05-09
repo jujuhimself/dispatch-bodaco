@@ -1,58 +1,46 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, AlertTriangle, Loader2, Link } from 'lucide-react';
+import { AlertCircle, Smartphone, Calendar, Clock, Loader2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchDeviceAlerts } from '@/services/iot-service';
 import { formatDistanceToNow } from 'date-fns';
 
 const DeviceAlerts = () => {
-  // Fix the useQuery implementation to not pass the fetchDeviceAlerts function directly
   const { 
     data: alerts, 
     isLoading, 
     error 
   } = useQuery({
     queryKey: ['deviceAlerts'],
-    queryFn: () => fetchDeviceAlerts(), // Wrap in anonymous function to avoid parameter mismatch
-    refetchInterval: 10000, // Refetch every 10 seconds
+    queryFn: () => fetchDeviceAlerts(),
+    refetchInterval: 30000, // Refetch every 30 seconds
   });
 
-  const getSeverityBadge = (severity: number) => {
-    switch (severity) {
-      case 1:
-        return <Badge className="bg-red-500 text-white">Critical</Badge>;
-      case 2:
-        return <Badge className="bg-orange-500 text-white">High</Badge>;
-      case 3:
-        return <Badge className="bg-yellow-500 text-white">Medium</Badge>;
-      case 4:
-        return <Badge className="bg-blue-500 text-white">Low</Badge>;
+  const getSeverityClass = (severity: number) => {
+    switch (true) {
+      case severity >= 8:
+        return 'bg-red-500';
+      case severity >= 5:
+        return 'bg-orange-500';
+      case severity >= 3:
+        return 'bg-yellow-500';
       default:
-        return <Badge className="bg-gray-500 text-white">Unknown</Badge>;
+        return 'bg-blue-500';
     }
   };
 
-  const getAlertTypeBadge = (type: string) => {
-    switch (type.toLowerCase()) {
-      case 'crash':
-        return <Badge className="bg-red-100 text-red-800 border border-red-200">Crash</Badge>;
-      case 'medical':
-        return <Badge className="bg-purple-100 text-purple-800 border border-purple-200">Medical</Badge>;
-      case 'fire':
-        return <Badge className="bg-orange-100 text-orange-800 border border-orange-200">Fire</Badge>;
+  const getSeverityText = (severity: number) => {
+    switch (true) {
+      case severity >= 8:
+        return 'Critical';
+      case severity >= 5:
+        return 'High';
+      case severity >= 3:
+        return 'Medium';
       default:
-        return <Badge className="bg-gray-100 text-gray-800 border border-gray-200">{type}</Badge>;
-    }
-  };
-
-  const formatTime = (timestamp: string) => {
-    try {
-      return formatDistanceToNow(new Date(timestamp), { addSuffix: true });
-    } catch (e) {
-      return 'Unknown time';
+        return 'Low';
     }
   };
 
@@ -70,7 +58,6 @@ const DeviceAlerts = () => {
   }
 
   if (error) {
-    console.error('Error loading device alerts:', error);
     return (
       <Card>
         <CardHeader>
@@ -87,85 +74,50 @@ const DeviceAlerts = () => {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-lg font-medium">Device Alerts</CardTitle>
-        <Button variant="outline" size="sm">View All</Button>
+        <Badge variant="outline">{alerts?.length || 0} Total</Badge>
       </CardHeader>
       <CardContent>
         {alerts && alerts.length > 0 ? (
           <div className="space-y-4">
             {alerts.map((alert) => (
-              <div key={alert.id} className="p-3 border rounded-md bg-gray-50">
-                <div className="flex justify-between items-start mb-2">
-                  <div className="flex items-center">
-                    <AlertTriangle className="h-4 w-4 text-red-500 mr-2" />
-                    <div>
-                      <div className="font-medium">
-                        {getAlertTypeBadge(alert.alert_type)}
-                        <span className="ml-2 text-sm text-gray-500">
-                          {formatTime(alert.created_at || '')}
-                        </span>
-                      </div>
+              <div key={alert.id} className="flex items-start justify-between p-3 border rounded-md">
+                <div className="flex items-start">
+                  <div className={`p-2 rounded-md ${getSeverityClass(alert.severity)} text-white mr-3`}>
+                    <AlertCircle className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <div className="font-medium flex items-center">
+                      {alert.alert_type.charAt(0).toUpperCase() + alert.alert_type.slice(1)} Alert
+                      <Badge className={`ml-2 ${getSeverityClass(alert.severity)}`} variant="secondary">
+                        {getSeverityText(alert.severity)}
+                      </Badge>
                     </div>
+                    <div className="text-xs text-gray-500 flex items-center mt-1">
+                      <Smartphone className="h-3 w-3 mr-1" />
+                      Device ID: {alert.device_id}
+                    </div>
+                    <div className="text-xs text-gray-500 flex items-center mt-1">
+                      <Calendar className="h-3 w-3 mr-1" />
+                      {new Date(alert.created_at || '').toLocaleDateString()}
+                      <Clock className="h-3 w-3 ml-2 mr-1" />
+                      {formatDistanceToNow(new Date(alert.created_at || ''), { addSuffix: true })}
+                    </div>
+                    {alert.processed && (
+                      <Badge variant="outline" className="mt-1">Processed</Badge>
+                    )}
                   </div>
-                  {getSeverityBadge(alert.severity)}
-                </div>
-                
-                {alert.location && (
-                  <div className="text-xs flex items-center text-gray-500 mt-2">
-                    <MapPin className="h-3 w-3 mr-1" />
-                    Coordinates: {alert.location.x.toFixed(4)}, {alert.location.y.toFixed(4)}
-                  </div>
-                )}
-                
-                {alert.processed && alert.emergency_id && (
-                  <div className="mt-2 text-xs flex items-center">
-                    <Link className="h-3 w-3 mr-1 text-blue-500" />
-                    <span>
-                      Linked to emergency 
-                      <Button variant="link" size="sm" className="p-0 h-auto text-xs ml-1">
-                        View Emergency
-                      </Button>
-                    </span>
-                  </div>
-                )}
-                
-                <div className="mt-2">
-                  <Button variant="outline" size="sm" className="text-xs">
-                    View Details
-                  </Button>
                 </div>
               </div>
             ))}
           </div>
         ) : (
           <div className="text-center py-8 text-gray-500">
-            No device alerts detected
+            No active alerts
           </div>
         )}
       </CardContent>
     </Card>
   );
-};
-
-// Helper function that was referenced but was missing
-const getAlertTypeBadge = (type: string) => {
-  switch (type.toLowerCase()) {
-    case 'crash':
-      return <Badge className="bg-red-100 text-red-800 border border-red-200">Crash</Badge>;
-    case 'medical':
-      return <Badge className="bg-purple-100 text-purple-800 border border-purple-200">Medical</Badge>;
-    case 'fire':
-      return <Badge className="bg-orange-100 text-orange-800 border border-orange-200">Fire</Badge>;
-    default:
-      return <Badge className="bg-gray-100 text-gray-800 border border-gray-200">{type}</Badge>;
-  }
-};
-
-const formatTime = (timestamp: string) => {
-  try {
-    return formatDistanceToNow(new Date(timestamp), { addSuffix: true });
-  } catch (e) {
-    return 'Unknown time';
-  }
 };
 
 export default DeviceAlerts;

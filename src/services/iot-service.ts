@@ -1,28 +1,29 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { transformCoordinates, formatCoordinatesForPostgres } from '@/services/emergency-service';
+import { Database } from '@/integrations/supabase/types';
 
+// Types for IoT devices and alerts
 export interface IoTDevice {
-  id: string;
-  device_id: string;
+  id?: string;
   name: string;
+  device_id: string;
   type: string;
+  status?: string;
+  location?: { x: number, y: number };
+  last_heartbeat?: string;
   vehicle_id?: string;
   owner_id?: string;
-  status?: string;
-  last_heartbeat?: string;
-  location?: { x: number; y: number } | null;
   metadata?: any;
   created_at?: string;
   updated_at?: string;
 }
 
 export interface DeviceAlert {
-  id: string;
+  id?: string;
   device_id: string;
   alert_type: string;
   severity: number;
-  location: { x: number; y: number } | null;
+  location?: { x: number, y: number };
   data: any;
   processed?: boolean;
   emergency_id?: string;
@@ -31,263 +32,220 @@ export interface DeviceAlert {
 }
 
 export interface AlertEscalation {
-  id: string;
+  id?: string;
   alert_id: string;
   level: 'normal' | 'elevated' | 'critical' | 'emergency';
   reason: string;
-  resolved: boolean;
-  resolved_at?: string;
+  resolved?: boolean;
   created_at?: string;
+  resolved_at?: string;
 }
 
-// IoT Devices
-export const fetchIoTDevices = async (): Promise<IoTDevice[]> => {
+export interface AlertProcessor {
+  id?: string;
+  alert_id: string;
+  processor_type: string;
+  status: string;
+  details?: any;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// Functions to fetch and manage IoT devices
+export async function fetchIoTDevices(): Promise<IoTDevice[]> {
   const { data, error } = await supabase
     .from('iot_devices')
-    .select('*')
-    .order('created_at', { ascending: false });
-
+    .select('*');
+  
   if (error) {
     console.error('Error fetching IoT devices:', error);
-    throw new Error('Failed to fetch IoT devices');
+    throw error;
   }
-
-  return data.map((item: any) => ({
-    ...item,
-    location: transformCoordinates(item.location)
-  })) as IoTDevice[];
-};
-
-export const createIoTDevice = async (deviceData: Partial<IoTDevice>): Promise<IoTDevice> => {
-  // Make sure required fields are present
-  if (!deviceData.device_id || !deviceData.name || !deviceData.type) {
-    throw new Error('Required fields missing: device_id, name, and type are required');
-  }
-
-  // Convert coordinates to Postgres point format if provided
-  const dataToInsert = { ...deviceData };
   
-  if (deviceData.location) {
-    // Don't directly include location in the insert object
-    delete dataToInsert.location;
+  return data.map(device => ({
+    ...device,
+    location: device.location ? {
+      x: parseFloat(device.location.toString().split('(')[1].split(',')[0]),
+      y: parseFloat(device.location.toString().split(',')[1].split(')')[0])
+    } : undefined
+  }));
+}
+
+export async function addIoTDevice(device: Partial<IoTDevice>): Promise<IoTDevice> {
+  // Ensure required fields are present
+  if (!device.name || !device.device_id || !device.type) {
+    throw new Error('Device name, device_id, and type are required');
+  }
+
+  // Format the location for PostGIS if it exists
+  let locationValue = null;
+  if (device.location) {
+    locationValue = `(${device.location.x},${device.location.y})`;
   }
 
   const { data, error } = await supabase
     .from('iot_devices')
     .insert({
-      ...dataToInsert,
-      // Set location separately if provided
-      ...(deviceData.location && { 
-        location: formatCoordinatesForPostgres(deviceData.location)
-      })
+      name: device.name,
+      device_id: device.device_id,
+      type: device.type,
+      status: device.status || 'active',
+      location: locationValue,
+      vehicle_id: device.vehicle_id,
+      owner_id: device.owner_id,
+      metadata: device.metadata || {},
     })
     .select()
     .single();
-
+  
   if (error) {
-    console.error('Error creating IoT device:', error);
-    throw new Error('Failed to create IoT device');
+    console.error('Error adding IoT device:', error);
+    throw error;
   }
-
+  
   return {
     ...data,
-    location: transformCoordinates(data.location)
-  } as IoTDevice;
-};
+    location: data.location ? {
+      x: parseFloat(data.location.toString().split('(')[1].split(',')[0]),
+      y: parseFloat(data.location.toString().split(',')[1].split(')')[0])
+    } : undefined
+  };
+}
 
-export const updateIoTDevice = async (id: string, deviceData: Partial<IoTDevice>): Promise<IoTDevice> => {
-  const dataToUpdate = { ...deviceData };
+export async function updateIoTDevice(id: string, device: Partial<IoTDevice>): Promise<IoTDevice> {
+  // Format the location for PostGIS if it exists
+  const updates: any = { ...device };
   
-  // Handle location separately
-  if (deviceData.location) {
-    delete dataToUpdate.location;
+  if (device.location) {
+    updates.location = `(${device.location.x},${device.location.y})`;
   }
-
+  
+  delete updates.id; // Remove id from updates object
+  
   const { data, error } = await supabase
     .from('iot_devices')
-    .update({
-      ...dataToUpdate,
-      ...(deviceData.location && { 
-        location: formatCoordinatesForPostgres(deviceData.location)
-      }),
-      updated_at: new Date().toISOString()
-    })
+    .update(updates)
     .eq('id', id)
     .select()
     .single();
-
+  
   if (error) {
     console.error('Error updating IoT device:', error);
-    throw new Error('Failed to update IoT device');
+    throw error;
   }
-
+  
   return {
     ...data,
-    location: transformCoordinates(data.location)
-  } as IoTDevice;
-};
+    location: data.location ? {
+      x: parseFloat(data.location.toString().split('(')[1].split(',')[0]),
+      y: parseFloat(data.location.toString().split(',')[1].split(')')[0])
+    } : undefined
+  };
+}
 
-export const deleteIoTDevice = async (id: string): Promise<void> => {
-  const { error } = await supabase
-    .from('iot_devices')
-    .delete()
-    .eq('id', id);
-
-  if (error) {
-    console.error('Error deleting IoT device:', error);
-    throw new Error('Failed to delete IoT device');
-  }
-};
-
-// Device Alerts
-export const fetchDeviceAlerts = async (processed?: boolean): Promise<DeviceAlert[]> => {
+// Functions to fetch and manage device alerts
+export async function fetchDeviceAlerts(processed?: boolean): Promise<DeviceAlert[]> {
   let query = supabase
     .from('device_alerts')
-    .select('*')
-    .order('created_at', { ascending: false });
-
+    .select('*');
+  
   if (processed !== undefined) {
     query = query.eq('processed', processed);
   }
-
+  
   const { data, error } = await query;
-
+  
   if (error) {
     console.error('Error fetching device alerts:', error);
-    throw new Error('Failed to fetch device alerts');
-  }
-
-  return data.map((item: any) => ({
-    ...item,
-    location: transformCoordinates(item.location)
-  })) as DeviceAlert[];
-};
-
-export const createDeviceAlert = async (alertData: Partial<DeviceAlert>): Promise<DeviceAlert> => {
-  // Make sure required fields are present
-  if (!alertData.device_id || !alertData.alert_type || !alertData.severity || !alertData.location || !alertData.data) {
-    throw new Error('Required fields missing: device_id, alert_type, severity, location, and data are required');
+    throw error;
   }
   
-  // Handle location separately
-  const dataToInsert = { ...alertData };
-  delete dataToInsert.location;
+  return data.map(alert => ({
+    ...alert,
+    location: alert.location ? {
+      x: parseFloat(alert.location.toString().split('(')[1].split(',')[0]),
+      y: parseFloat(alert.location.toString().split(',')[1].split(')')[0])
+    } : undefined
+  }));
+}
+
+export async function createDeviceAlert(alert: Partial<DeviceAlert>): Promise<DeviceAlert> {
+  // Ensure required fields are present
+  if (!alert.device_id || !alert.alert_type || alert.severity === undefined || !alert.data) {
+    throw new Error('Device ID, alert type, severity, and data are required');
+  }
+
+  // Format the location for PostGIS if it exists
+  let locationValue = null;
+  if (alert.location) {
+    locationValue = `(${alert.location.x},${alert.location.y})`;
+  }
 
   const { data, error } = await supabase
     .from('device_alerts')
     .insert({
-      ...dataToInsert,
-      location: formatCoordinatesForPostgres(alertData.location)
+      device_id: alert.device_id,
+      alert_type: alert.alert_type,
+      severity: alert.severity,
+      location: locationValue,
+      data: alert.data,
+      processed: alert.processed || false
     })
     .select()
     .single();
-
+  
   if (error) {
     console.error('Error creating device alert:', error);
-    throw new Error('Failed to create device alert');
+    throw error;
   }
-
+  
   return {
     ...data,
-    location: transformCoordinates(data.location)
-  } as DeviceAlert;
-};
+    location: data.location ? {
+      x: parseFloat(data.location.toString().split('(')[1].split(',')[0]),
+      y: parseFloat(data.location.toString().split(',')[1].split(')')[0])
+    } : undefined
+  };
+}
 
-// Alert Escalations
-export const fetchAlertEscalations = async (resolved?: boolean): Promise<AlertEscalation[]> => {
-  let query = supabase
-    .from('alert_escalations')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  if (resolved !== undefined) {
-    query = query.eq('resolved', resolved);
-  }
-
-  const { data, error } = await query;
-
-  if (error) {
-    console.error('Error fetching alert escalations:', error);
-    throw new Error('Failed to fetch alert escalations');
-  }
-
-  return data as AlertEscalation[];
-};
-
-export const createAlertEscalation = async (escalationData: Partial<AlertEscalation>): Promise<AlertEscalation> => {
-  // Make sure required fields are present
-  if (!escalationData.alert_id || !escalationData.level || !escalationData.reason) {
-    throw new Error('Required fields missing: alert_id, level, and reason are required');
+// Functions for alert escalations
+export async function createAlertEscalation(escalation: Partial<AlertEscalation>): Promise<AlertEscalation> {
+  // Ensure required fields are present
+  if (!escalation.alert_id || !escalation.level || !escalation.reason) {
+    throw new Error('Alert ID, level, and reason are required');
   }
 
   const { data, error } = await supabase
     .from('alert_escalations')
-    .insert(escalationData)
+    .insert({
+      alert_id: escalation.alert_id,
+      level: escalation.level,
+      reason: escalation.reason,
+      resolved: escalation.resolved || false
+    })
     .select()
     .single();
-
+  
   if (error) {
     console.error('Error creating alert escalation:', error);
-    throw new Error('Failed to create alert escalation');
+    throw error;
   }
+  
+  return data;
+}
 
-  return data as AlertEscalation;
-};
-
-export const resolveAlertEscalation = async (id: string): Promise<AlertEscalation> => {
+// Functions for alert processors
+export async function createAlertProcessor(processor: AlertProcessor): Promise<AlertProcessor> {
   const { data, error } = await supabase
-    .from('alert_escalations')
-    .update({
-      resolved: true,
-      resolved_at: new Date().toISOString()
-    })
-    .eq('id', id)
+    .from('alert_processors')
+    .insert(processor)
     .select()
     .single();
-
+  
   if (error) {
-    console.error('Error resolving alert escalation:', error);
-    throw new Error('Failed to resolve alert escalation');
+    console.error('Error creating alert processor:', error);
+    throw error;
   }
-
-  return data as AlertEscalation;
-};
-
-// Subscription to real-time alerts
-export const subscribeToDeviceAlerts = (callback: (alert: DeviceAlert) => void) => {
-  return supabase
-    .channel('device-alerts-channel')
-    .on('postgres_changes', 
-      { 
-        event: 'INSERT', 
-        schema: 'public', 
-        table: 'device_alerts' 
-      },
-      (payload) => {
-        const alert = {
-          ...payload.new,
-          location: transformCoordinates(payload.new.location)
-        } as DeviceAlert;
-        
-        callback(alert);
-      }
-    )
-    .subscribe();
-};
-
-// Subscription to real-time escalations
-export const subscribeToAlertEscalations = (callback: (escalation: AlertEscalation) => void) => {
-  return supabase
-    .channel('alert-escalations-channel')
-    .on('postgres_changes', 
-      { 
-        event: 'INSERT', 
-        schema: 'public', 
-        table: 'alert_escalations' 
-      },
-      (payload) => {
-        callback(payload.new as AlertEscalation);
-      }
-    )
-    .subscribe();
-};
+  
+  return data;
+}
