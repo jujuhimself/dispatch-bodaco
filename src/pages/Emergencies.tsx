@@ -43,7 +43,7 @@ const Emergencies = () => {
   if (isLoading) {
     return (
       <div className="container mx-auto p-4 flex justify-center items-center min-h-[50vh]">
-        <Loader size="lg" />
+        <Loader />
       </div>
     );
   }
@@ -101,15 +101,17 @@ const Emergencies = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <TabsContent value="list" className="mt-0">
-            <EmergencyList emergencies={filteredEmergencies} />
-          </TabsContent>
-          
-          <TabsContent value="map" className="mt-0">
-            <div className="h-[500px] rounded-md overflow-hidden bg-muted/20">
-              <EmergencyMap />
-            </div>
-          </TabsContent>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsContent value="list" className="mt-0">
+              <EmergencyList emergencies={filteredEmergencies} />
+            </TabsContent>
+            
+            <TabsContent value="map" className="mt-0">
+              <div className="h-[500px] rounded-md overflow-hidden bg-muted/20">
+                <EmergencyMap />
+              </div>
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
     </div>

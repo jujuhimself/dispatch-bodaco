@@ -1,28 +1,23 @@
 
-export type UserRole = 'admin' | 'dispatcher' | 'responder';
+import { User, Session } from '@supabase/supabase-js';
+
+export type UserRole = 'dispatcher' | 'responder' | 'admin';
 
 export interface UserProfile {
-  id: string;
+  id?: string;
   email: string;
-  role: UserRole;
   name?: string;
-  avatar_url?: string;
   phone_number?: string;
-  created_at: string;
-  last_sign_in_at?: string;
-}
-
-export interface AuthState {
-  user: UserProfile | null;
-  session: any;
-  loading: boolean;
+  role: UserRole;
+  created_at?: string;
+  avatar_url?: string;
 }
 
 export interface AuthContextType {
   user: UserProfile | null;
-  session: any;
+  session: Session | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, userData: any) => Promise<void>;
+  signUp: (email: string, password: string, userData: Partial<UserProfile>) => Promise<void>;
   signOut: () => Promise<void>;
 }

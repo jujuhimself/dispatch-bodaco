@@ -87,7 +87,7 @@ const Responders = () => {
   if (isLoading) {
     return (
       <div className="container mx-auto p-4 flex justify-center items-center min-h-[50vh]">
-        <Loader size="lg" />
+        <Loader />
       </div>
     );
   }
@@ -145,6 +145,21 @@ const Responders = () => {
           </Tabs>
         </CardHeader>
         <CardContent>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="hidden">
+            <TabsContent value="all">
+              {/* Content rendered in the main component */}
+            </TabsContent>
+            <TabsContent value="available">
+              {/* Content rendered in the main component */}
+            </TabsContent>
+            <TabsContent value="on_call">
+              {/* Content rendered in the main component */}
+            </TabsContent>
+            <TabsContent value="off_duty">
+              {/* Content rendered in the main component */}
+            </TabsContent>
+          </Tabs>
+          
           {filteredResponders.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-muted-foreground">No responders found.</p>

@@ -76,7 +76,7 @@ const Communications = () => {
   if (isLoading) {
     return (
       <div className="container mx-auto p-4 flex justify-center items-center min-h-[50vh]">
-        <Loader size="lg" />
+        <Loader />
       </div>
     );
   }

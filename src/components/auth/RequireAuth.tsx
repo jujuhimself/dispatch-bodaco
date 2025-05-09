@@ -24,7 +24,7 @@ const RequireAuth: React.FC<RequireAuthProps> = ({ children, roles }) => {
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center bg-gradient-to-br from-sky-50 via-indigo-50 to-blue-100">
-        <Loader size="lg" />
+        <Loader />
       </div>
     );
   }
