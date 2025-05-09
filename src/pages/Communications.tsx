@@ -10,7 +10,7 @@ import { AlertCircle, Send } from 'lucide-react';
 import { Loader } from '@/components/ui/loader';
 import { fetchRecentCommunications, sendCommunication } from '@/services/emergency-service';
 import { Communication as CommunicationType } from '@/types/emergency-types';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 

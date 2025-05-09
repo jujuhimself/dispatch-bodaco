@@ -139,6 +139,24 @@ export const fetchAvailableResponders = async (): Promise<Responder[]> => {
   })) as Responder[];
 };
 
+export const getActiveResponders = async (): Promise<Responder[]> => {
+  const { data, error } = await supabase
+    .from('responders')
+    .select('*')
+    .in('status', ['available', 'on_call'])
+    .order('last_active', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching active responders:', error);
+    throw new Error('Failed to fetch active responders');
+  }
+
+  return data.map((item: any) => ({
+    ...item,
+    coordinates: transformCoordinates(item.coordinates)
+  })) as Responder[];
+};
+
 export const fetchHospitals = async (): Promise<Hospital[]> => {
   const { data, error } = await supabase
     .from('hospitals')

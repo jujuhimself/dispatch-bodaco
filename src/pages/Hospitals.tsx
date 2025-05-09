@@ -8,7 +8,7 @@ import { AlertCircle, Search, Bed, Phone } from 'lucide-react';
 import { Loader } from '@/components/ui/loader';
 import { fetchHospitals, updateHospitalCapacity } from '@/services/emergency-service';
 import { Hospital } from '@/types/emergency-types';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 

@@ -10,7 +10,7 @@ import { AlertCircle, Plus, Search } from 'lucide-react';
 import { Loader } from '@/components/ui/loader';
 import { fetchEmergencies } from '@/services/emergency-service';
 import { Emergency } from '@/types/emergency-types';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import EmergencyList from '@/components/emergencies/EmergencyList';
 import EmergencyMap from '@/components/dashboard/EmergencyMap';
 

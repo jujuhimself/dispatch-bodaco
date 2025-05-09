@@ -6,11 +6,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Smartphone, AlertCircle } from 'lucide-react';
 import IoTDevices from '@/components/iot/IoTDevices';
 import DeviceAlerts from '@/components/iot/DeviceAlerts';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { Link } from 'react-router-dom';
 
 const IoTDevicesPage = () => {
-  const { user } = useAuth();
+  const { auth: user } = useAuth();
   const [activeTab, setActiveTab] = React.useState('devices');
   
   const canManageDevices = user?.role === 'admin' || user?.role === 'dispatcher';
