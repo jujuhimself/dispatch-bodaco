@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 
@@ -209,7 +208,12 @@ export async function createDeviceAlert(alert: Partial<DeviceAlert>): Promise<De
 }
 
 // Functions for alert escalations
-export async function createAlertEscalation(escalation: Partial<AlertEscalation>): Promise<AlertEscalation> {
+export async function createAlertEscalation(escalation: {
+  alert_id: string;
+  level: 'normal' | 'elevated' | 'critical' | 'emergency';
+  reason: string;
+  resolved?: boolean;
+}): Promise<AlertEscalation> {
   // Ensure required fields are present
   if (!escalation.alert_id || !escalation.level || !escalation.reason) {
     throw new Error('Alert ID, level, and reason are required');
@@ -231,7 +235,76 @@ export async function createAlertEscalation(escalation: Partial<AlertEscalation>
     throw error;
   }
   
-  return data;
+  return data as AlertEscalation;
+}
+
+// Function to get emergency statistics for the analytics dashboard
+export async function getEmergencyStatistics() {
+  // Get count of total emergencies
+  const { count: totalCount, error: totalError } = await supabase
+    .from('emergencies')
+    .select('*', { count: 'exact', head: true });
+
+  // Get count of active emergencies
+  const { count: activeCount, error: activeError } = await supabase
+    .from('emergencies')
+    .select('*', { count: 'exact', head: true })
+    .in('status', ['pending', 'assigned', 'in_transit', 'on_site']);
+
+  // Get count of available responders
+  const { count: availableRespondersCount, error: respondersError } = await supabase
+    .from('responders')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'available');
+
+  // Get count of alerts from devices
+  const { count: alertsCount, error: alertsError } = await supabase
+    .from('device_alerts')
+    .select('*', { count: 'exact', head: true });
+
+  // Get count of unresolved escalations
+  const { count: escalationsCount, error: escalationsError } = await supabase
+    .from('alert_escalations')
+    .select('*', { count: 'exact', head: true })
+    .eq('resolved', false);
+
+  if (totalError || activeError || respondersError || alertsError || escalationsError) {
+    console.error('Error fetching statistics:', { totalError, activeError, respondersError, alertsError, escalationsError });
+    throw new Error('Failed to fetch emergency statistics');
+  }
+
+  // Calculate average response time (for demo purposes, we'll use a placeholder)
+  const avgResponseTime = "4:32"; // In a real app, this would be calculated from actual data
+
+  // Fetch hospital data for capacity calculations
+  const { data: hospitalData, error: hospitalError } = await supabase
+    .from('hospitals')
+    .select('total_beds, available_beds');
+    
+  if (hospitalError) {
+    console.error('Error fetching hospital data:', hospitalError);
+  }
+  
+  // Calculate hospital capacity
+  const totalBeds = hospitalData?.reduce((sum, hospital) => sum + hospital.total_beds, 0) || 0;
+  const availableBeds = hospitalData?.reduce((sum, hospital) => sum + hospital.available_beds, 0) || 0;
+  const capacityPercentage = totalBeds > 0 ? Math.round((1 - (availableBeds / totalBeds)) * 100) : 0;
+  
+  // Calculate hospitals at capacity
+  const hospitalsAtCapacity = hospitalData?.filter(h => h.available_beds === 0).length || 0;
+
+  return {
+    totalEmergencies: totalCount || 0,
+    activeEmergencies: activeCount || 0,
+    availableResponders: availableRespondersCount || 0,
+    avgResponseTime,
+    hospitalCapacity: capacityPercentage,
+    hospitalsAtCapacity,
+    availableBeds,
+    totalBeds,
+    deviceAlerts: alertsCount || 0,
+    pendingEscalations: escalationsCount || 0
+  };
 }
 
 // Functions for alert processors

@@ -7,6 +7,7 @@ import { Plus, Smartphone, AlertCircle } from 'lucide-react';
 import IoTDevices from '@/components/iot/IoTDevices';
 import DeviceAlerts from '@/components/iot/DeviceAlerts';
 import { useAuth } from '@/contexts/AuthContext';
+import { Link } from 'react-router-dom';
 
 const IoTDevicesPage = () => {
   const { user } = useAuth();
@@ -20,10 +21,12 @@ const IoTDevicesPage = () => {
         <h1 className="text-2xl font-bold">IoT Devices & Alerts</h1>
         
         {canManageDevices && (
-          <Button className="bg-primary hover:bg-primary/90">
-            <Plus className="h-4 w-4 mr-1" />
-            Register New Device
-          </Button>
+          <Link to="/device-registration">
+            <Button className="bg-primary hover:bg-primary/90">
+              <Plus className="h-4 w-4 mr-1" />
+              Register New Device
+            </Button>
+          </Link>
         )}
       </div>
       
