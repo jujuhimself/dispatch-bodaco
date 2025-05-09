@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
-import { AuthContext } from '@/contexts/AuthContext';
+import { AuthContext, AuthProvider } from '@/contexts/AuthContext';
 import { useAuth } from '@/hooks/useAuth';
 import LoginPage from '@/pages/LoginPage';
 import Dashboard from '@/components/dashboard/Dashboard';
@@ -15,13 +15,11 @@ import ResponderTrackingPage from '@/pages/ResponderTracking';
 import AnalyticsPage from '@/pages/Analytics';
 
 function App() {
-  const { auth, setAuth, checkSession } = useAuth();
-  const [loading, setLoading] = useState(true);
+  const { auth, setAuth, checkSession, loading } = useAuth();
 
   useEffect(() => {
     const fetchData = async () => {
       await checkSession();
-      setLoading(false);
     };
     fetchData();
   }, [checkSession]);
@@ -31,7 +29,15 @@ function App() {
   }
 
   return (
-    <AuthContext.Provider value={{ auth, setAuth }}>
+    <AuthContext.Provider value={{ 
+      auth, 
+      setAuth, 
+      checkSession, 
+      user: auth, 
+      loading,
+      signIn: async () => {}, 
+      signUp: async () => {} 
+    }}>
       <Router>
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" />} />
