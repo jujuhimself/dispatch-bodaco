@@ -1,17 +1,18 @@
+
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
-import { AuthContext } from './contexts/AuthContext';
-import { useAuth } from './hooks/useAuth';
-import LoginPage from './pages/LoginPage';
-import Dashboard from './components/dashboard/Dashboard';
-import RequireAuth from './components/auth/RequireAuth';
-import RespondersPage from './pages/RespondersPage';
-import HospitalsPage from './pages/HospitalsPage';
-import SettingsPage from './pages/SettingsPage';
-import IoTDevicesPage from './pages/IoTDevices';
-import DeviceRegistrationPage from './pages/DeviceRegistration';
-import ResponderTrackingPage from './pages/ResponderTracking';
-import AnalyticsPage from './pages/Analytics';
+import { AuthContext } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
+import LoginPage from '@/pages/LoginPage';
+import Dashboard from '@/components/dashboard/Dashboard';
+import RequireAuth from '@/components/auth/RequireAuth';
+import RespondersPage from '@/pages/RespondersPage';
+import HospitalsPage from '@/pages/HospitalsPage';
+import SettingsPage from '@/pages/SettingsPage';
+import IoTDevicesPage from '@/pages/IoTDevices';
+import DeviceRegistrationPage from '@/pages/DeviceRegistration';
+import ResponderTrackingPage from '@/pages/ResponderTracking';
+import AnalyticsPage from '@/pages/Analytics';
 
 function App() {
   const { auth, setAuth, checkSession } = useAuth();
