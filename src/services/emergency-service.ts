@@ -147,7 +147,12 @@ export const getActiveResponders = async () => {
       .not('status', 'eq', 'off_duty');
     
     if (error) throw error;
-    return data || [];
+    
+    // Transform the data to ensure coordinates are properly formatted
+    return data.map((item: any) => ({
+      ...item,
+      coordinates: transformCoordinates(item.coordinates)
+    })) as Responder[];
   } catch (error) {
     console.error('Error fetching active responders:', error);
     return [];

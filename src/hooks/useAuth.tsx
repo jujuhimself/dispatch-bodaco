@@ -23,20 +23,15 @@ const useAuth = (): UseAuthReturn => {
       const { data } = await supabase.auth.getSession();
       
       if (data.session?.user) {
-        // Use the user's ID from the session to query profiles
-        const { data: userData, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', data.session.user.id)
-          .single();
-          
-        if (userData && !error) {
-          setAuth({
-            ...userData,
-            email: data.session.user.email || '',
-            role: userData.role || 'user' // Ensure role has a default value
-          } as UserProfile);
-        }
+        // For now, just use the auth user data directly without querying profiles
+        // since we haven't set up the profiles table yet
+        setAuth({
+          id: data.session.user.id,
+          email: data.session.user.email || '',
+          role: 'user', // Default role
+          name: data.session.user.user_metadata?.name || '',
+          phone_number: data.session.user.user_metadata?.phone_number || ''
+        } as UserProfile);
       }
     } catch (error) {
       console.error('Error checking session:', error);
