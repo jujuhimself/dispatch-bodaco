@@ -12,7 +12,8 @@ import {
   Smartphone,
   BellRing,
   CirclePlus,
-  Hospital
+  Hospital,
+  MessageSquare
 } from 'lucide-react';
 
 interface SidebarLinkProps {
@@ -30,12 +31,12 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({ to, icon: Icon, children, bad
     <Link
       to={to}
       className={cn(
-        "group flex items-center justify-between rounded-md p-2 text-sm font-medium hover:bg-secondary hover:text-foreground",
-        isActive ? "bg-secondary text-foreground" : "text-muted-foreground"
+        "group flex items-center justify-between rounded-md p-2 text-sm font-medium hover:bg-muted hover:text-foreground transition-colors",
+        isActive ? "bg-muted text-foreground" : "text-muted-foreground"
       )}
     >
       <div className="flex items-center space-x-3">
-        <Icon className="h-4 w-4" />
+        <Icon className={cn("h-4 w-4", isActive ? "text-primary" : "")} />
         <span>{children}</span>
       </div>
       
@@ -77,6 +78,10 @@ const SidebarLinks = () => {
       <SidebarLink to="/responder-tracking" icon={MapPin}>
         Responder Tracking
       </SidebarLink>
+
+      <SidebarLink to="/communications" icon={MessageSquare}>
+        Communications
+      </SidebarLink>
       
       <SidebarLink to="/analytics" icon={BarChart3}>
         Analytics & Reports
@@ -95,17 +100,32 @@ const SidebarLinks = () => {
 
 const Sidebar = () => {
   return (
-    <div className="flex h-full border-r bg-secondary flex-col py-4 w-64">
+    <div className="flex h-full border-r bg-card flex-col py-4 w-64">
       <div className="px-6 pb-4">
-        <Link to="/dashboard" className="flex items-center font-semibold">
-          Rapid Response Guardian
+        <Link to="/dashboard" className="flex items-center font-semibold text-primary">
+          <span className="text-lg">Rapid Response</span>
+          <span className="font-bold ml-1 text-foreground">Guardian</span>
         </Link>
       </div>
-      <nav className="flex-1 space-y-8">
+      <nav className="flex-1 px-3 space-y-6">
         <div className="space-y-1">
+          <p className="px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Main
+          </p>
           <SidebarLinks />
         </div>
       </nav>
+      <div className="px-3 py-2 mt-auto border-t border-border">
+        <div className="flex items-center px-2 py-3 space-x-3">
+          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+            D
+          </div>
+          <div>
+            <p className="text-sm font-medium">Dispatcher</p>
+            <p className="text-xs text-muted-foreground">Online</p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

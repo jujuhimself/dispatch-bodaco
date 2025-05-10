@@ -3,7 +3,7 @@ import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertCircle, FilePlus, Filter, Loader2 } from 'lucide-react';
+import { AlertCircle, FilePlus, Filter, Loader2, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { fetchEmergencies } from '@/services/emergency-service';
@@ -25,10 +25,12 @@ const EmergenciesPage: React.FC = () => {
     data: emergencies,
     isLoading,
     error,
-    refetch
+    refetch,
+    isRefetching
   } = useQuery({
     queryKey: ['emergencies'],
-    queryFn: fetchEmergencies
+    queryFn: fetchEmergencies,
+    refetchInterval: 30000 // Auto-refresh every 30 seconds
   });
 
   const filterEmergencies = useCallback((data: Emergency[] | undefined): Emergency[] => {
@@ -106,12 +108,14 @@ const EmergenciesPage: React.FC = () => {
             variant="outline" 
             size="sm"
             onClick={handleRefresh}
+            disabled={isRefetching}
           >
-            {isLoading ? (
+            {isRefetching ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              'Refresh'
+              <RefreshCw className="h-4 w-4" />
             )}
+            <span className="ml-2 hidden sm:inline-block">Refresh</span>
           </Button>
           
           <Link to="/emergency/create">
@@ -143,8 +147,8 @@ const EmergenciesPage: React.FC = () => {
       <Card>
         <CardHeader className="pb-2">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList>
-              <TabsTrigger value="all">All Emergencies</TabsTrigger>
+            <TabsList className="grid grid-cols-4">
+              <TabsTrigger value="all">All</TabsTrigger>
               <TabsTrigger value="active">Active</TabsTrigger>
               <TabsTrigger value="pending">Pending</TabsTrigger>
               <TabsTrigger value="resolved">Resolved</TabsTrigger>
@@ -164,6 +168,15 @@ const EmergenciesPage: React.FC = () => {
                 {error instanceof Error ? error.message : 'An unknown error occurred'}
               </p>
               <Button onClick={() => refetch()}>Try Again</Button>
+            </div>
+          ) : filteredEmergencies.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <p className="mb-4">No emergencies found matching your criteria</p>
+              {(searchQuery || typeFilter !== 'all' || priorityFilter !== 'all') && (
+                <Button variant="outline" onClick={handleResetFilters}>
+                  Clear Filters
+                </Button>
+              )}
             </div>
           ) : (
             <EmergencyList emergencies={filteredEmergencies} />

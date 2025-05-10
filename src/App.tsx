@@ -15,6 +15,7 @@ import AnalyticsPage from '@/pages/Analytics';
 import EmergenciesPage from '@/pages/EmergenciesPage';
 import EmergencyDetailsPage from '@/pages/EmergencyDetailsPage';
 import EmergencyCreate from '@/pages/EmergencyCreate';
+import CommunicationsPage from '@/pages/Communications';
 
 function App() {
   const { auth, checkSession, loading } = useAuth();
@@ -88,6 +89,11 @@ function App() {
         <Route path="/emergency/:id" element={
           <RequireAuth>
             <EmergencyDetailsPage />
+          </RequireAuth>
+        } />
+        <Route path="/communications" element={
+          <RequireAuth>
+            <CommunicationsPage />
           </RequireAuth>
         } />
       </Routes>
