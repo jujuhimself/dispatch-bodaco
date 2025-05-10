@@ -28,7 +28,7 @@ const useAuth = (): UseAuthReturn => {
         setAuth({
           id: data.session.user.id,
           email: data.session.user.email || '',
-          role: 'user' as UserRole, // Specify as UserRole type
+          role: 'user' as UserRole, // Explicitly cast this as UserRole type
           name: data.session.user.user_metadata?.name || '',
           phone_number: data.session.user.user_metadata?.phone_number || ''
         } as UserProfile);
