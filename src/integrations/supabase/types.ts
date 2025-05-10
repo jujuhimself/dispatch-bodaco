@@ -85,29 +85,115 @@ export type Database = {
           },
         ]
       }
+      channel_members: {
+        Row: {
+          channel_id: string
+          joined_at: string | null
+          last_read_at: string | null
+          role: string
+          user_id: string
+        }
+        Insert: {
+          channel_id: string
+          joined_at?: string | null
+          last_read_at?: string | null
+          role?: string
+          user_id: string
+        }
+        Update: {
+          channel_id?: string
+          joined_at?: string | null
+          last_read_at?: string | null
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "channel_members_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "communication_channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "channel_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      communication_channels: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          emergency_id: string | null
+          id: string
+          name: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          emergency_id?: string | null
+          id?: string
+          name: string
+          type?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          emergency_id?: string | null
+          id?: string
+          name?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "communication_channels_emergency_id_fkey"
+            columns: ["emergency_id"]
+            isOneToOne: false
+            referencedRelation: "emergencies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       communications: {
         Row: {
+          attachment_url: string | null
           emergency_id: string | null
           id: string
           message: string
+          parent_id: string | null
+          read_by_ids: string[] | null
           responder_id: string | null
           sender: string
           sent_at: string
           type: string
         }
         Insert: {
+          attachment_url?: string | null
           emergency_id?: string | null
           id?: string
           message: string
+          parent_id?: string | null
+          read_by_ids?: string[] | null
           responder_id?: string | null
           sender: string
           sent_at?: string
           type: string
         }
         Update: {
+          attachment_url?: string | null
           emergency_id?: string | null
           id?: string
           message?: string
+          parent_id?: string | null
+          read_by_ids?: string[] | null
           responder_id?: string | null
           sender?: string
           sent_at?: string
@@ -119,6 +205,13 @@ export type Database = {
             columns: ["emergency_id"]
             isOneToOne: false
             referencedRelation: "emergencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "communications_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "communications"
             referencedColumns: ["id"]
           },
           {

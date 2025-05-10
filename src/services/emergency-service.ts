@@ -320,6 +320,21 @@ export const sendCommunication = async (message: string, sender: string, emergen
   return data as Communication;
 };
 
+export const subscribeToMessages = (callback: (payload: any) => void) => {
+  return supabase
+    .channel('public:communications')
+    .on(
+      'postgres_changes', 
+      { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'communications' 
+      }, 
+      (payload) => callback(payload)
+    )
+    .subscribe();
+};
+
 export const updateHospitalCapacity = async (hospitalId: string, availableBeds: number): Promise<void> => {
   const { error } = await supabase
     .from('hospitals')
