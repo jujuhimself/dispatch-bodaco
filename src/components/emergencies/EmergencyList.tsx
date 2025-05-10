@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Emergency } from '@/types/emergency-types';
 import { Badge } from '@/components/ui/badge';
 import { AlertCircle, AlertTriangle, CheckCircle2, Clock, HelpCircle } from 'lucide-react';
@@ -10,6 +10,8 @@ interface EmergencyListProps {
 }
 
 const EmergencyList: React.FC<EmergencyListProps> = ({ emergencies }) => {
+  const navigate = useNavigate();
+
   // Sort emergencies by priority (lower number = higher priority) and then by reported_at (newest first)
   const sortedEmergencies = [...emergencies].sort((a, b) => {
     if (a.priority !== b.priority) {
@@ -76,6 +78,11 @@ const EmergencyList: React.FC<EmergencyListProps> = ({ emergencies }) => {
         return 'bg-gray-100 text-gray-800 border-gray-300';
     }
   };
+
+  // Handle row click to navigate to emergency details
+  const handleRowClick = (emergencyId: string) => {
+    navigate(`/emergency/${emergencyId}`);
+  };
   
   if (emergencies.length === 0) {
     return (
@@ -101,8 +108,8 @@ const EmergencyList: React.FC<EmergencyListProps> = ({ emergencies }) => {
           {sortedEmergencies.map((emergency) => (
             <tr
               key={emergency.id}
-              className="hover:bg-gray-50 cursor-pointer"
-              onClick={() => {}}
+              className="hover:bg-gray-50 cursor-pointer transition-colors"
+              onClick={() => handleRowClick(emergency.id)}
             >
               <td className="px-3 py-4 whitespace-nowrap text-sm">
                 <div className="font-medium text-gray-900">{emergency.type}</div>

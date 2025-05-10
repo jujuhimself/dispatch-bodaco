@@ -1,20 +1,22 @@
-
 import React, { useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, Calendar, Clock, Edit, MapPin, MessageSquare, Phone, User } from 'lucide-react';
 import { toast } from 'sonner';
-import { fetchEmergencyWithDeviceAlert, fetchEmergencyAssignments } from '@/services/emergency-service';
+import { fetchEmergencyWithDeviceAlert, fetchEmergencyAssignments, updateEmergencyStatus } from '@/services/emergency-service';
 import { formatDistanceToNow, format } from 'date-fns';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 const EmergencyDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('details');
+  const [showResolveDialog, setShowResolveDialog] = useState(false);
+  const queryClient = useQueryClient();
   
   const { data, isLoading, error } = useQuery({
     queryKey: ['emergency', id],
@@ -26,6 +28,20 @@ const EmergencyDetailsPage: React.FC = () => {
     queryKey: ['emergency-assignments', id],
     queryFn: () => fetchEmergencyAssignments(id),
     enabled: !!id
+  });
+
+  // Add mutation to update emergency status
+  const resolveEmergencyMutation = useMutation({
+    mutationFn: () => updateEmergencyStatus(id || '', 'resolved'),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['emergency', id] });
+      queryClient.invalidateQueries({ queryKey: ['emergencies'] });
+      toast.success('Emergency marked as resolved');
+      setShowResolveDialog(false);
+    },
+    onError: (error) => {
+      toast.error(`Failed to resolve emergency: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   });
   
   if (isLoading) {
@@ -97,8 +113,11 @@ const EmergencyDetailsPage: React.FC = () => {
   };
   
   const handleResolveEmergency = () => {
-    toast.success('Emergency marked as resolved');
-    // Implementation will be added later
+    setShowResolveDialog(true);
+  };
+
+  const confirmResolveEmergency = () => {
+    resolveEmergencyMutation.mutate();
   };
 
   const handleAssignResponder = () => {
@@ -140,8 +159,16 @@ const EmergencyDetailsPage: React.FC = () => {
               variant="outline" 
               onClick={handleResolveEmergency}
               className="bg-green-50 text-green-600 border-green-200 hover:bg-green-100"
+              disabled={resolveEmergencyMutation.isPending}
             >
-              Mark as Resolved
+              {resolveEmergencyMutation.isPending ? (
+                <div className="flex items-center">
+                  <div className="animate-spin h-4 w-4 border-2 border-green-600 border-t-transparent rounded-full mr-2"></div>
+                  Processing...
+                </div>
+              ) : (
+                "Mark as Resolved"
+              )}
             </Button>
           )}
           
@@ -214,6 +241,19 @@ const EmergencyDetailsPage: React.FC = () => {
                           <div>
                             <p>{formatDate(emergency.assigned_at)}</p>
                             <p className="text-sm text-gray-500">{getTimeElapsed(emergency.assigned_at)}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {emergency.resolved_at && (
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-500 mb-1">Resolved</h3>
+                        <div className="flex items-start">
+                          <Clock className="h-4 w-4 text-gray-400 mt-1 mr-2" />
+                          <div>
+                            <p>{formatDate(emergency.resolved_at)}</p>
+                            <p className="text-sm text-gray-500">{getTimeElapsed(emergency.resolved_at)}</p>
                           </div>
                         </div>
                       </div>
@@ -389,6 +429,24 @@ const EmergencyDetailsPage: React.FC = () => {
           </Card>
         </div>
       </div>
+      
+      {/* Resolve confirmation dialog */}
+      <AlertDialog open={showResolveDialog} onOpenChange={setShowResolveDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Resolve Emergency</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to mark this emergency as resolved? This action will update the status and mark the current time as the resolution time.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmResolveEmergency} className="bg-green-600 hover:bg-green-700">
+              Yes, Resolve Emergency
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

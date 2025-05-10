@@ -6,7 +6,27 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Search } from 'lucide-react';
 
-const EmergencyFilters: React.FC = () => {
+interface EmergencyFiltersProps {
+  searchQuery: string;
+  setSearchQuery: (value: string) => void;
+  typeFilter: string;
+  setTypeFilter: (value: string) => void;
+  priorityFilter: string;
+  setPriorityFilter: (value: string) => void;
+  applyFilters: () => void;
+  resetFilters: () => void;
+}
+
+const EmergencyFilters: React.FC<EmergencyFiltersProps> = ({
+  searchQuery,
+  setSearchQuery,
+  typeFilter,
+  setTypeFilter,
+  priorityFilter,
+  setPriorityFilter,
+  applyFilters,
+  resetFilters
+}) => {
   return (
     <Card className="border-dashed">
       <CardContent className="p-4">
@@ -15,13 +35,18 @@ const EmergencyFilters: React.FC = () => {
             <label className="text-xs font-medium text-gray-500">Search</label>
             <div className="relative">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
-              <Input placeholder="Search emergencies..." className="pl-8" />
+              <Input 
+                placeholder="Search emergencies..." 
+                className="pl-8"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
           </div>
           
           <div className="space-y-1">
             <label className="text-xs font-medium text-gray-500">Type</label>
-            <Select>
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
               <SelectTrigger>
                 <SelectValue placeholder="Any type" />
               </SelectTrigger>
@@ -38,7 +63,7 @@ const EmergencyFilters: React.FC = () => {
           
           <div className="space-y-1">
             <label className="text-xs font-medium text-gray-500">Priority</label>
-            <Select>
+            <Select value={priorityFilter} onValueChange={setPriorityFilter}>
               <SelectTrigger>
                 <SelectValue placeholder="Any priority" />
               </SelectTrigger>
@@ -54,8 +79,8 @@ const EmergencyFilters: React.FC = () => {
           </div>
           
           <div className="flex items-end space-x-2">
-            <Button className="flex-1">Apply Filters</Button>
-            <Button variant="outline">Reset</Button>
+            <Button className="flex-1" onClick={applyFilters}>Apply Filters</Button>
+            <Button variant="outline" onClick={resetFilters}>Reset</Button>
           </div>
         </div>
       </CardContent>

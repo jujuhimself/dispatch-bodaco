@@ -418,3 +418,31 @@ export const fetchHospitalData = async (): Promise<any[]> => {
     } : undefined
   }));
 };
+
+export const updateEmergencyStatus = async (emergencyId: string, status: Emergency['status']): Promise<Emergency> => {
+  const updateData: any = {
+    status
+  };
+  
+  // If we're resolving the emergency, add the resolved timestamp
+  if (status === 'resolved') {
+    updateData.resolved_at = new Date().toISOString();
+  }
+
+  const { data, error } = await supabase
+    .from('emergencies')
+    .update(updateData)
+    .eq('id', emergencyId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating emergency status:', error);
+    throw new Error('Failed to update emergency status');
+  }
+
+  return {
+    ...data,
+    coordinates: transformCoordinates(data.coordinates)
+  } as Emergency;
+};

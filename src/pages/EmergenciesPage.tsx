@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,10 +10,16 @@ import { fetchEmergencies } from '@/services/emergency-service';
 import EmergencyList from '@/components/emergencies/EmergencyList';
 import EmergencyFilters from '@/components/emergencies/EmergencyFilters';
 import { toast } from 'sonner';
+import { Emergency } from '@/types/emergency-types';
 
 const EmergenciesPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
+  
+  // Filter states
+  const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [priorityFilter, setPriorityFilter] = useState('all');
   
   const { 
     data: emergencies,
@@ -25,15 +31,56 @@ const EmergenciesPage: React.FC = () => {
     queryFn: fetchEmergencies
   });
 
-  const filteredEmergencies = emergencies?.filter(emergency => {
-    if (activeTab === 'all') return true;
-    if (activeTab === 'active') {
-      return ['pending', 'assigned', 'in_transit', 'on_site'].includes(emergency.status);
-    }
-    if (activeTab === 'pending') return emergency.status === 'pending';
-    if (activeTab === 'resolved') return emergency.status === 'resolved';
-    return true;
-  }) || [];
+  const filterEmergencies = useCallback((data: Emergency[] | undefined): Emergency[] => {
+    if (!data) return [];
+    
+    return data.filter(emergency => {
+      // First apply active tab filter
+      if (activeTab === 'all') {
+        // Continue with other filters
+      } else if (activeTab === 'active') {
+        if (!['pending', 'assigned', 'in_transit', 'on_site'].includes(emergency.status)) {
+          return false;
+        }
+      } else if (activeTab === 'pending') {
+        if (emergency.status !== 'pending') return false;
+      } else if (activeTab === 'resolved') {
+        if (emergency.status !== 'resolved') return false;
+      }
+      
+      // Search query filter
+      if (searchQuery && !emergency.type.toLowerCase().includes(searchQuery.toLowerCase()) && 
+          !emergency.location.toLowerCase().includes(searchQuery.toLowerCase()) &&
+          !(emergency.description?.toLowerCase().includes(searchQuery.toLowerCase()))) {
+        return false;
+      }
+      
+      // Type filter
+      if (typeFilter !== 'all' && !emergency.type.toLowerCase().includes(typeFilter.toLowerCase())) {
+        return false;
+      }
+      
+      // Priority filter
+      if (priorityFilter !== 'all' && emergency.priority !== parseInt(priorityFilter)) {
+        return false;
+      }
+      
+      return true;
+    });
+  }, [activeTab, searchQuery, typeFilter, priorityFilter]);
+  
+  const filteredEmergencies = filterEmergencies(emergencies);
+  
+  const handleApplyFilters = () => {
+    toast.success("Filters applied");
+  };
+  
+  const handleResetFilters = () => {
+    setSearchQuery('');
+    setTypeFilter('all');
+    setPriorityFilter('all');
+    toast.success("Filters reset");
+  };
   
   const handleRefresh = () => {
     refetch();
@@ -80,7 +127,18 @@ const EmergenciesPage: React.FC = () => {
         </div>
       </div>
       
-      {showFilters && <EmergencyFilters />}
+      {showFilters && (
+        <EmergencyFilters 
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          typeFilter={typeFilter}
+          setTypeFilter={setTypeFilter}
+          priorityFilter={priorityFilter}
+          setPriorityFilter={setPriorityFilter}
+          applyFilters={handleApplyFilters}
+          resetFilters={handleResetFilters}
+        />
+      )}
       
       <Card>
         <CardHeader className="pb-2">
