@@ -1,7 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
-import { AuthContext } from '@/contexts/AuthContext';
 import { useAuth } from '@/contexts/AuthContext';
 import LoginPage from '@/pages/LoginPage';
 import Dashboard from '@/components/dashboard/Dashboard';
@@ -13,9 +12,12 @@ import IoTDevicesPage from '@/pages/IoTDevices';
 import DeviceRegistrationPage from '@/pages/DeviceRegistration';
 import ResponderTrackingPage from '@/pages/ResponderTracking';
 import AnalyticsPage from '@/pages/Analytics';
+import EmergenciesPage from '@/pages/EmergenciesPage';
+import EmergencyDetailsPage from '@/pages/EmergencyDetailsPage';
+import EmergencyCreate from '@/pages/EmergencyCreate';
 
 function App() {
-  const { auth, setAuth, checkSession, loading } = useAuth();
+  const { auth, checkSession, loading } = useAuth();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -71,6 +73,21 @@ function App() {
         <Route path="/analytics" element={
           <RequireAuth>
             <AnalyticsPage />
+          </RequireAuth>
+        } />
+        <Route path="/emergencies" element={
+          <RequireAuth>
+            <EmergenciesPage />
+          </RequireAuth>
+        } />
+        <Route path="/emergency/create" element={
+          <RequireAuth>
+            <EmergencyCreate />
+          </RequireAuth>
+        } />
+        <Route path="/emergency/:id" element={
+          <RequireAuth>
+            <EmergencyDetailsPage />
           </RequireAuth>
         } />
       </Routes>
