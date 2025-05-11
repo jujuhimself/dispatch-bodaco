@@ -43,7 +43,7 @@ export const fetchCommunications = async (
 };
 
 export const createChannel = async (
-  channelData: Partial<CommunicationChannel>
+  channelData: { name: string; description?: string | null; type?: string; emergency_id?: string | null }
 ): Promise<CommunicationChannel | null> => {
   try {
     const { data, error } = await supabase

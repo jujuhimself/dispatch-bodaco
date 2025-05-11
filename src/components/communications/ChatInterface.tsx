@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
 import { sendMessage, subscribeToMessages } from '@/services/communications-service';
-import { ReloadIcon } from '@radix-ui/react-icons';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Emergency, Responder } from '@/types/emergency-types';
 
@@ -161,7 +161,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       {title && (
         <div className="px-4 py-3 border-b flex items-center justify-between">
           <h3 className="font-medium">{title}</h3>
-          {loading && <ReloadIcon className="animate-spin h-4 w-4" />}
+          {loading && <Loader2 className="animate-spin h-4 w-4" />}
         </div>
       )}
       

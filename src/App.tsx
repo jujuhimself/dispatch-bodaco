@@ -2,6 +2,7 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { HelmetProvider } from 'react-helmet-async';
 import LoginPage from '@/pages/LoginPage';
 import Dashboard from '@/components/dashboard/Dashboard';
 import RequireAuth from '@/components/auth/RequireAuth';
@@ -32,72 +33,74 @@ function App() {
   }
 
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Navigate to="/dashboard" />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/dashboard" element={
-          <RequireAuth>
-            <Dashboard />
-          </RequireAuth>
-        } />
-        <Route path="/responders" element={
-          <RequireAuth>
-            <RespondersPage />
-          </RequireAuth>
-        } />
-        <Route path="/hospitals" element={
-          <RequireAuth>
-            <HospitalsPage />
-          </RequireAuth>
-        } />
-        <Route path="/settings" element={
-          <RequireAuth>
-            <SettingsPage />
-          </RequireAuth>
-        } />
-        <Route path="/iot" element={
-          <RequireAuth>
-            <IoTDevicesPage />
-          </RequireAuth>
-        } />
-        <Route path="/device-registration" element={
-          <RequireAuth>
-            <DeviceRegistrationPage />
-          </RequireAuth>
-        } />
-        <Route path="/responder-tracking" element={
-          <RequireAuth>
-            <ResponderTrackingPage />
-          </RequireAuth>
-        } />
-        <Route path="/analytics" element={
-          <RequireAuth>
-            <AnalyticsPage />
-          </RequireAuth>
-        } />
-        <Route path="/emergencies" element={
-          <RequireAuth>
-            <EmergenciesPage />
-          </RequireAuth>
-        } />
-        <Route path="/emergency/create" element={
-          <RequireAuth>
-            <EmergencyCreate />
-          </RequireAuth>
-        } />
-        <Route path="/emergency/:id" element={
-          <RequireAuth>
-            <EmergencyDetailsPage />
-          </RequireAuth>
-        } />
-        <Route path="/communications" element={
-          <RequireAuth>
-            <CommunicationsPage />
-          </RequireAuth>
-        } />
-      </Routes>
-    </Router>
+    <HelmetProvider>
+      <Router>
+        <Routes>
+          <Route path="/" element={<Navigate to="/dashboard" />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/dashboard" element={
+            <RequireAuth>
+              <Dashboard />
+            </RequireAuth>
+          } />
+          <Route path="/responders" element={
+            <RequireAuth>
+              <RespondersPage />
+            </RequireAuth>
+          } />
+          <Route path="/hospitals" element={
+            <RequireAuth>
+              <HospitalsPage />
+            </RequireAuth>
+          } />
+          <Route path="/settings" element={
+            <RequireAuth>
+              <SettingsPage />
+            </RequireAuth>
+          } />
+          <Route path="/iot" element={
+            <RequireAuth>
+              <IoTDevicesPage />
+            </RequireAuth>
+          } />
+          <Route path="/device-registration" element={
+            <RequireAuth>
+              <DeviceRegistrationPage />
+            </RequireAuth>
+          } />
+          <Route path="/responder-tracking" element={
+            <RequireAuth>
+              <ResponderTrackingPage />
+            </RequireAuth>
+          } />
+          <Route path="/analytics" element={
+            <RequireAuth>
+              <AnalyticsPage />
+            </RequireAuth>
+          } />
+          <Route path="/emergencies" element={
+            <RequireAuth>
+              <EmergenciesPage />
+            </RequireAuth>
+          } />
+          <Route path="/emergency/create" element={
+            <RequireAuth>
+              <EmergencyCreate />
+            </RequireAuth>
+          } />
+          <Route path="/emergency/:id" element={
+            <RequireAuth>
+              <EmergencyDetailsPage />
+            </RequireAuth>
+          } />
+          <Route path="/communications" element={
+            <RequireAuth>
+              <CommunicationsPage />
+            </RequireAuth>
+          } />
+        </Routes>
+      </Router>
+    </HelmetProvider>
   );
 }
 
