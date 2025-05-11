@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Ambulance } from 'lucide-react';
+import { Ambulance, CheckCircle2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { UserRole } from '@/types/auth-types';
@@ -20,12 +20,16 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const Auth = () => {
   const { user, loading, signIn, signUp } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // Registration success state
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
   
   // Login form state
   const [loginEmail, setLoginEmail] = useState('');
@@ -85,7 +89,7 @@ const Auth = () => {
       };
       
       await signUp(registerEmail, registerPassword, userData);
-      toast.success('Account created successfully! Please check your email for verification.');
+      setRegistrationSuccess(true);
       
       // Reset form
       setRegisterEmail('');
@@ -112,6 +116,61 @@ const Auth = () => {
       </div>
     );
   }
+
+  // Show registration success page
+  if (registrationSuccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-100 p-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="max-w-md w-full"
+        >
+          <Card className="border-success-200 shadow-lg overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-green-500/10 via-teal-500/5 to-emerald-500/10 -z-10" />
+            <CardHeader className="text-center pb-2">
+              <div className="mx-auto bg-success-100 p-3 rounded-full">
+                <CheckCircle2 className="h-12 w-12 text-success-500" />
+              </div>
+              <CardTitle className="text-2xl mt-4 text-success-700">Registration Successful!</CardTitle>
+            </CardHeader>
+            <CardContent className="text-center">
+              <p className="text-gray-600 mb-6">
+                Please check your email inbox for a verification link. You'll need to verify your email before logging in.
+              </p>
+              
+              <Alert className="bg-blue-50 border-blue-200 text-blue-800 mb-6">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Important</AlertTitle>
+                <AlertDescription>
+                  If you don't see the email in a few minutes, check your spam folder.
+                </AlertDescription>
+              </Alert>
+              
+              <div className="flex flex-col gap-4">
+                <Button 
+                  onClick={() => setRegistrationSuccess(false)}
+                  variant="outline" 
+                  className="w-full"
+                >
+                  Return to Login
+                </Button>
+                
+                <Button
+                  onClick={() => window.open('mailto:', '_blank')}
+                  variant="ghost"
+                  className="w-full"
+                >
+                  Need help? Contact Support
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+    );
+  }
   
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-100 p-4">
@@ -123,9 +182,9 @@ const Auth = () => {
           transition={{ duration: 0.5 }}
         >
           <div className="flex items-center space-x-3">
-            <Ambulance className="h-10 w-10 text-emergency-600" />
+            <Ambulance className="h-12 w-12 text-emergency-600" />
             <h1 className="text-4xl font-bold text-emergency-700 flex items-center">
-              <span className="text-emergency-600">Respond</span>
+              <span className="text-emergency-600">Boda & Co</span>
               <span className="ml-1 bg-emergency-500 h-2 w-2 rounded-full emergency-pulse"></span>
             </h1>
           </div>
@@ -137,23 +196,31 @@ const Auth = () => {
           transition={{ duration: 0.5, delay: 0.1 }}
         >
           <Card className="bg-white/90 backdrop-blur-lg border border-gray-100 shadow-lg overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-purple-500/5 to-pink-500/10 -z-10" />
-            <CardHeader className="text-center">
-              <CardTitle className="text-2xl bg-gradient-to-r from-emergency-600 to-purple-600 bg-clip-text text-transparent">Welcome to Respond</CardTitle>
-              <CardDescription>Emergency Response Management System</CardDescription>
+            <div className="absolute inset-0 bg-gradient-to-br from-emergency-500/10 via-purple-500/5 to-blue-500/10 -z-10" />
+            <CardHeader className="pb-2 text-center">
+              <CardTitle className="text-3xl font-bold bg-gradient-to-r from-emergency-600 via-purple-600 to-blue-600 bg-clip-text text-transparent">
+                Welcome
+              </CardTitle>
+              <CardDescription className="text-base text-gray-600">
+                Emergency Response Management System
+              </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-4">
               <Tabs defaultValue="login" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-6 bg-blue-50/50">
-                  <TabsTrigger value="login" className="data-[state=active]:bg-white">Login</TabsTrigger>
-                  <TabsTrigger value="register" className="data-[state=active]:bg-white">Register</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-2 mb-8 rounded-lg p-1 bg-slate-100">
+                  <TabsTrigger value="login" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                    Login
+                  </TabsTrigger>
+                  <TabsTrigger value="register" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                    Register
+                  </TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="login">
                   <form onSubmit={handleLogin}>
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="email">Email</Label>
+                        <Label htmlFor="email" className="text-gray-700">Email Address</Label>
                         <Input 
                           id="email" 
                           type="email" 
@@ -165,7 +232,7 @@ const Auth = () => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="password">Password</Label>
+                        <Label htmlFor="password" className="text-gray-700">Password</Label>
                         <Input 
                           id="password" 
                           type="password" 
@@ -182,7 +249,7 @@ const Auth = () => {
                       </div>
                       <Button 
                         type="submit" 
-                        className="w-full bg-gradient-to-r from-emergency-600 to-purple-600 hover:from-emergency-700 hover:to-purple-700" 
+                        className="w-full bg-gradient-to-r from-emergency-600 to-blue-600 hover:from-emergency-700 hover:to-blue-700 transition-all duration-300" 
                         disabled={isLoading}
                       >
                         {isLoading ? 'Signing in...' : 'Sign In'}
@@ -195,7 +262,7 @@ const Auth = () => {
                   <form onSubmit={handleRegister}>
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="register-name">Full Name</Label>
+                        <Label htmlFor="register-name" className="text-gray-700">Full Name</Label>
                         <Input 
                           id="register-name" 
                           type="text" 
@@ -207,7 +274,7 @@ const Auth = () => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="register-email">Email</Label>
+                        <Label htmlFor="register-email" className="text-gray-700">Email Address</Label>
                         <Input 
                           id="register-email" 
                           type="email" 
@@ -219,7 +286,7 @@ const Auth = () => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="register-phone">Phone Number</Label>
+                        <Label htmlFor="register-phone" className="text-gray-700">Phone Number</Label>
                         <Input 
                           id="register-phone" 
                           type="tel" 
@@ -230,7 +297,7 @@ const Auth = () => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="register-password">Password</Label>
+                        <Label htmlFor="register-password" className="text-gray-700">Password</Label>
                         <Input 
                           id="register-password" 
                           type="password"
@@ -241,7 +308,7 @@ const Auth = () => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="confirm-password">Confirm Password</Label>
+                        <Label htmlFor="confirm-password" className="text-gray-700">Confirm Password</Label>
                         <Input 
                           id="confirm-password" 
                           type="password" 
@@ -252,7 +319,7 @@ const Auth = () => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="role">Role</Label>
+                        <Label htmlFor="role" className="text-gray-700">Select Role</Label>
                         <Select 
                           value={role} 
                           onValueChange={(value) => setRole(value as UserRole)}
@@ -273,7 +340,7 @@ const Auth = () => {
                       </div>
                       <Button 
                         type="submit" 
-                        className="w-full bg-gradient-to-r from-emergency-600 to-purple-600 hover:from-emergency-700 hover:to-purple-700" 
+                        className="w-full bg-gradient-to-r from-emergency-600 to-blue-600 hover:from-emergency-700 hover:to-blue-700 transition-all duration-300" 
                         disabled={isLoading}
                       >
                         {isLoading ? 'Creating Account...' : 'Create Account'}
@@ -283,9 +350,9 @@ const Auth = () => {
                 </TabsContent>
               </Tabs>
             </CardContent>
-            <CardFooter className="justify-center text-sm text-gray-500">
+            <CardFooter className="justify-center text-sm text-gray-500 pt-2">
               <p>
-                Emergency Response System — <Link to="/login" className="text-emergency-600 hover:underline">Already have an account?</Link>
+                Boda & Co Emergency Response — <Link to="/login" className="text-emergency-600 hover:underline">Already have an account?</Link>
               </p>
             </CardFooter>
           </Card>

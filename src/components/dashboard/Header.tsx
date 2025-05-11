@@ -11,7 +11,7 @@ const Header = () => {
           <Ambulance className="h-8 w-8 text-emergency-600 mr-2" />
           <div className="flex flex-col">
             <h1 className="text-xl font-bold flex items-center">
-              <span className="text-emergency-600">Respond</span>
+              <span className="text-emergency-600">Boda & Co</span>
               <span className="ml-1 bg-emergency-500 h-2 w-2 rounded-full emergency-pulse"></span>
             </h1>
             <p className="text-sm text-gray-500">Emergency Response Platform</p>

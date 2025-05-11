@@ -9,6 +9,48 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      agencies: {
+        Row: {
+          active: boolean | null
+          contact_email: string | null
+          contact_person: string | null
+          contact_phone: string | null
+          coordinates: unknown | null
+          created_at: string | null
+          id: string
+          location: string | null
+          name: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          contact_email?: string | null
+          contact_person?: string | null
+          contact_phone?: string | null
+          coordinates?: unknown | null
+          created_at?: string | null
+          id?: string
+          location?: string | null
+          name: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          contact_email?: string | null
+          contact_person?: string | null
+          contact_phone?: string | null
+          coordinates?: unknown | null
+          created_at?: string | null
+          id?: string
+          location?: string | null
+          name?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       alert_escalations: {
         Row: {
           alert_id: string
@@ -81,6 +123,47 @@ export type Database = {
             columns: ["alert_id"]
             isOneToOne: false
             referencedRelation: "device_alerts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      audit_logs: {
+        Row: {
+          action: string
+          id: string
+          new_data: Json | null
+          old_data: Json | null
+          performed_at: string | null
+          performed_by: string | null
+          record_id: string
+          table_name: string
+        }
+        Insert: {
+          action: string
+          id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+          performed_at?: string | null
+          performed_by?: string | null
+          record_id: string
+          table_name: string
+        }
+        Update: {
+          action?: string
+          id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+          performed_at?: string | null
+          performed_by?: string | null
+          record_id?: string
+          table_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -288,7 +371,9 @@ export type Database = {
           notes: string | null
           priority: number
           reported_at: string
+          resolution_details: string | null
           resolved_at: string | null
+          resolved_by: string | null
           status: Database["public"]["Enums"]["emergency_status"]
           type: string
         }
@@ -302,7 +387,9 @@ export type Database = {
           notes?: string | null
           priority?: number
           reported_at?: string
+          resolution_details?: string | null
           resolved_at?: string | null
+          resolved_by?: string | null
           status?: Database["public"]["Enums"]["emergency_status"]
           type: string
         }
@@ -316,7 +403,9 @@ export type Database = {
           notes?: string | null
           priority?: number
           reported_at?: string
+          resolution_details?: string | null
           resolved_at?: string | null
+          resolved_by?: string | null
           status?: Database["public"]["Enums"]["emergency_status"]
           type?: string
         }
@@ -326,6 +415,61 @@ export type Database = {
             columns: ["device_alert_id"]
             isOneToOne: false
             referencedRelation: "device_alerts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emergencies_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      emergency_agencies: {
+        Row: {
+          agency_id: string
+          assigned_at: string | null
+          created_at: string | null
+          emergency_id: string
+          id: string
+          notes: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          agency_id: string
+          assigned_at?: string | null
+          created_at?: string | null
+          emergency_id: string
+          id?: string
+          notes?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          agency_id?: string
+          assigned_at?: string | null
+          created_at?: string | null
+          emergency_id?: string
+          id?: string
+          notes?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emergency_agencies_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emergency_agencies_emergency_id_fkey"
+            columns: ["emergency_id"]
+            isOneToOne: false
+            referencedRelation: "emergencies"
             referencedColumns: ["id"]
           },
         ]
@@ -486,12 +630,56 @@ export type Database = {
         }
         Relationships: []
       }
+      responder_skills: {
+        Row: {
+          certification_expiry: string | null
+          certified: boolean | null
+          created_at: string | null
+          id: string
+          proficiency_level: number
+          responder_id: string
+          skill_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          certification_expiry?: string | null
+          certified?: boolean | null
+          created_at?: string | null
+          id?: string
+          proficiency_level?: number
+          responder_id: string
+          skill_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          certification_expiry?: string | null
+          certified?: boolean | null
+          created_at?: string | null
+          id?: string
+          proficiency_level?: number
+          responder_id?: string
+          skill_name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "responder_skills_responder_id_fkey"
+            columns: ["responder_id"]
+            isOneToOne: false
+            referencedRelation: "responders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       responders: {
         Row: {
+          agency_id: string | null
+          availability_status: string | null
           coordinates: unknown | null
           current_location: string | null
           id: string
           last_active: string | null
+          last_status_change: string | null
           name: string
           notes: string | null
           phone: string | null
@@ -499,10 +687,13 @@ export type Database = {
           type: Database["public"]["Enums"]["responder_type"]
         }
         Insert: {
+          agency_id?: string | null
+          availability_status?: string | null
           coordinates?: unknown | null
           current_location?: string | null
           id?: string
           last_active?: string | null
+          last_status_change?: string | null
           name: string
           notes?: string | null
           phone?: string | null
@@ -510,17 +701,69 @@ export type Database = {
           type: Database["public"]["Enums"]["responder_type"]
         }
         Update: {
+          agency_id?: string | null
+          availability_status?: string | null
           coordinates?: unknown | null
           current_location?: string | null
           id?: string
           last_active?: string | null
+          last_status_change?: string | null
           name?: string
           notes?: string | null
           phone?: string | null
           status?: Database["public"]["Enums"]["responder_status"] | null
           type?: Database["public"]["Enums"]["responder_type"]
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "responders_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shifts: {
+        Row: {
+          created_at: string | null
+          end_time: string
+          id: string
+          notes: string | null
+          responder_id: string
+          start_time: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          end_time: string
+          id?: string
+          notes?: string | null
+          responder_id: string
+          start_time: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          end_time?: string
+          id?: string
+          notes?: string | null
+          responder_id?: string
+          start_time?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shifts_responder_id_fkey"
+            columns: ["responder_id"]
+            isOneToOne: false
+            referencedRelation: "responders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
