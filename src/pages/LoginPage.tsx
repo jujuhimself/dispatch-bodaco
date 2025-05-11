@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -54,7 +54,7 @@ const LoginPage: React.FC = () => {
         
         <Card className="bg-white/90 backdrop-blur-lg border border-gray-100 shadow-lg">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Welcome Back</CardTitle>
+            <CardTitle className="text-2xl bg-gradient-to-r from-emergency-600 to-purple-600 bg-clip-text text-transparent">Welcome Back</CardTitle>
             <CardDescription>Emergency Response Management System</CardDescription>
           </CardHeader>
           <CardContent>
@@ -91,7 +91,7 @@ const LoginPage: React.FC = () => {
                     </div>
                     <Button 
                       type="submit" 
-                      className="w-full bg-emergency-600 hover:bg-emergency-700" 
+                      className="w-full bg-gradient-to-r from-emergency-600 to-purple-600 hover:from-emergency-700 hover:to-purple-700" 
                       disabled={isLoading}
                     >
                       {isLoading ? 'Signing in...' : 'Sign In'}
@@ -101,9 +101,15 @@ const LoginPage: React.FC = () => {
               </TabsContent>
             </Tabs>
           </CardContent>
-          <CardFooter className="justify-center text-sm text-gray-500">
+          <CardFooter className="justify-center text-sm text-gray-500 flex flex-col space-y-2">
             <p>
               Emergency Response System
+            </p>
+            <p>
+              Don't have an account?{' '}
+              <Link to="/auth" className="text-emergency-600 hover:underline font-medium">
+                Sign up
+              </Link>
             </p>
           </CardFooter>
         </Card>

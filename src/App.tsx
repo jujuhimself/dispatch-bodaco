@@ -30,16 +30,27 @@ function App() {
   }, [checkSession]);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-100">
+      <div className="animate-pulse flex flex-col items-center">
+        <div className="h-12 w-12 text-emergency-600 mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M17 6h-5v12h5a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2Z"/>
+            <path d="M11 6H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h5"/>
+            <line x1="14" x2="14" y1="9" y2="15"/>
+          </svg>
+        </div>
+        <p className="text-emergency-700">Loading...</p>
+      </div>
+    </div>;
   }
 
   return (
     <HelmetProvider>
       <Router>
         <Routes>
-          <Route path="/" element={<Navigate to="/dashboard" />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/auth" element={<Auth />} />
+          <Route path="/" element={<Navigate to={auth ? "/dashboard" : "/login"} />} />
+          <Route path="/login" element={auth ? <Navigate to="/dashboard" /> : <LoginPage />} />
+          <Route path="/auth" element={auth ? <Navigate to="/dashboard" /> : <Auth />} />
           <Route path="/dashboard" element={
             <RequireAuth>
               <Dashboard />

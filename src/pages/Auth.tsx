@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,6 +11,15 @@ import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { UserRole } from '@/types/auth-types';
 import { motion } from 'framer-motion';
+import { 
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
 
 const Auth = () => {
   const { user, loading, signIn, signUp } = useAuth();
@@ -33,7 +42,7 @@ const Auth = () => {
   // Check if user is already authenticated
   useEffect(() => {
     if (user && !loading) {
-      const from = (location.state as any)?.from?.pathname || '/';
+      const from = (location.state as any)?.from?.pathname || '/dashboard';
       navigate(from, { replace: true });
     }
   }, [user, loading, navigate, location]);
@@ -44,8 +53,9 @@ const Auth = () => {
     
     try {
       await signIn(loginEmail, loginPassword);
-    } catch (error) {
-      // Error is handled in the AuthContext
+      toast.success('Successfully logged in');
+    } catch (error: any) {
+      toast.error(error.message || 'Error during sign in');
       console.error('Login error:', error);
     } finally {
       setIsLoading(false);
@@ -75,6 +85,7 @@ const Auth = () => {
       };
       
       await signUp(registerEmail, registerPassword, userData);
+      toast.success('Account created successfully! Please check your email for verification.');
       
       // Reset form
       setRegisterEmail('');
@@ -83,8 +94,8 @@ const Auth = () => {
       setRole('dispatcher');
       setName('');
       setPhoneNumber('');
-    } catch (error) {
-      // Error is handled in the AuthContext
+    } catch (error: any) {
+      toast.error(error.message || 'Error during registration');
       console.error('Registration error:', error);
     } finally {
       setIsLoading(false);
@@ -237,16 +248,23 @@ const Auth = () => {
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="role">Role</Label>
-                        <select
-                          id="role"
-                          value={role}
-                          onChange={(e) => setRole(e.target.value as UserRole)}
-                          className="flex h-10 w-full rounded-md border border-input bg-white/70 px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+                        <Select 
+                          value={role} 
+                          onValueChange={(value) => setRole(value as UserRole)}
                         >
-                          <option value="dispatcher">Dispatcher</option>
-                          <option value="responder">Responder</option>
-                          <option value="admin">Administrator</option>
-                        </select>
+                          <SelectTrigger className="w-full bg-white/70">
+                            <SelectValue placeholder="Select a role" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectGroup>
+                              <SelectLabel>Roles</SelectLabel>
+                              <SelectItem value="dispatcher">Dispatcher</SelectItem>
+                              <SelectItem value="responder">Responder</SelectItem>
+                              <SelectItem value="admin">Administrator</SelectItem>
+                              <SelectItem value="user">Standard User</SelectItem>
+                            </SelectGroup>
+                          </SelectContent>
+                        </Select>
                       </div>
                       <Button 
                         type="submit" 
@@ -262,7 +280,7 @@ const Auth = () => {
             </CardContent>
             <CardFooter className="justify-center text-sm text-gray-500">
               <p>
-                Emergency Response System — <a href="#" className="text-emergency-600 hover:underline">Terms of Service</a>
+                Emergency Response System — <Link to="/login" className="text-emergency-600 hover:underline">Already have an account?</Link>
               </p>
             </CardFooter>
           </Card>
