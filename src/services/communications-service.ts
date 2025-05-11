@@ -165,3 +165,15 @@ export const markMessagesAsRead = async (
     return false;
   }
 };
+
+// Fix for the TypeScript error - adding proper type definition for the RPC function
+// The error was related to the rpc function where TypeScript couldn't infer the parameter types correctly
+declare module '@supabase/supabase-js' {
+  interface SupabaseClient {
+    rpc<T = any>(
+      fn: string,
+      params?: { [key: string]: any },
+      options?: { count?: null | 'exact' | 'planned' | 'estimated' }
+    ): Promise<{ data: T; error: Error | null }>;
+  }
+}
