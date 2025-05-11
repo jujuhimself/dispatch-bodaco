@@ -103,7 +103,7 @@ const Auth = () => {
   }
   
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-sky-50 via-indigo-50 to-blue-100 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-100 p-4">
       <div className="w-full max-w-md">
         <motion.div 
           className="mb-8 flex justify-center"
@@ -125,16 +125,17 @@ const Auth = () => {
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.1 }}
         >
-          <Card className="bg-white/90 backdrop-blur-lg border border-gray-100 shadow-lg">
+          <Card className="bg-white/90 backdrop-blur-lg border border-gray-100 shadow-lg overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-purple-500/5 to-pink-500/10 -z-10" />
             <CardHeader className="text-center">
-              <CardTitle className="text-2xl">Welcome to Respond</CardTitle>
+              <CardTitle className="text-2xl bg-gradient-to-r from-emergency-600 to-purple-600 bg-clip-text text-transparent">Welcome to Respond</CardTitle>
               <CardDescription>Emergency Response Management System</CardDescription>
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="login" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-6">
-                  <TabsTrigger value="login">Login</TabsTrigger>
-                  <TabsTrigger value="register">Register</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-2 mb-6 bg-blue-50/50">
+                  <TabsTrigger value="login" className="data-[state=active]:bg-white">Login</TabsTrigger>
+                  <TabsTrigger value="register" className="data-[state=active]:bg-white">Register</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="login">
@@ -165,7 +166,7 @@ const Auth = () => {
                       </div>
                       <Button 
                         type="submit" 
-                        className="w-full bg-emergency-600 hover:bg-emergency-700" 
+                        className="w-full bg-gradient-to-r from-emergency-600 to-purple-600 hover:from-emergency-700 hover:to-purple-700" 
                         disabled={isLoading}
                       >
                         {isLoading ? 'Signing in...' : 'Sign In'}
@@ -249,7 +250,7 @@ const Auth = () => {
                       </div>
                       <Button 
                         type="submit" 
-                        className="w-full bg-emergency-600 hover:bg-emergency-700" 
+                        className="w-full bg-gradient-to-r from-emergency-600 to-purple-600 hover:from-emergency-700 hover:to-purple-700" 
                         disabled={isLoading}
                       >
                         {isLoading ? 'Creating Account...' : 'Create Account'}

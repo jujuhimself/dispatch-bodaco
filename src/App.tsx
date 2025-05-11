@@ -17,6 +17,7 @@ import EmergenciesPage from '@/pages/EmergenciesPage';
 import EmergencyDetailsPage from '@/pages/EmergencyDetailsPage';
 import EmergencyCreate from '@/pages/EmergencyCreate';
 import CommunicationsPage from '@/pages/Communications';
+import Auth from '@/pages/Auth';
 
 function App() {
   const { auth, checkSession, loading } = useAuth();
@@ -38,6 +39,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/auth" element={<Auth />} />
           <Route path="/dashboard" element={
             <RequireAuth>
               <Dashboard />
