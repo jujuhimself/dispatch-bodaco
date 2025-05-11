@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { UserProfile, UserRole } from '@/types/auth-types';
 import { supabase } from '@/integrations/supabase/client';
 
