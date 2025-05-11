@@ -1,7 +1,7 @@
 
+import React, { createContext, useContext, ReactNode } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { UserRole } from '@/types/auth-types';
-import { createContext, useContext, ReactNode } from 'react';
 
 // Define permissions for each role
 export interface RolePermissions {
