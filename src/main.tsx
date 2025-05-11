@@ -3,6 +3,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { RBACProvider } from '@/services/rbac-service';
 import App from './App.tsx';
 import './index.css';
 
@@ -23,7 +24,9 @@ root.render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <App />
+        <RBACProvider>
+          <App />
+        </RBACProvider>
       </AuthProvider>
     </QueryClientProvider>
   </React.StrictMode>

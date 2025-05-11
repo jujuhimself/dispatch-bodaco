@@ -11,7 +11,9 @@ export const AuthContext = createContext<UseAuthReturn>({
   user: null,
   loading: false,
   signIn: async () => {},
-  signUp: async () => {}
+  signUp: async () => {},
+  signOut: async () => {},
+  sendVerificationEmail: async () => {}
 });
 
 // Provider component

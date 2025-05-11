@@ -18,6 +18,9 @@ import EmergencyDetailsPage from '@/pages/EmergencyDetailsPage';
 import EmergencyCreate from '@/pages/EmergencyCreate';
 import CommunicationsPage from '@/pages/Communications';
 import Auth from '@/pages/Auth';
+import ProfilePage from '@/pages/ProfilePage';
+import ResetPassword from '@/pages/ResetPassword';
+import UpdatePassword from '@/pages/UpdatePassword';
 
 function App() {
   const { auth, checkSession, loading } = useAuth();
@@ -51,9 +54,17 @@ function App() {
           <Route path="/" element={<Navigate to={auth ? "/dashboard" : "/login"} />} />
           <Route path="/login" element={auth ? <Navigate to="/dashboard" /> : <LoginPage />} />
           <Route path="/auth" element={auth ? <Navigate to="/dashboard" /> : <Auth />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/update-password" element={<UpdatePassword />} />
+          
           <Route path="/dashboard" element={
             <RequireAuth>
               <Dashboard />
+            </RequireAuth>
+          } />
+          <Route path="/profile" element={
+            <RequireAuth>
+              <ProfilePage />
             </RequireAuth>
           } />
           <Route path="/responders" element={
