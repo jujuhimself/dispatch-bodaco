@@ -1,4 +1,3 @@
-
 import { useEffect, useCallback } from 'react';
 
 /**
@@ -242,7 +241,8 @@ export function usePerformanceMonitoring() {
     const navEntry = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
     if (navEntry) {
       metrics.navigationTime = navEntry.responseEnd - navEntry.requestStart;
-      metrics.domLoadTime = navEntry.domComplete - navEntry.domLoading;
+      // Fix: Use domContentLoadedEventEnd and domContentLoadedEventStart for DOM load time
+      metrics.domLoadTime = navEntry.domContentLoadedEventEnd - navEntry.domContentLoadedEventStart;
     }
     
     // Resource timing
