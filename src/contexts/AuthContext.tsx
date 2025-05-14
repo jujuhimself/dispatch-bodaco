@@ -36,5 +36,5 @@ export const useAuth = () => {
   return context;
 };
 
-// Export the original hook for backward compatibility
-export { default as useAuthHook } from '@/hooks/useAuth';
+// Export the hook without creating a circular dependency
+export { useAuthHook };
