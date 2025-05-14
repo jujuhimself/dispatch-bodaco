@@ -119,16 +119,26 @@ export function setupUpdateNotification(onUpdateAvailable: () => void): void {
   });
 }
 
+// Check if background sync is supported
+function isBackgroundSyncSupported(): boolean {
+  return isServiceWorkerSupported() && 
+    'SyncManager' in window &&
+    'sync' in ServiceWorkerRegistration.prototype;
+}
+
 // Register background sync for offline operations
 export async function registerBackgroundSync(syncTag: string): Promise<boolean> {
-  if (!isServiceWorkerSupported() || !('sync' in ServiceWorkerRegistration.prototype)) {
+  if (!isBackgroundSyncSupported()) {
     console.warn('Background sync not supported');
     return false;
   }
   
   try {
     const registration = await navigator.serviceWorker.ready;
-    await registration.sync.register(syncTag);
+    // Using type assertion to tell TypeScript that sync exists on this registration
+    // when we've already checked that it does with isBackgroundSyncSupported()
+    await (registration as ServiceWorkerRegistration & { sync: { register: (tag: string) => Promise<void> } })
+      .sync.register(syncTag);
     return true;
   } catch (error) {
     console.error('Error registering background sync:', error);
@@ -171,4 +181,3 @@ export function showUpdateNotification() {
     registration.showNotification('Update Available', options);
   });
 }
-
