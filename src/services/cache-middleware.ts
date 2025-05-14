@@ -1,5 +1,5 @@
 
-import { getCachedData, setCachedData } from './performance-service';
+import { getCachedData, setCachedData } from './cache-service';
 
 /**
  * Cache middleware for API requests
