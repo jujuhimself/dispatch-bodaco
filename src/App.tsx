@@ -1,5 +1,5 @@
 
-import React, { useEffect, Suspense } from 'react';
+import React, { useEffect, Suspense, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { HelmetProvider } from 'react-helmet-async';
@@ -12,6 +12,9 @@ import { ErrorBoundary } from '@/components/error/ErrorBoundary';
 import { initializeNetworkListeners, useNetworkStatus } from '@/services/network/network-status';
 import UpdateNotification from '@/components/app/UpdateNotification';
 import { initializeIndexedDB } from '@/services/indexed-db-service';
+import { toast } from 'sonner';
+import { SkeletonCard } from '@/components/ui/skeleton-loader';
+import { useTour, OnboardingTour } from '@/components/onboarding/OnboardingTour';
 
 // Use dynamic imports to improve initial load time
 const RespondersPage = React.lazy(() => import('@/pages/RespondersPage'));
@@ -31,23 +34,27 @@ const ResetPassword = React.lazy(() => import('@/pages/ResetPassword'));
 const UpdatePassword = React.lazy(() => import('@/pages/UpdatePassword'));
 const NotFoundPage = React.lazy(() => import('@/pages/NotFound'));
 
+// Improved loading fallback with skeleton UI
 const LoadingFallback = () => (
   <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-100">
-    <div className="flex flex-col items-center">
-      <Loader className="h-12 w-12 text-emergency-600 mb-4" />
-      <p className="text-emergency-700">Loading...</p>
+    <div className="w-full max-w-md px-4">
+      <div className="flex justify-center mb-6">
+        <Loader className="h-12 w-12 text-emergency-600" />
+      </div>
+      <SkeletonCard rows={4} className="bg-white/70 p-6 rounded-xl shadow-lg" />
     </div>
   </div>
 );
 
+// Network status indicator with better styling
 const NetworkStatusIndicator = () => {
   const { online } = useNetworkStatus();
   
   if (online) return null;
   
   return (
-    <div className="fixed bottom-4 right-4 z-50 bg-error-600 text-white px-4 py-2 rounded-full shadow-lg flex items-center">
-      <span className="inline-block w-3 h-3 bg-red-400 rounded-full mr-2 animate-pulse"></span>
+    <div className="fixed bottom-4 right-4 z-50 bg-error-600 text-white px-4 py-2 rounded-full shadow-lg flex items-center animate-pulse">
+      <span className="inline-block w-3 h-3 bg-red-400 rounded-full mr-2"></span>
       Offline Mode
     </div>
   );
@@ -64,8 +71,43 @@ const ScrollToTop = () => {
   return null;
 };
 
+// New onboarding guide for first-time users
+const AppOnboarding = () => {
+  const appTour = useTour('app-onboarding');
+  
+  const tourSteps = [
+    {
+      target: 'body',
+      title: 'Welcome to Rapid Response',
+      content: 'This quick tour will help you get familiar with our emergency management system.',
+      position: 'center' as const,
+    },
+    {
+      target: '[data-tour="sidebar"]',
+      title: 'Navigation',
+      content: 'Use the sidebar to navigate between different sections of the application.',
+      position: 'right' as const,
+    },
+    {
+      target: '[data-tour="user-menu"]',
+      title: 'User Settings',
+      content: 'Access your profile, preferences and logout from here.',
+      position: 'bottom' as const,
+    }
+  ];
+  
+  return (
+    <OnboardingTour 
+      {...appTour.tourProps}
+      steps={tourSteps} 
+      onComplete={() => console.log('App tour completed')}
+    />
+  );
+};
+
 function App() {
   const { auth, checkSession, loading } = useAuth();
+  const [appInitialized, setAppInitialized] = useState(false);
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -79,16 +121,21 @@ function App() {
         // Initialize IndexedDB for offline support
         await initializeIndexedDB();
         
+        // Mark app as initialized
+        setAppInitialized(true);
+        
       } catch (error) {
         console.error("Error initializing app:", error);
+        toast.error("There was a problem initializing the application. Some features may not work correctly.");
+        setAppInitialized(true); // Allow the app to continue even with initialization errors
       }
     };
     
     initializeApp();
-    
   }, [checkSession]);
 
-  if (loading) {
+  // Show loading state while app is initializing or auth is loading
+  if (loading || !appInitialized) {
     return <LoadingFallback />;
   }
 
@@ -179,8 +226,15 @@ function App() {
             </Routes>
           </Suspense>
           <NetworkStatusIndicator />
-          <Toaster position="top-right" richColors />
+          <Toaster 
+            position="top-right" 
+            richColors 
+            closeButton 
+            visibleToasts={3} 
+            duration={4000}
+          />
           <UpdateNotification />
+          <AppOnboarding />
         </Router>
       </HelmetProvider>
     </ErrorBoundary>
