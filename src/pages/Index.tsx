@@ -9,6 +9,7 @@ import { ErrorBoundary } from '@/components/error/ErrorBoundary';
 import { LoadingState } from '@/components/ui/loading-state';
 import { markPerformance, measurePerformance } from '@/services/performance/metrics-collector';
 import { useNetworkStatus } from '@/services/network/network-status';
+import { toast } from "sonner";
 
 const Index = () => {
   const { auth, loading } = useAuth();
@@ -40,6 +41,15 @@ const Index = () => {
       navigate('/login');
     }
   }, [auth, loading, navigate]);
+
+  // Notify user when network status changes
+  useEffect(() => {
+    if (!online) {
+      toast.warning("You are currently offline. Some features may be limited.");
+    } else {
+      toast.success("You are back online!");
+    }
+  }, [online]);
 
   // Show loading state
   if (loading) {

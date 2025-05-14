@@ -1,5 +1,6 @@
+
 import React, { useEffect, Suspense } from 'react';
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { HelmetProvider } from 'react-helmet-async';
 import LoginPage from '@/pages/LoginPage';
@@ -9,6 +10,8 @@ import { Loader } from '@/components/ui/loader';
 import { Toaster } from 'sonner';
 import { ErrorBoundary } from '@/components/error/ErrorBoundary';
 import { initializeNetworkListeners, useNetworkStatus } from '@/services/network/network-status';
+import UpdateNotification from '@/components/app/UpdateNotification';
+import { initializeIndexedDB } from '@/services/indexed-db-service';
 
 // Use dynamic imports to improve initial load time
 const RespondersPage = React.lazy(() => import('@/pages/RespondersPage'));
@@ -26,6 +29,7 @@ const Auth = React.lazy(() => import('@/pages/Auth'));
 const ProfilePage = React.lazy(() => import('@/pages/ProfilePage'));
 const ResetPassword = React.lazy(() => import('@/pages/ResetPassword'));
 const UpdatePassword = React.lazy(() => import('@/pages/UpdatePassword'));
+const NotFoundPage = React.lazy(() => import('@/pages/NotFound'));
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-100">
@@ -49,22 +53,39 @@ const NetworkStatusIndicator = () => {
   );
 };
 
+// ScrollToTop component to ensure page scrolls to top on navigation
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+  
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  
+  return null;
+};
+
 function App() {
   const { auth, checkSession, loading } = useAuth();
 
   useEffect(() => {
-    const fetchData = async () => {
+    const initializeApp = async () => {
       try {
+        // Check auth session
         await checkSession();
+        
+        // Initialize network status listeners
+        initializeNetworkListeners();
+        
+        // Initialize IndexedDB for offline support
+        await initializeIndexedDB();
+        
       } catch (error) {
-        console.error("Error checking session:", error);
+        console.error("Error initializing app:", error);
       }
     };
     
-    fetchData();
+    initializeApp();
     
-    // Initialize network status listeners
-    initializeNetworkListeners();
   }, [checkSession]);
 
   if (loading) {
@@ -75,6 +96,7 @@ function App() {
     <ErrorBoundary>
       <HelmetProvider>
         <Router>
+          <ScrollToTop />
           <Suspense fallback={<LoadingFallback />}>
             <Routes>
               <Route path="/" element={<Navigate to={auth ? "/dashboard" : "/login"} />} />
@@ -151,10 +173,14 @@ function App() {
                   <CommunicationsPage />
                 </RequireAuth>
               } />
+              
+              {/* Catch all route for 404 */}
+              <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </Suspense>
           <NetworkStatusIndicator />
-          <Toaster position="top-right" />
+          <Toaster position="top-right" richColors />
+          <UpdateNotification />
         </Router>
       </HelmetProvider>
     </ErrorBoundary>
