@@ -4,6 +4,8 @@ import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { RBACProvider } from '@/services/rbac-service';
+import { registerServiceWorker } from '@/services/service-worker-registration';
+import { ErrorBoundary } from '@/components/error/ErrorBoundary';
 import App from './App.tsx';
 import './index.css';
 
@@ -21,28 +23,38 @@ const queryClient = new QueryClient({
 });
 
 // Register service worker for offline capabilities
-if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
+if (process.env.NODE_ENV === 'production') {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js')
-      .then(registration => {
-        console.log('ServiceWorker registration successful with scope:', registration.scope);
-      })
-      .catch(error => {
-        console.error('ServiceWorker registration failed:', error);
-      });
+    registerServiceWorker().catch(error => {
+      console.error('Service worker registration failed:', error);
+    });
   });
 }
+
+// Add global error handler for uncaught exceptions
+window.addEventListener('error', (event) => {
+  console.error('Global error caught:', event.error);
+  // Here you could send to a monitoring service
+});
+
+// Add global promise rejection handler
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('Unhandled promise rejection:', event.reason);
+  // Here you could send to a monitoring service
+});
 
 const root = createRoot(document.getElementById("root")!);
 
 root.render(
   <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <RBACProvider>
-          <App />
-        </RBACProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <RBACProvider>
+            <App />
+          </RBACProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   </React.StrictMode>
 );

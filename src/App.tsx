@@ -6,7 +6,9 @@ import LoginPage from '@/pages/LoginPage';
 import Dashboard from '@/components/dashboard/Dashboard';
 import RequireAuth from '@/components/auth/RequireAuth';
 import { Loader } from '@/components/ui/loader';
-import { toast } from 'sonner';
+import { Toaster } from 'sonner';
+import { ErrorBoundary } from '@/components/error/ErrorBoundary';
+import { initializeNetworkListeners, useNetworkStatus } from '@/services/network/network-status';
 
 // Use dynamic imports to improve initial load time
 const RespondersPage = React.lazy(() => import('@/pages/RespondersPage'));
@@ -34,6 +36,19 @@ const LoadingFallback = () => (
   </div>
 );
 
+const NetworkStatusIndicator = () => {
+  const { online } = useNetworkStatus();
+  
+  if (online) return null;
+  
+  return (
+    <div className="fixed bottom-4 right-4 z-50 bg-error-600 text-white px-4 py-2 rounded-full shadow-lg flex items-center">
+      <span className="inline-block w-3 h-3 bg-red-400 rounded-full mr-2 animate-pulse"></span>
+      Offline Mode
+    </div>
+  );
+};
+
 function App() {
   const { auth, checkSession, loading } = useAuth();
 
@@ -43,11 +58,13 @@ function App() {
         await checkSession();
       } catch (error) {
         console.error("Error checking session:", error);
-        toast.error("Error connecting to authentication service");
       }
     };
     
     fetchData();
+    
+    // Initialize network status listeners
+    initializeNetworkListeners();
   }, [checkSession]);
 
   if (loading) {
@@ -55,85 +72,92 @@ function App() {
   }
 
   return (
-    <HelmetProvider>
-      <Router>
-        <Suspense fallback={<LoadingFallback />}>
-          <Routes>
-            <Route path="/" element={<Navigate to={auth ? "/dashboard" : "/login"} />} />
-            <Route path="/login" element={auth ? <Navigate to="/dashboard" /> : <LoginPage />} />
-            <Route path="/auth" element={auth ? <Navigate to="/dashboard" /> : <Auth />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/update-password" element={<UpdatePassword />} />
-            
-            <Route path="/dashboard" element={
-              <RequireAuth>
-                <Dashboard />
-              </RequireAuth>
-            } />
-            <Route path="/profile" element={
-              <RequireAuth>
-                <ProfilePage />
-              </RequireAuth>
-            } />
-            <Route path="/responders" element={
-              <RequireAuth>
-                <RespondersPage />
-              </RequireAuth>
-            } />
-            <Route path="/hospitals" element={
-              <RequireAuth>
-                <HospitalsPage />
-              </RequireAuth>
-            } />
-            <Route path="/settings" element={
-              <RequireAuth>
-                <SettingsPage />
-              </RequireAuth>
-            } />
-            <Route path="/iot" element={
-              <RequireAuth>
-                <IoTDevicesPage />
-              </RequireAuth>
-            } />
-            <Route path="/device-registration" element={
-              <RequireAuth>
-                <DeviceRegistrationPage />
-              </RequireAuth>
-            } />
-            <Route path="/responder-tracking" element={
-              <RequireAuth>
-                <ResponderTrackingPage />
-              </RequireAuth>
-            } />
-            <Route path="/analytics" element={
-              <RequireAuth>
-                <AnalyticsPage />
-              </RequireAuth>
-            } />
-            <Route path="/emergencies" element={
-              <RequireAuth>
-                <EmergenciesPage />
-              </RequireAuth>
-            } />
-            <Route path="/emergency/create" element={
-              <RequireAuth>
-                <EmergencyCreate />
-              </RequireAuth>
-            } />
-            <Route path="/emergency/:id" element={
-              <RequireAuth>
-                <EmergencyDetailsPage />
-              </RequireAuth>
-            } />
-            <Route path="/communications" element={
-              <RequireAuth>
-                <CommunicationsPage />
-              </RequireAuth>
-            } />
-          </Routes>
-        </Suspense>
-      </Router>
-    </HelmetProvider>
+    <ErrorBoundary>
+      <HelmetProvider>
+        <Router>
+          <Suspense fallback={<LoadingFallback />}>
+            <Routes>
+              <Route path="/" element={<Navigate to={auth ? "/dashboard" : "/login"} />} />
+              <Route path="/login" element={auth ? <Navigate to="/dashboard" /> : <LoginPage />} />
+              <Route path="/auth" element={auth ? <Navigate to="/dashboard" /> : <Auth />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/update-password" element={<UpdatePassword />} />
+              
+              <Route path="/dashboard" element={
+                <RequireAuth>
+                  <ErrorBoundary>
+                    <Dashboard />
+                  </ErrorBoundary>
+                </RequireAuth>
+              } />
+              
+              <Route path="/profile" element={
+                <RequireAuth>
+                  <ProfilePage />
+                </RequireAuth>
+              } />
+              <Route path="/responders" element={
+                <RequireAuth>
+                  <RespondersPage />
+                </RequireAuth>
+              } />
+              <Route path="/hospitals" element={
+                <RequireAuth>
+                  <HospitalsPage />
+                </RequireAuth>
+              } />
+              <Route path="/settings" element={
+                <RequireAuth>
+                  <SettingsPage />
+                </RequireAuth>
+              } />
+              <Route path="/iot" element={
+                <RequireAuth>
+                  <IoTDevicesPage />
+                </RequireAuth>
+              } />
+              <Route path="/device-registration" element={
+                <RequireAuth>
+                  <DeviceRegistrationPage />
+                </RequireAuth>
+              } />
+              <Route path="/responder-tracking" element={
+                <RequireAuth>
+                  <ResponderTrackingPage />
+                </RequireAuth>
+              } />
+              <Route path="/analytics" element={
+                <RequireAuth>
+                  <AnalyticsPage />
+                </RequireAuth>
+              } />
+              <Route path="/emergencies" element={
+                <RequireAuth>
+                  <EmergenciesPage />
+                </RequireAuth>
+              } />
+              <Route path="/emergency/create" element={
+                <RequireAuth>
+                  <EmergencyCreate />
+                </RequireAuth>
+              } />
+              <Route path="/emergency/:id" element={
+                <RequireAuth>
+                  <EmergencyDetailsPage />
+                </RequireAuth>
+              } />
+              <Route path="/communications" element={
+                <RequireAuth>
+                  <CommunicationsPage />
+                </RequireAuth>
+              } />
+            </Routes>
+          </Suspense>
+          <NetworkStatusIndicator />
+          <Toaster position="top-right" />
+        </Router>
+      </HelmetProvider>
+    </ErrorBoundary>
   );
 }
 
