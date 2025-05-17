@@ -2,191 +2,156 @@
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import { saveAs } from 'file-saver';
-import * as Papa from 'papaparse';
+import * as FileSaver from 'file-saver';
 
-declare module 'jspdf' {
-  interface jsPDF {
-    autoTable: (options: any) => jsPDF;
-  }
-}
+// Define export formats
+export type ExportFormat = 'pdf' | 'csv' | 'xlsx';
 
-export enum ExportFormat {
-  PDF = 'pdf',
-  EXCEL = 'excel',
-  CSV = 'csv'
-}
-
-export interface ExportOptions {
-  filename?: string;
-  sheetName?: string;
-  title?: string;
-  subtitle?: string;
-  orientation?: 'portrait' | 'landscape';
-  pageSize?: string;
-}
-
-export interface TableData {
-  headers: string[];
-  data: any[][];
-}
-
-export function exportData(data: TableData, format: ExportFormat, options: ExportOptions = {}) {
-  const { filename = 'export', sheetName = 'Sheet1' } = options;
+// Define a generic function to export data
+export const exportData = async <T extends Record<string, any>>(
+  data: T[],
+  format: ExportFormat,
+  options: {
+    filename?: string;
+    title?: string;
+    sheetName?: string;
+    headers?: {key: string, label: string}[];
+  } = {}
+) => {
+  // Default options
+  const filename = options.filename || `export-${new Date().toISOString().slice(0, 10)}`;
+  const title = options.title || 'Exported Data';
   
+  // Choose the export function based on format
   switch (format) {
-    case ExportFormat.PDF:
-      return exportToPdf(data, options);
-    case ExportFormat.EXCEL:
-      return exportToExcel(data, filename, sheetName);
-    case ExportFormat.CSV:
-      return exportToCsv(data, filename);
+    case 'pdf':
+      return exportToPdf(data, {
+        ...options,
+        filename: filename + '.pdf',
+        title
+      });
+    case 'csv':
+      return exportToCsv(data, {
+        ...options,
+        filename: filename + '.csv'
+      });
+    case 'xlsx':
+      return exportToExcel(data, {
+        ...options,
+        filename: filename + '.xlsx',
+        sheetName: options.sheetName || 'Sheet1'
+      });
     default:
       throw new Error('Unsupported export format');
   }
-}
-
-// Export emergency data in various formats
-export function exportEmergenciesData(emergencies: any[], format: ExportFormat, options: ExportOptions = {}) {
-  const headers = [
-    'ID',
-    'Type',
-    'Location',
-    'Status',
-    'Priority',
-    'Reported At',
-    'Resolved At'
-  ];
-  
-  const data = emergencies.map(emergency => [
-    emergency.id,
-    emergency.type,
-    emergency.location,
-    emergency.status,
-    emergency.priority,
-    formatDate(emergency.reported_at),
-    emergency.resolved_at ? formatDate(emergency.resolved_at) : 'N/A'
-  ]);
-  
-  return exportData({ headers, data }, format, {
-    filename: 'emergencies-report',
-    sheetName: 'Emergencies',
-    title: 'Emergency Reports',
-    ...options
-  });
-}
-
-// Export responder data in various formats
-export function exportRespondersData(responders: any[], format: ExportFormat, options: ExportOptions = {}) {
-  const headers = [
-    'ID',
-    'Name',
-    'Type',
-    'Status',
-    'Location',
-    'Last Active'
-  ];
-  
-  const data = responders.map(responder => [
-    responder.id,
-    responder.name,
-    responder.type,
-    responder.status,
-    responder.current_location || 'Unknown',
-    formatDate(responder.last_active)
-  ]);
-  
-  return exportData({ headers, data }, format, {
-    filename: 'responders-report',
-    sheetName: 'Responders',
-    title: 'Responder Status Report',
-    ...options
-  });
-}
-
-// Helper function to format dates
-function formatDate(dateString: string): string {
-  if (!dateString) return '';
-  
-  const date = new Date(dateString);
-  return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
-}
+};
 
 // Export to PDF
-function exportToPdf(data: TableData, options: ExportOptions): void {
-  const { 
-    filename = 'export', 
-    title = 'Report', 
-    subtitle = '', 
-    orientation = 'portrait',
-    pageSize = 'a4'
-  } = options;
-  
-  const doc = new jsPDF({
-    orientation: orientation,
-    unit: 'mm',
-    format: pageSize
-  });
+const exportToPdf = <T extends Record<string, any>>(
+  data: T[],
+  options: {
+    filename: string;
+    title: string;
+    headers?: {key: string, label: string}[];
+  }
+) => {
+  const doc = new jsPDF();
   
   // Add title
-  doc.setFontSize(18);
-  doc.text(title, 14, 22);
+  doc.text(options.title, 14, 15);
   
-  // Add subtitle if provided
-  if (subtitle) {
-    doc.setFontSize(12);
-    doc.text(subtitle, 14, 30);
-  }
+  // Prepare headers and table data
+  const headers = options.headers || 
+    Object.keys(data[0] || {}).map(key => ({
+      key, 
+      label: key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')
+    }));
   
-  // Add date
-  const dateText = `Generated: ${new Date().toLocaleString()}`;
-  doc.setFontSize(10);
-  doc.text(dateText, 14, orientation === 'portrait' ? 40 : 35);
+  const tableData = data.map(item => 
+    headers.map(header => item[header.key]?.toString() || '')
+  );
   
-  // Add table
-  doc.autoTable({
-    head: [data.headers],
-    body: data.data,
-    startY: orientation === 'portrait' ? 45 : 40,
-    headStyles: {
-      fillColor: [41, 128, 185],
-      textColor: 255,
-      fontStyle: 'bold'
-    },
-    alternateRowStyles: {
-      fillColor: [240, 240, 240]
-    },
-    styles: {
-      cellPadding: 3,
-      fontSize: 10
-    }
+  // Create table
+  (doc as any).autoTable({
+    head: [headers.map(header => header.label)],
+    body: tableData,
+    startY: 20,
+    margin: { top: 20 }
   });
   
   // Save the PDF
-  doc.save(`${filename}.pdf`);
-}
-
-// Export to Excel
-function exportToExcel(data: TableData, filename: string, sheetName: string): void {
-  const worksheet = XLSX.utils.aoa_to_sheet([data.headers, ...data.data]);
-  const workbook = XLSX.utils.book_new();
-  
-  XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
-  
-  // Generate buffer
-  const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-  const dataBlob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  
-  // Save file
-  saveAs(dataBlob, `${filename}.xlsx`);
-}
+  doc.save(options.filename);
+};
 
 // Export to CSV
-function exportToCsv(data: TableData, filename: string): void {
-  const csvData = [data.headers, ...data.data];
-  const csvString = Papa.unparse(csvData);
-  const csvBlob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+const exportToCsv = <T extends Record<string, any>>(
+  data: T[],
+  options: {
+    filename: string;
+    headers?: {key: string, label: string}[];
+  }
+) => {
+  // Prepare headers
+  const headers = options.headers || 
+    Object.keys(data[0] || {}).map(key => ({
+      key, 
+      label: key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')
+    }));
   
-  // Save file
-  saveAs(csvBlob, `${filename}.csv`);
-}
+  // Create header row
+  const headerRow = headers.map(header => `"${header.label}"`).join(',');
+  
+  // Create data rows
+  const dataRows = data.map(item => 
+    headers.map(header => {
+      const value = item[header.key];
+      return `"${value !== undefined && value !== null ? value.toString().replace(/"/g, '""') : ''}"`;
+    }).join(',')
+  ).join('\n');
+  
+  // Combine header and data
+  const csvContent = `${headerRow}\n${dataRows}`;
+  
+  // Create file and download
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  FileSaver.saveAs(blob, options.filename);
+};
+
+// Export to Excel
+const exportToExcel = <T extends Record<string, any>>(
+  data: T[],
+  options: {
+    filename: string;
+    sheetName: string;
+    headers?: {key: string, label: string}[];
+  }
+) => {
+  // Prepare headers
+  const headers = options.headers || 
+    Object.keys(data[0] || {}).map(key => ({
+      key, 
+      label: key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')
+    }));
+  
+  // Create worksheet data
+  const worksheetData = [
+    // Header row
+    headers.map(header => header.label),
+    // Data rows
+    ...data.map(item => 
+      headers.map(header => item[header.key])
+    )
+  ];
+  
+  // Create worksheet
+  const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+  
+  // Create workbook
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, options.sheetName);
+  
+  // Create file and download
+  const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+  const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  FileSaver.saveAs(blob, options.filename);
+};

@@ -6,6 +6,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { RBACProvider } from '@/services/rbac-service';
 import { registerServiceWorker } from '@/services/service-worker-registration';
 import { ErrorBoundary } from '@/components/error/ErrorBoundary';
+import { Toaster } from 'sonner';
 import App from './App.tsx';
 import './index.css';
 
@@ -34,13 +35,11 @@ if (process.env.NODE_ENV === 'production') {
 // Add global error handler for uncaught exceptions
 window.addEventListener('error', (event) => {
   console.error('Global error caught:', event.error);
-  // Here you could send to a monitoring service
 });
 
 // Add global promise rejection handler
 window.addEventListener('unhandledrejection', (event) => {
   console.error('Unhandled promise rejection:', event.reason);
-  // Here you could send to a monitoring service
 });
 
 const rootElement = document.getElementById("root");
@@ -55,6 +54,13 @@ root.render(
         <AuthProvider>
           <RBACProvider>
             <App />
+            <Toaster 
+              position="top-right" 
+              richColors 
+              closeButton 
+              visibleToasts={3} 
+              duration={4000}
+            />
           </RBACProvider>
         </AuthProvider>
       </QueryClientProvider>

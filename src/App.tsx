@@ -6,7 +6,6 @@ import LoginPage from '@/pages/LoginPage';
 import Dashboard from '@/components/dashboard/Dashboard';
 import RequireAuth from '@/components/auth/RequireAuth';
 import { Loader } from '@/components/ui/loader';
-import { Toaster } from 'sonner';
 import { ErrorBoundary } from '@/components/error/ErrorBoundary';
 import { initializeNetworkListeners, useNetworkStatus } from '@/services/network/network-status';
 import UpdateNotification from '@/components/app/UpdateNotification';
@@ -79,19 +78,19 @@ const AppOnboarding = () => {
       target: 'body',
       title: 'Welcome to Rapid Response',
       content: 'This quick tour will help you get familiar with our emergency management system.',
-      position: 'bottom' as const,
+      position: 'bottom',
     },
     {
       target: '[data-tour="sidebar"]',
       title: 'Navigation',
       content: 'Use the sidebar to navigate between different sections of the application.',
-      position: 'right' as const,
+      position: 'right',
     },
     {
       target: '[data-tour="user-menu"]',
       title: 'User Settings',
       content: 'Access your profile, preferences and logout from here.',
-      position: 'bottom' as const,
+      position: 'bottom',
     }
   ];
   
@@ -105,7 +104,7 @@ const AppOnboarding = () => {
 };
 
 function App() {
-  const { auth, checkSession, loading } = useAuth();
+  const { user, loading, checkSession } = useAuth();
   const [appInitialized, setAppInitialized] = useState(false);
 
   useEffect(() => {
@@ -145,9 +144,9 @@ function App() {
           <ScrollToTop />
           <Suspense fallback={<LoadingFallback />}>
             <Routes>
-              <Route path="/" element={<Navigate to={auth ? "/dashboard" : "/login"} />} />
-              <Route path="/login" element={auth ? <Navigate to="/dashboard" /> : <LoginPage />} />
-              <Route path="/auth" element={auth ? <Navigate to="/dashboard" /> : <Auth />} />
+              <Route path="/" element={<Navigate to={user ? "/dashboard" : "/login"} />} />
+              <Route path="/login" element={user ? <Navigate to="/dashboard" /> : <LoginPage />} />
+              <Route path="/auth" element={user ? <Navigate to="/dashboard" /> : <Auth />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/update-password" element={<UpdatePassword />} />
               

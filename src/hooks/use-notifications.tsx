@@ -1,7 +1,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { v4 as uuidv4 } from 'uuid'; // This should work now that we've installed the package
+import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '@/integrations/supabase/client';
 import { useCallback, useEffect } from 'react';
 import { Notification, NotificationType } from '@/types/notification-types';
@@ -57,13 +57,13 @@ export const useNotificationStore = create<NotificationState>()(
 );
 
 export function useNotifications() {
-  const { auth } = useAuth();
+  const { user } = useAuth();
   const store = useNotificationStore();
   
   const addRealTimeNotification = useCallback((payload: any) => {
-    if (payload && payload.new && auth) {
+    if (payload && payload.new && user) {
       // Check if the notification is intended for this user
-      if (!payload.new.user_id || payload.new.user_id === auth.id) {
+      if (!payload.new.user_id || payload.new.user_id === user.id) {
         store.addNotification({
           title: payload.new.title,
           message: payload.new.message,
@@ -73,11 +73,11 @@ export function useNotifications() {
         });
       }
     }
-  }, [auth, store]);
+  }, [user, store]);
   
   // Listen to realtime notifications if authenticated
   useEffect(() => {
-    if (!auth) return;
+    if (!user) return;
     
     // Subscribe to realtime notifications
     const channel = supabase
@@ -92,7 +92,7 @@ export function useNotifications() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [auth, addRealTimeNotification]);
+  }, [user, addRealTimeNotification]);
   
   return store;
 }
@@ -100,7 +100,7 @@ export function useNotifications() {
 // Hook to add notifications programmatically
 export function useNotificationSender() {
   const store = useNotificationStore();
-  const { auth } = useAuth();
+  const { user } = useAuth();
   
   const sendNotification = async (
     title: string, 
@@ -113,23 +113,20 @@ export function useNotificationSender() {
     store.addNotification({ title, message, type, metadata });
     
     // If we should persist to database and user is authenticated
-    if (persist && auth) {
+    if (persist && user) {
       try {
-        // Check if the notifications table exists in the database before inserting
-        // This is a workaround since we can't directly query for this table
-        // For now, we'll just do local notifications without persisting to DB
-        // In a real app, you would create the notifications table first
+        // Note: In a real app with a notifications table in the database,
+        // you would uncomment this code to persist notifications
         
-        // Commented out until notifications table is created
-        // await supabase.from('notifications').insert([
-        //   {
-        //     title,
-        //     message,
-        //     type,
-        //     user_id: auth.id,
-        //     metadata
-        //   }
-        // ]);
+        /* 
+        await supabase.from('notifications').insert([{
+          title,
+          message,
+          type,
+          user_id: user.id,
+          metadata
+        }]);
+        */
       } catch (error) {
         console.error('Failed to persist notification:', error);
       }

@@ -1,14 +1,13 @@
 
 import React, { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { usePermissions } from '@/services/rbac-service';
-import { RolePermissions } from '@/services/rbac-service';
+import useAuth from '@/hooks/useAuth';
+import { usePermissions, Permission } from '@/services/rbac-service';
 import { UserRole } from '@/types/auth-types';
 
 interface PermissionGuardProps {
   children: ReactNode;
-  requiredPermission?: keyof RolePermissions;
+  requiredPermission?: Permission;
   requiredRole?: UserRole | UserRole[];
   fallback?: ReactNode; // Optional fallback component
 }
@@ -19,12 +18,12 @@ const PermissionGuard: React.FC<PermissionGuardProps> = ({
   requiredRole,
   fallback
 }) => {
-  const { auth } = useAuth();
+  const { user } = useAuth();
   const permissions = usePermissions();
   const location = useLocation();
 
   // First, check if user is authenticated
-  if (!auth) {
+  if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 

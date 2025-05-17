@@ -1,5 +1,6 @@
 
-import { supabase } from '@/integrations/supabase/client';
+// Mock responder service file to resolve import errors
+import { supabase } from "@/integrations/supabase/client";
 
 export interface Responder {
   id: string;
@@ -8,37 +9,46 @@ export interface Responder {
   status: string;
   current_location?: string;
   availability_status?: string;
-  coordinates?: any;
-  // Add other fields as needed
 }
 
-export async function fetchResponders(): Promise<Responder[]> {
-  try {
-    const { data, error } = await supabase
-      .from('responders')
-      .select('*');
+export const fetchResponders = async () => {
+  const { data, error } = await supabase
+    .from('responders')
+    .select('*')
+    .order('name', { ascending: true });
     
-    if (error) throw error;
-    
-    return data || [];
-  } catch (error) {
-    console.error('Error fetching responders:', error);
-    return [];
+  if (error) {
+    throw new Error(`Failed to fetch responders: ${error.message}`);
   }
-}
+  
+  return data || [];
+};
 
-export async function fetchAvailableResponders(): Promise<Responder[]> {
-  try {
-    const { data, error } = await supabase
-      .from('responders')
-      .select('*')
-      .eq('availability_status', 'available');
+export const fetchResponderById = async (id: string) => {
+  const { data, error } = await supabase
+    .from('responders')
+    .select('*')
+    .eq('id', id)
+    .single();
     
-    if (error) throw error;
-    
-    return data || [];
-  } catch (error) {
-    console.error('Error fetching available responders:', error);
-    return [];
+  if (error) {
+    throw new Error(`Failed to fetch responder: ${error.message}`);
   }
-}
+  
+  return data;
+};
+
+export const updateResponderStatus = async (id: string, status: string) => {
+  const { data, error } = await supabase
+    .from('responders')
+    .update({ availability_status: status })
+    .eq('id', id)
+    .select()
+    .single();
+    
+  if (error) {
+    throw new Error(`Failed to update responder: ${error.message}`);
+  }
+  
+  return data;
+};

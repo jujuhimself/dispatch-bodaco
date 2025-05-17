@@ -1,45 +1,53 @@
 
-import { supabase } from '@/integrations/supabase/client';
+// Mock hospital service file to resolve import errors
+import { supabase } from "@/integrations/supabase/client";
 
 export interface Hospital {
   id: string;
   name: string;
   location: string;
-  available_beds: number;
   total_beds: number;
-  specialist_available?: boolean;
-  coordinates?: any;
-  // Add other fields as needed
+  available_beds: number;
 }
 
-export async function fetchHospitals(): Promise<Hospital[]> {
-  try {
-    const { data, error } = await supabase
-      .from('hospitals')
-      .select('*');
+export const fetchHospitals = async () => {
+  const { data, error } = await supabase
+    .from('hospitals')
+    .select('*')
+    .order('name', { ascending: true });
     
-    if (error) throw error;
-    
-    return data || [];
-  } catch (error) {
-    console.error('Error fetching hospitals:', error);
-    return [];
+  if (error) {
+    throw new Error(`Failed to fetch hospitals: ${error.message}`);
   }
-}
+  
+  return data || [];
+};
 
-export async function fetchHospitalById(id: string): Promise<Hospital | null> {
-  try {
-    const { data, error } = await supabase
-      .from('hospitals')
-      .select('*')
-      .eq('id', id)
-      .single();
+export const fetchHospitalById = async (id: string) => {
+  const { data, error } = await supabase
+    .from('hospitals')
+    .select('*')
+    .eq('id', id)
+    .single();
     
-    if (error) throw error;
-    
-    return data;
-  } catch (error) {
-    console.error(`Error fetching hospital with ID ${id}:`, error);
-    return null;
+  if (error) {
+    throw new Error(`Failed to fetch hospital: ${error.message}`);
   }
-}
+  
+  return data;
+};
+
+export const updateHospitalBeds = async (id: string, availableBeds: number) => {
+  const { data, error } = await supabase
+    .from('hospitals')
+    .update({ available_beds: availableBeds })
+    .eq('id', id)
+    .select()
+    .single();
+    
+  if (error) {
+    throw new Error(`Failed to update hospital: ${error.message}`);
+  }
+  
+  return data;
+};

@@ -30,16 +30,19 @@ export interface AuthSession {
   expires_at: number;
 }
 
+// Define UserMetadata type to match Supabase expectations
+export interface UserMetadata {
+  name?: string;
+  phone_number?: string;
+  role?: UserRole;
+}
+
 // Extend the User type from supabase with our needed properties
 declare module '@supabase/supabase-js' {
   interface User {
     name?: string;
     phone_number?: string;
     avatar_url?: string;
-    user_metadata: {
-      name?: string;
-      phone_number?: string;
-      role?: UserRole;
-    };
+    user_metadata: UserMetadata;
   }
 }

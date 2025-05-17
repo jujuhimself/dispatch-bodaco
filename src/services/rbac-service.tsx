@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, ReactNode } from 'react';
 import { UserRole } from '@/types/auth-types';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 
 // Define permission structure
 export type Permission = 
@@ -26,8 +26,11 @@ export type Permission =
   | 'view:iot'
   | 'manage:iot';
 
+// Role-based permissions type
+export type RolePermissions = Record<UserRole, Permission[]>;
+
 // Role-based permissions map
-const rolePermissions: Record<UserRole, Permission[]> = {
+const rolePermissions: RolePermissions = {
   admin: [
     'view:dashboards',
     'view:emergencies',
@@ -96,26 +99,45 @@ export const hasPermission = (role: UserRole | string, permission: Permission): 
 type RBACContextType = {
   hasAccess: (permission: Permission) => boolean;
   userRole: UserRole | null;
+  hasPermission: (permission: Permission) => boolean;
+  hasRole: (role: UserRole | UserRole[]) => boolean;
 };
 
 const RBACContext = createContext<RBACContextType>({
   hasAccess: () => false,
-  userRole: null
+  userRole: null,
+  hasPermission: () => false,
+  hasRole: () => false
 });
 
 // Provider component
 export const RBACProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { auth } = useAuth();
+  const { user } = useAuth();
   
-  const userRole = auth?.user_metadata?.role as UserRole || null;
+  const userRole = user?.role as UserRole || null;
   
   const hasAccess = (permission: Permission): boolean => {
-    if (!auth || !userRole) return false;
+    if (!user || !userRole) return false;
     return hasPermission(userRole, permission);
+  };
+
+  const hasRole = (requiredRole: UserRole | UserRole[]): boolean => {
+    if (!user || !userRole) return false;
+    
+    if (Array.isArray(requiredRole)) {
+      return requiredRole.includes(userRole);
+    }
+    
+    return userRole === requiredRole;
   };
   
   return (
-    <RBACContext.Provider value={{ hasAccess, userRole }}>
+    <RBACContext.Provider value={{ 
+      hasAccess, 
+      userRole, 
+      hasPermission: hasAccess,
+      hasRole 
+    }}>
       {children}
     </RBACContext.Provider>
   );
@@ -123,6 +145,16 @@ export const RBACProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
 // Custom hook to use RBAC
 export const useRBAC = () => useContext(RBACContext);
+
+// Export the hook with the necessary permission checks
+export const usePermissions = () => {
+  const rbacContext = useContext(RBACContext);
+  return {
+    hasPermission: rbacContext.hasPermission,
+    hasRole: rbacContext.hasRole,
+    userRole: rbacContext.userRole
+  };
+};
 
 // Permission-based component wrapper
 interface WithPermissionProps {

@@ -5,11 +5,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 export interface UseAuthReturn {
-  auth: UserProfile | null;
-  setAuth: React.Dispatch<React.SetStateAction<UserProfile | null>>;
-  checkSession: () => Promise<void>;
   user: UserProfile | null;
+  auth: UserProfile | null; // Alias for backward compatibility
   loading: boolean;
+  checkSession: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, userData: Partial<UserProfile>) => Promise<void>;
   signOut: () => Promise<void>;
@@ -17,12 +16,15 @@ export interface UseAuthReturn {
 }
 
 const useAuth = (): UseAuthReturn => {
-  const [auth, setAuth] = useState<UserProfile | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
   const checkSession = useCallback(async () => {
     try {
+      // Set loading true before checking session
       setLoading(true);
+      
+      // Get session from supabase
       const { data } = await supabase.auth.getSession();
       
       if (data.session?.user) {
@@ -35,7 +37,7 @@ const useAuth = (): UseAuthReturn => {
           
         if (profileData) {
           // Use profile data if available
-          setAuth({
+          setUser({
             id: data.session.user.id,
             email: data.session.user.email || '',
             role: (profileData.role as UserRole) || 'user',
@@ -47,10 +49,10 @@ const useAuth = (): UseAuthReturn => {
           });
         } else {
           // Fallback to auth user data
-          setAuth({
+          setUser({
             id: data.session.user.id,
             email: data.session.user.email || '',
-            role: 'user' as UserRole,
+            role: (data.session.user.user_metadata?.role as UserRole) || 'user',
             name: data.session.user.user_metadata?.name || '',
             phone_number: data.session.user.user_metadata?.phone_number || ''
           } as UserProfile);
@@ -67,25 +69,34 @@ const useAuth = (): UseAuthReturn => {
           }
         }
       } else {
-        setAuth(null);
+        setUser(null);
       }
     } catch (error) {
       console.error('Error checking session:', error);
+      setUser(null);
     } finally {
+      // Make sure to set loading to false AFTER all async operations
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
+    // Set up initial loading state
+    setLoading(true);
+    
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          await checkSession();
+      (event) => {
+        // Don't make any async calls here directly to prevent deadlocks
+        // Just trigger the checkSession function on auth state changes
+        if (['SIGNED_IN', 'TOKEN_REFRESHED', 'USER_UPDATED'].includes(event)) {
+          // Use setTimeout to avoid potential deadlocks in the Supabase auth state management
+          setTimeout(() => {
+            checkSession();
+          }, 0);
         } else if (event === 'SIGNED_OUT') {
-          setAuth(null);
-        } else if (event === 'USER_UPDATED') {
-          await checkSession();
+          setUser(null);
+          setLoading(false);
         }
       }
     );
@@ -104,11 +115,10 @@ const useAuth = (): UseAuthReturn => {
       setLoading(true);
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
+      // Session will be handled by the onAuthStateChange listener
     } catch (error: any) {
       console.error('Error signing in:', error);
       throw error;
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -143,7 +153,7 @@ const useAuth = (): UseAuthReturn => {
       setLoading(true);
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-      setAuth(null);
+      setUser(null);
     } catch (error: any) {
       console.error('Error signing out:', error);
       throw error;
@@ -173,11 +183,10 @@ const useAuth = (): UseAuthReturn => {
   };
 
   return {
-    auth,
-    setAuth,
-    checkSession,
-    user: auth, // Alias for compatibility
+    user,
+    auth: user, // Alias for backward compatibility
     loading,
+    checkSession,
     signIn,
     signUp,
     signOut,
