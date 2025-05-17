@@ -1,7 +1,7 @@
 
 import React, { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import useAuth from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { usePermissions, Permission } from '@/services/rbac-service';
 import { UserRole } from '@/types/auth-types';
 

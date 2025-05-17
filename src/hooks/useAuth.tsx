@@ -184,7 +184,7 @@ const useAuth = (): UseAuthReturn => {
 
   return {
     user,
-    auth: user, // Explicitly include auth as an alias for user
+    auth: user, // Explicitly set auth as an alias for user
     loading,
     checkSession,
     signIn,
