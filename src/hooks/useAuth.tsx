@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 
 export interface UseAuthReturn {
   user: UserProfile | null;
-  auth: UserProfile | null; // Alias for backward compatibility
+  auth: UserProfile | null; // Explicitly include auth as an alias for user
   loading: boolean;
   checkSession: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
