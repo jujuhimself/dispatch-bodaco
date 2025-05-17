@@ -6,7 +6,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { RBACProvider } from '@/services/rbac-service';
 import { registerServiceWorker } from '@/services/service-worker-registration';
 import { ErrorBoundary } from '@/components/error/ErrorBoundary';
-import { Toaster } from 'sonner';
+import { Toaster } from '@/components/ui/toaster';
 import App from './App.tsx';
 import './index.css';
 
@@ -54,13 +54,7 @@ root.render(
         <AuthProvider>
           <RBACProvider>
             <App />
-            <Toaster 
-              position="top-right" 
-              richColors 
-              closeButton 
-              visibleToasts={3} 
-              duration={4000}
-            />
+            <Toaster />
           </RBACProvider>
         </AuthProvider>
       </QueryClientProvider>

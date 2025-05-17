@@ -1,16 +1,17 @@
 
 import React, { createContext, useState, useEffect, useCallback } from 'react';
-import useAuth, { UseAuthReturn } from '@/hooks/useAuth';
+import useAuth from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import type { UseAuthReturn } from '@/hooks/useAuth';
 
 // Create a context with the same shape as our hook
 export const AuthContext = createContext<UseAuthReturn | null>(null);
 
 // Custom hook to use the AuthContext
-export const useAuth = () => {
+export const useAuthContext = () => {
   const context = React.useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error('useAuthContext must be used within an AuthProvider');
   }
   return context;
 };

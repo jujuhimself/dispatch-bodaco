@@ -1,6 +1,6 @@
 import React, { useEffect, Suspense, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { HelmetProvider } from 'react-helmet-async';
 import LoginPage from '@/pages/LoginPage';
 import Dashboard from '@/components/dashboard/Dashboard';
@@ -12,7 +12,7 @@ import UpdateNotification from '@/components/app/UpdateNotification';
 import { initializeIndexedDB } from '@/services/indexed-db-service';
 import { toast } from 'sonner';
 import { SkeletonCard } from '@/components/ui/skeleton-loader';
-import { useTour, OnboardingTour } from '@/components/onboarding/OnboardingTour';
+import { useTour, OnboardingTour, TourStep } from '@/components/onboarding/OnboardingTour';
 
 // Use dynamic imports to improve initial load time
 const RespondersPage = React.lazy(() => import('@/pages/RespondersPage'));
@@ -73,7 +73,7 @@ const ScrollToTop = () => {
 const AppOnboarding = () => {
   const appTour = useTour('app-onboarding');
   
-  const tourSteps = [
+  const tourSteps: TourStep[] = [
     {
       target: 'body',
       title: 'Welcome to Rapid Response',
@@ -224,14 +224,6 @@ function App() {
             </Routes>
           </Suspense>
           <NetworkStatusIndicator />
-          <Toaster 
-            position="top-right" 
-            richColors 
-            closeButton 
-            visibleToasts={3} 
-            duration={4000}
-          />
-          <UpdateNotification />
           <AppOnboarding />
         </Router>
       </HelmetProvider>
