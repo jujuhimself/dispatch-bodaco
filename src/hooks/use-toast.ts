@@ -1,7 +1,6 @@
 
 import { toast as sonnerToast } from "sonner";
 import { type ToastActionElement } from "@/components/ui/toast";
-import { useToast as useToastShadcn } from "@/components/ui/toaster";
 
 export type ToastProps = {
   title?: string;
@@ -10,11 +9,8 @@ export type ToastProps = {
 };
 
 export const useToast = () => {
-  const toastShadcn = useToastShadcn();
-
   return {
     toast: sonnerToast,
-    ...toastShadcn,
   };
 };
 

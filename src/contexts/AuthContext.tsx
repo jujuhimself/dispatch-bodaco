@@ -14,6 +14,9 @@ interface AuthContextType {
   checkSession: () => Promise<void>;
   refreshAuth: () => Promise<void>;
   updateUserData: (data: any) => Promise<void>;
+  // Added these properties to match usage in other components
+  user: User | null;
+  signUp: (email: string, password: string, userData: any) => Promise<void>;
 }
 
 const initialValue: AuthContextType = {
@@ -25,6 +28,9 @@ const initialValue: AuthContextType = {
   checkSession: async () => {},
   refreshAuth: async () => {},
   updateUserData: async () => {},
+  // Added these properties to match usage in other components
+  user: null,
+  signUp: async () => {},
 };
 
 export const AuthContext = createContext<AuthContextType>(initialValue);
@@ -102,6 +108,29 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
   
+  // Add signUp function to match usage in Auth.tsx
+  const signUp = async (email: string, password: string, userData: any) => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: userData,
+        }
+      });
+      
+      if (error) throw error;
+      
+      toast.success('Signed up successfully. Please check your email to verify your account.');
+    } catch (error: any) {
+      toast.error(`Sign up failed: ${error.message}`);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   const signOut = async () => {
     setLoading(true);
     try {
@@ -160,6 +189,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     checkSession,
     refreshAuth,
     updateUserData,
+    // Add these properties to match usage in other components
+    user: auth,
+    signUp,
   };
   
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

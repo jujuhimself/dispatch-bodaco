@@ -1,24 +1,45 @@
 
-import { User, Session } from '@supabase/supabase-js';
+// User roles for the application
+export type UserRole = 'admin' | 'dispatcher' | 'responder' | 'user';
 
-export type UserRole = 'user' | 'dispatcher' | 'responder' | 'admin';
-
+// Extended User profile
 export interface UserProfile {
-  id?: string;
+  id: string;
   email: string;
-  name?: string;
-  phone_number?: string;
   role: UserRole;
-  created_at?: string;
+  name: string;
+  phone_number?: string;
   avatar_url?: string;
+  created_at?: string;
   last_sign_in_at?: string;
 }
 
-export interface AuthContextType {
-  user: UserProfile | null;
-  session: Session | null;
-  loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, userData: Partial<UserProfile>) => Promise<void>;
-  signOut: () => Promise<void>;
+// User settings interface
+export interface UserSettings {
+  theme: 'light' | 'dark' | 'system';
+  notifications: boolean;
+  language: string;
+  density: 'compact' | 'normal' | 'comfortable';
+}
+
+// Modified AuthSession type to match our needs
+export interface AuthSession {
+  user: UserProfile;
+  access_token: string;
+  refresh_token: string;
+  expires_at: number;
+}
+
+// Extend the User type from supabase with our needed properties
+declare module '@supabase/supabase-js' {
+  interface User {
+    name?: string;
+    phone_number?: string;
+    avatar_url?: string;
+    user_metadata: {
+      name?: string;
+      phone_number?: string;
+      role?: UserRole;
+    };
+  }
 }
