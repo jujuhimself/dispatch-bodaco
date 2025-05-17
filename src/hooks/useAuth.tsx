@@ -184,7 +184,7 @@ const useAuth = (): UseAuthReturn => {
 
   return {
     user,
-    auth: user, // Alias for backward compatibility
+    auth: user, // Explicitly include auth as an alias for user
     loading,
     checkSession,
     signIn,
