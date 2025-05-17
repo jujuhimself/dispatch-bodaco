@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-interface TourStep {
+export interface TourStep {
   target: string;
   title: string;
   content: string | React.ReactNode;

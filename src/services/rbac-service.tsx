@@ -1,7 +1,8 @@
 
 import React, { createContext, useContext, ReactNode } from 'react';
 import { UserRole } from '@/types/auth-types';
-import useAuth from '@/hooks/useAuth';
+import useAuthHook from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Define permission structure
 export type Permission = 

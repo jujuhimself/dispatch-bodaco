@@ -6,7 +6,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { RBACProvider } from '@/services/rbac-service';
 import { registerServiceWorker } from '@/services/service-worker-registration';
 import { ErrorBoundary } from '@/components/error/ErrorBoundary';
-import { Toaster } from '@/components/ui/toaster';
+import { Toaster } from '@/components/ui/use-toast';
 import App from './App.tsx';
 import './index.css';
 
