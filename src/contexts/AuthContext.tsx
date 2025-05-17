@@ -1,5 +1,5 @@
 
-import React, { createContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useEffect, useCallback, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { User, Session } from '@supabase/supabase-js';
@@ -28,6 +28,15 @@ const initialValue: AuthContextType = {
 };
 
 export const AuthContext = createContext<AuthContextType>(initialValue);
+
+// Create a hook to use the AuthContext
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
 
 interface AuthProviderProps {
   children: React.ReactNode;

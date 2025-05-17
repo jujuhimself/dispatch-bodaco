@@ -1,180 +1,192 @@
-import { saveAs } from 'file-saver';
-import { parseISO, format } from 'date-fns';
-import Papa from 'papaparse';
+
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import * as Papa from 'papaparse';
 
-// Define supported export formats
-export type ExportFormat = 'csv' | 'excel' | 'json' | 'pdf';
-
-// Generic data export function
-export async function exportData<T>(
-  data: T[],
-  format: ExportFormat,
-  filename: string,
-  options?: {
-    headers?: string[];
-    title?: string;
-    dateFields?: string[];
-    transformer?: (item: T) => any;
-  }
-) {
-  if (!data.length) {
-    throw new Error('No data to export');
-  }
-  
-  const now = new Date();
-  const timestamp = format(now, 'yyyy-MM-dd_HH-mm');
-  const fullFilename = `${filename}_${timestamp}`;
-  
-  try {
-    switch (format) {
-      case 'csv':
-        return exportCSV(data, fullFilename, options);
-      case 'excel':
-        return exportExcel(data, fullFilename, options);
-      case 'json':
-        return exportJSON(data, fullFilename, options);
-      case 'pdf':
-        return exportPDF(data, fullFilename, options);
-      default:
-        throw new Error(`Unsupported export format: ${format}`);
-    }
-  } catch (error) {
-    console.error('Export failed:', error);
-    throw error;
+declare module 'jspdf' {
+  interface jsPDF {
+    autoTable: (options: any) => jsPDF;
   }
 }
 
-// CSV Export
-function exportCSV<T>(data: T[], filename: string, options?: { headers?: string[]; transformer?: (item: T) => any; dateFields?: string[] }) {
-  // Transform data if needed
-  let processedData = data;
-  if (options?.transformer) {
-    processedData = data.map(options.transformer);
-  }
+export enum ExportFormat {
+  PDF = 'pdf',
+  EXCEL = 'excel',
+  CSV = 'csv'
+}
+
+export interface ExportOptions {
+  filename?: string;
+  sheetName?: string;
+  title?: string;
+  subtitle?: string;
+  orientation?: 'portrait' | 'landscape';
+  pageSize?: string;
+}
+
+export interface TableData {
+  headers: string[];
+  data: any[][];
+}
+
+export function exportData(data: TableData, format: ExportFormat, options: ExportOptions = {}) {
+  const { filename = 'export', sheetName = 'Sheet1' } = options;
   
-  // Format date fields
-  if (options?.dateFields) {
-    processedData = processedData.map(item => {
-      const newItem = { ...item };
-      options.dateFields!.forEach(field => {
-        if ((newItem as any)[field]) {
-          try {
-            const date = parseISO((newItem as any)[field]);
-            (newItem as any)[field] = format(date, 'yyyy-MM-dd HH:mm:ss');
-          } catch (e) {
-            // Keep original if parsing fails
-          }
-        }
-      });
-      return newItem;
-    });
+  switch (format) {
+    case ExportFormat.PDF:
+      return exportToPdf(data, options);
+    case ExportFormat.EXCEL:
+      return exportToExcel(data, filename, sheetName);
+    case ExportFormat.CSV:
+      return exportToCsv(data, filename);
+    default:
+      throw new Error('Unsupported export format');
   }
+}
+
+// Export emergency data in various formats
+export function exportEmergenciesData(emergencies: any[], format: ExportFormat, options: ExportOptions = {}) {
+  const headers = [
+    'ID',
+    'Type',
+    'Location',
+    'Status',
+    'Priority',
+    'Reported At',
+    'Resolved At'
+  ];
   
-  const csv = Papa.unparse({
-    fields: options?.headers || Object.keys(processedData[0] || {}),
-    data: processedData
+  const data = emergencies.map(emergency => [
+    emergency.id,
+    emergency.type,
+    emergency.location,
+    emergency.status,
+    emergency.priority,
+    formatDate(emergency.reported_at),
+    emergency.resolved_at ? formatDate(emergency.resolved_at) : 'N/A'
+  ]);
+  
+  return exportData({ headers, data }, format, {
+    filename: 'emergencies-report',
+    sheetName: 'Emergencies',
+    title: 'Emergency Reports',
+    ...options
+  });
+}
+
+// Export responder data in various formats
+export function exportRespondersData(responders: any[], format: ExportFormat, options: ExportOptions = {}) {
+  const headers = [
+    'ID',
+    'Name',
+    'Type',
+    'Status',
+    'Location',
+    'Last Active'
+  ];
+  
+  const data = responders.map(responder => [
+    responder.id,
+    responder.name,
+    responder.type,
+    responder.status,
+    responder.current_location || 'Unknown',
+    formatDate(responder.last_active)
+  ]);
+  
+  return exportData({ headers, data }, format, {
+    filename: 'responders-report',
+    sheetName: 'Responders',
+    title: 'Responder Status Report',
+    ...options
+  });
+}
+
+// Helper function to format dates
+function formatDate(dateString: string): string {
+  if (!dateString) return '';
+  
+  const date = new Date(dateString);
+  return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+}
+
+// Export to PDF
+function exportToPdf(data: TableData, options: ExportOptions): void {
+  const { 
+    filename = 'export', 
+    title = 'Report', 
+    subtitle = '', 
+    orientation = 'portrait',
+    pageSize = 'a4'
+  } = options;
+  
+  const doc = new jsPDF({
+    orientation: orientation,
+    unit: 'mm',
+    format: pageSize
   });
   
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  saveAs(blob, `${filename}.csv`);
+  // Add title
+  doc.setFontSize(18);
+  doc.text(title, 14, 22);
   
-  return Promise.resolve(true);
+  // Add subtitle if provided
+  if (subtitle) {
+    doc.setFontSize(12);
+    doc.text(subtitle, 14, 30);
+  }
+  
+  // Add date
+  const dateText = `Generated: ${new Date().toLocaleString()}`;
+  doc.setFontSize(10);
+  doc.text(dateText, 14, orientation === 'portrait' ? 40 : 35);
+  
+  // Add table
+  doc.autoTable({
+    head: [data.headers],
+    body: data.data,
+    startY: orientation === 'portrait' ? 45 : 40,
+    headStyles: {
+      fillColor: [41, 128, 185],
+      textColor: 255,
+      fontStyle: 'bold'
+    },
+    alternateRowStyles: {
+      fillColor: [240, 240, 240]
+    },
+    styles: {
+      cellPadding: 3,
+      fontSize: 10
+    }
+  });
+  
+  // Save the PDF
+  doc.save(`${filename}.pdf`);
 }
 
-// Excel Export
-function exportExcel<T>(data: T[], filename: string, options?: { headers?: string[]; transformer?: (item: T) => any; dateFields?: string[] }) {
-  // Transform data if needed
-  let processedData = data;
-  if (options?.transformer) {
-    processedData = data.map(options.transformer);
-  }
-  
-  // Format date fields
-  if (options?.dateFields) {
-    processedData = processedData.map(item => {
-      const newItem = { ...item };
-      options.dateFields!.forEach(field => {
-        if ((newItem as any)[field]) {
-          try {
-            const date = parseISO((newItem as any)[field]);
-            (newItem as any)[field] = format(date, 'yyyy-MM-dd HH:mm:ss');
-          } catch (e) {
-            // Keep original if parsing fails
-          }
-        }
-      });
-      return newItem;
-    });
-  }
-  
-  // Create worksheet
-  const worksheet = XLSX.utils.json_to_sheet(processedData);
-  
-  // Create workbook
+// Export to Excel
+function exportToExcel(data: TableData, filename: string, sheetName: string): void {
+  const worksheet = XLSX.utils.aoa_to_sheet([data.headers, ...data.data]);
   const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Data');
   
-  // Generate Excel file
+  XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+  
+  // Generate buffer
   const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-  const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  saveAs(blob, `${filename}.xlsx`);
+  const dataBlob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   
-  return Promise.resolve(true);
+  // Save file
+  saveAs(dataBlob, `${filename}.xlsx`);
 }
 
-// JSON Export
-function exportJSON<T>(data: T[], filename: string, options?: { transformer?: (item: T) => any }) {
-  // Transform data if needed
-  let processedData = data;
-  if (options?.transformer) {
-    processedData = data.map(options.transformer);
-  }
+// Export to CSV
+function exportToCsv(data: TableData, filename: string): void {
+  const csvData = [data.headers, ...data.data];
+  const csvString = Papa.unparse(csvData);
+  const csvBlob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
   
-  const json = JSON.stringify(processedData, null, 2);
-  const blob = new Blob([json], { type: 'application/json' });
-  saveAs(blob, `${filename}.json`);
-  
-  return Promise.resolve(true);
-}
-
-// PDF Export
-async function exportPDF<T>(data: T[], filename: string, options?: { title?: string; transformer?: (item: T) => any }) {
-  // For PDF export, we'll use a dynamic import to reduce initial bundle size
-  try {
-    const { jsPDF } = await import('jspdf');
-    const { autoTable } = await import('jspdf-autotable');
-    
-    const doc = new jsPDF();
-    
-    // Add title if provided
-    if (options?.title) {
-      doc.text(options.title, 14, 15);
-    }
-    
-    // Transform data if needed
-    let processedData = data;
-    if (options?.transformer) {
-      processedData = data.map(options.transformer);
-    }
-    
-    // Prepare data for autotable
-    const tableData = processedData.map(item => Object.values(item));
-    const headers = Object.keys(processedData[0] || {});
-    
-    // Add table
-    autoTable(doc, {
-      head: [headers],
-      body: tableData,
-      startY: options?.title ? 20 : 10,
-    });
-    
-    // Save PDF
-    doc.save(`${filename}.pdf`);
-    
-    return true;
-  } catch (error) {
-    console.error('PDF export failed:', error);
-    throw new Error('PDF export failed. PDF generation library could not be loaded.');
-  }
+  // Save file
+  saveAs(csvBlob, `${filename}.csv`);
 }

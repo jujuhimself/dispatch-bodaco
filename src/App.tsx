@@ -1,4 +1,3 @@
-
 import React, { useEffect, Suspense, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -80,7 +79,7 @@ const AppOnboarding = () => {
       target: 'body',
       title: 'Welcome to Rapid Response',
       content: 'This quick tour will help you get familiar with our emergency management system.',
-      position: 'center' as const,
+      position: 'bottom' as const,
     },
     {
       target: '[data-tour="sidebar"]',
