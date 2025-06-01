@@ -36,13 +36,3 @@ export interface UserMetadata {
   phone_number?: string;
   role?: UserRole;
 }
-
-// Extend the User type from supabase with our needed properties
-declare module '@supabase/supabase-js' {
-  interface User {
-    name?: string;
-    phone_number?: string;
-    avatar_url?: string;
-    user_metadata: UserMetadata;
-  }
-}
