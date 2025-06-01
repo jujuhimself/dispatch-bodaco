@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 
 export interface UseAuthReturn {
   user: UserProfile | null;
-  auth: UserProfile | null; // Explicit auth alias
+  auth: UserProfile | null;
   loading: boolean;
   checkSession: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
@@ -18,50 +18,47 @@ export interface UseAuthReturn {
 const useAuth = (): UseAuthReturn => {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [initialized, setInitialized] = useState(false);
 
   const checkSession = useCallback(async () => {
+    if (initialized) return; // Prevent duplicate calls
+    
     try {
-      setLoading(true);
-      
       const { data } = await supabase.auth.getSession();
       
       if (data.session?.user) {
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', data.session.user.id)
-          .single();
-          
-        if (profileData) {
-          setUser({
-            id: data.session.user.id,
-            email: data.session.user.email || '',
-            role: (profileData.role as UserRole) || 'user',
-            name: profileData.name || '',
-            phone_number: profileData.phone_number || '',
-            avatar_url: profileData.avatar_url || '',
-            created_at: profileData.created_at,
-            last_sign_in_at: profileData.last_sign_in_at
-          });
-        } else {
-          setUser({
-            id: data.session.user.id,
-            email: data.session.user.email || '',
-            role: (data.session.user.user_metadata?.role as UserRole) || 'user',
-            name: data.session.user.user_metadata?.name || '',
-            phone_number: data.session.user.user_metadata?.phone_number || ''
-          } as UserProfile);
-          
-          if (!profileError) {
-            await supabase.from('profiles').insert({
-              id: data.session.user.id,
-              email: data.session.user.email,
-              role: 'user',
-              name: data.session.user.user_metadata?.name,
-              phone_number: data.session.user.user_metadata?.phone_number
-            });
+        // Create a basic user profile from auth data first
+        const basicProfile: UserProfile = {
+          id: data.session.user.id,
+          email: data.session.user.email || '',
+          role: (data.session.user.user_metadata?.role as UserRole) || 'user',
+          name: data.session.user.user_metadata?.name || '',
+          phone_number: data.session.user.user_metadata?.phone_number || ''
+        };
+        
+        setUser(basicProfile);
+        
+        // Fetch extended profile data in background (non-blocking)
+        setTimeout(async () => {
+          try {
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', data.session.user.id)
+              .single();
+              
+            if (profileData) {
+              setUser({
+                ...basicProfile,
+                avatar_url: profileData.avatar_url || '',
+                created_at: profileData.created_at,
+                last_sign_in_at: profileData.last_sign_in_at
+              });
+            }
+          } catch (error) {
+            console.log('Profile fetch failed, using basic profile');
           }
-        }
+        }, 0);
       } else {
         setUser(null);
       }
@@ -70,31 +67,39 @@ const useAuth = (): UseAuthReturn => {
       setUser(null);
     } finally {
       setLoading(false);
+      setInitialized(true);
     }
-  }, []);
+  }, [initialized]);
 
   useEffect(() => {
-    setLoading(true);
-    
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event) => {
-        if (['SIGNED_IN', 'TOKEN_REFRESHED', 'USER_UPDATED'].includes(event)) {
-          setTimeout(() => {
-            checkSession();
-          }, 0);
-        } else if (event === 'SIGNED_OUT') {
+      (event, session) => {
+        if (event === 'SIGNED_OUT') {
           setUser(null);
+          setLoading(false);
+        } else if (['SIGNED_IN', 'TOKEN_REFRESHED'].includes(event) && session?.user) {
+          const basicProfile: UserProfile = {
+            id: session.user.id,
+            email: session.user.email || '',
+            role: (session.user.user_metadata?.role as UserRole) || 'user',
+            name: session.user.user_metadata?.name || '',
+            phone_number: session.user.user_metadata?.phone_number || ''
+          };
+          setUser(basicProfile);
           setLoading(false);
         }
       }
     );
 
-    checkSession();
+    // Only check session if not already initialized
+    if (!initialized) {
+      checkSession();
+    }
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [checkSession]);
+  }, [checkSession, initialized]);
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -168,7 +173,7 @@ const useAuth = (): UseAuthReturn => {
 
   return {
     user,
-    auth: user, // Provide auth as an alias for user
+    auth: user,
     loading,
     checkSession,
     signIn,

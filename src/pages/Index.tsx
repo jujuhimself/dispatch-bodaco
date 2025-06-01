@@ -4,10 +4,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Loader } from '@/components/ui/loader';
 import Dashboard from '@/components/dashboard/Dashboard';
 import { useNavigate } from 'react-router-dom';
-import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorBoundary } from '@/components/error/ErrorBoundary';
 import { LoadingState } from '@/components/ui/loading-state';
-import { markPerformance, measurePerformance } from '@/services/performance/metrics-collector';
 import { useNetworkStatus } from '@/services/network/network-status';
 import { toast } from "sonner";
 
@@ -16,25 +14,6 @@ const Index = () => {
   const navigate = useNavigate();
   const { online } = useNetworkStatus();
   
-  // Performance tracking
-  useEffect(() => {
-    markPerformance('index-page-mount');
-    
-    return () => {
-      const loadTime = measurePerformance('index-page-render', 'index-page-mount', 'index-page-complete');
-      if (loadTime) {
-        console.log(`Index page rendered in ${loadTime.toFixed(2)}ms`);
-      }
-    };
-  }, []);
-  
-  // Mark when the component completes initial render
-  useEffect(() => {
-    if (!loading) {
-      markPerformance('index-page-complete');
-    }
-  }, [loading]);
-  
   useEffect(() => {
     // If not loading and not authenticated, redirect to login
     if (!loading && !auth) {
@@ -42,12 +21,13 @@ const Index = () => {
     }
   }, [auth, loading, navigate]);
 
-  // Notify user when network status changes
+  // Simple network status notification (only show offline warning)
   useEffect(() => {
     if (!online) {
-      toast.warning("You are currently offline. Some features may be limited.");
-    } else {
-      toast.success("You are back online!");
+      toast.warning("You are currently offline. Some features may be limited.", { 
+        id: 'offline-warning',
+        duration: 5000 
+      });
     }
   }, [online]);
 
@@ -58,9 +38,9 @@ const Index = () => {
         <div className="flex flex-col items-center">
           <Loader className="h-12 w-12 text-emergency-600 mb-4" />
           <p className="text-emergency-700">Loading your dashboard...</p>
-          <p className="text-sm text-gray-500 mt-2">
-            {!online && "Working in offline mode"}
-          </p>
+          {!online && (
+            <p className="text-sm text-gray-500 mt-2">Working in offline mode</p>
+          )}
         </div>
       </div>
     );

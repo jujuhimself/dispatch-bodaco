@@ -1,3 +1,4 @@
+
 import React, { useEffect, Suspense, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,7 +11,6 @@ import { ErrorBoundary } from '@/components/error/ErrorBoundary';
 import { initializeNetworkListeners, useNetworkStatus } from '@/services/network/network-status';
 import UpdateNotification from '@/components/app/UpdateNotification';
 import { initializeIndexedDB } from '@/services/indexed-db-service';
-import { toast } from 'sonner';
 import { SkeletonCard } from '@/components/ui/skeleton-loader';
 import { useTour, OnboardingTour, TourStep } from '@/components/onboarding/OnboardingTour';
 
@@ -32,19 +32,19 @@ const ResetPassword = React.lazy(() => import('@/pages/ResetPassword'));
 const UpdatePassword = React.lazy(() => import('@/pages/UpdatePassword'));
 const NotFoundPage = React.lazy(() => import('@/pages/NotFound'));
 
-// Improved loading fallback with skeleton UI
+// Fast loading fallback
 const LoadingFallback = () => (
   <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-100">
     <div className="w-full max-w-md px-4">
       <div className="flex justify-center mb-6">
         <Loader className="h-12 w-12 text-emergency-600" />
       </div>
-      <SkeletonCard rows={4} className="bg-white/70 p-6 rounded-xl shadow-lg" />
+      <SkeletonCard rows={3} className="bg-white/70 p-6 rounded-xl shadow-lg" />
     </div>
   </div>
 );
 
-// Network status indicator with better styling
+// Network status indicator
 const NetworkStatusIndicator = () => {
   const { online } = useNetworkStatus();
   
@@ -58,7 +58,7 @@ const NetworkStatusIndicator = () => {
   );
 };
 
-// ScrollToTop component to ensure page scrolls to top on navigation
+// ScrollToTop component
 const ScrollToTop = () => {
   const { pathname } = useLocation();
   
@@ -69,7 +69,7 @@ const ScrollToTop = () => {
   return null;
 };
 
-// New onboarding guide for first-time users
+// Simplified onboarding
 const AppOnboarding = () => {
   const appTour = useTour('app-onboarding');
   
@@ -104,35 +104,37 @@ const AppOnboarding = () => {
 };
 
 function App() {
-  const { user, loading, checkSession } = useAuth();
+  const { user, loading } = useAuth();
   const [appInitialized, setAppInitialized] = useState(false);
 
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // Check auth session
-        await checkSession();
-        
-        // Initialize network status listeners
+        // Initialize network status listeners (fast)
         initializeNetworkListeners();
         
-        // Initialize IndexedDB for offline support
-        await initializeIndexedDB();
-        
-        // Mark app as initialized
+        // Mark app as initialized quickly
         setAppInitialized(true);
+        
+        // Initialize IndexedDB in background (non-blocking)
+        setTimeout(async () => {
+          try {
+            await initializeIndexedDB();
+          } catch (error) {
+            console.error("IndexedDB initialization failed:", error);
+          }
+        }, 0);
         
       } catch (error) {
         console.error("Error initializing app:", error);
-        toast.error("There was a problem initializing the application. Some features may not work correctly.");
-        setAppInitialized(true); // Allow the app to continue even with initialization errors
+        setAppInitialized(true); // Allow the app to continue
       }
     };
     
     initializeApp();
-  }, [checkSession]);
+  }, []);
 
-  // Show loading state while app is initializing or auth is loading
+  // Show loading state only while auth is loading or app is initializing
   if (loading || !appInitialized) {
     return <LoadingFallback />;
   }
@@ -158,68 +160,19 @@ function App() {
                 </RequireAuth>
               } />
               
-              <Route path="/profile" element={
-                <RequireAuth>
-                  <ProfilePage />
-                </RequireAuth>
-              } />
-              <Route path="/responders" element={
-                <RequireAuth>
-                  <RespondersPage />
-                </RequireAuth>
-              } />
-              <Route path="/hospitals" element={
-                <RequireAuth>
-                  <HospitalsPage />
-                </RequireAuth>
-              } />
-              <Route path="/settings" element={
-                <RequireAuth>
-                  <SettingsPage />
-                </RequireAuth>
-              } />
-              <Route path="/iot" element={
-                <RequireAuth>
-                  <IoTDevicesPage />
-                </RequireAuth>
-              } />
-              <Route path="/device-registration" element={
-                <RequireAuth>
-                  <DeviceRegistrationPage />
-                </RequireAuth>
-              } />
-              <Route path="/responder-tracking" element={
-                <RequireAuth>
-                  <ResponderTrackingPage />
-                </RequireAuth>
-              } />
-              <Route path="/analytics" element={
-                <RequireAuth>
-                  <AnalyticsPage />
-                </RequireAuth>
-              } />
-              <Route path="/emergencies" element={
-                <RequireAuth>
-                  <EmergenciesPage />
-                </RequireAuth>
-              } />
-              <Route path="/emergency/create" element={
-                <RequireAuth>
-                  <EmergencyCreate />
-                </RequireAuth>
-              } />
-              <Route path="/emergency/:id" element={
-                <RequireAuth>
-                  <EmergencyDetailsPage />
-                </RequireAuth>
-              } />
-              <Route path="/communications" element={
-                <RequireAuth>
-                  <CommunicationsPage />
-                </RequireAuth>
-              } />
+              <Route path="/profile" element={<RequireAuth><ProfilePage /></RequireAuth>} />
+              <Route path="/responders" element={<RequireAuth><RespondersPage /></RequireAuth>} />
+              <Route path="/hospitals" element={<RequireAuth><HospitalsPage /></RequireAuth>} />
+              <Route path="/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />
+              <Route path="/iot" element={<RequireAuth><IoTDevicesPage /></RequireAuth>} />
+              <Route path="/device-registration" element={<RequireAuth><DeviceRegistrationPage /></RequireAuth>} />
+              <Route path="/responder-tracking" element={<RequireAuth><ResponderTrackingPage /></RequireAuth>} />
+              <Route path="/analytics" element={<RequireAuth><AnalyticsPage /></RequireAuth>} />
+              <Route path="/emergencies" element={<RequireAuth><EmergenciesPage /></RequireAuth>} />
+              <Route path="/emergency/create" element={<RequireAuth><EmergencyCreate /></RequireAuth>} />
+              <Route path="/emergency/:id" element={<RequireAuth><EmergencyDetailsPage /></RequireAuth>} />
+              <Route path="/communications" element={<RequireAuth><CommunicationsPage /></RequireAuth>} />
               
-              {/* Catch all route for 404 */}
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </Suspense>

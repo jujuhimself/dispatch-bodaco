@@ -15,8 +15,6 @@ import { Toaster } from 'sonner';
 import { ErrorBoundary } from '@/components/error/ErrorBoundary';
 import { useNetworkStatus } from '@/services/network/network-status';
 import { toast } from 'sonner';
-import { markPerformance, measurePerformance } from '@/services/performance/metrics-collector';
-import { usePrefetchOnMount } from '@/hooks/use-prefetch';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import { OnboardingTour, useTour } from '@/components/onboarding/OnboardingTour';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -63,51 +61,23 @@ const Dashboard = () => {
       position: 'bottom' as const,
     },
   ];
-  
-  // Prefetch important data
-  usePrefetchOnMount([
-    ['emergencies'],
-    ['responders'],
-    ['hospitals'],
-  ]);
 
-  // Performance tracking
-  useEffect(() => {
-    markPerformance('dashboard-mount');
-    
-    return () => {
-      const loadTime = measurePerformance('dashboard-render', 'dashboard-mount', 'dashboard-complete');
-      if (loadTime) {
-        console.log(`Dashboard rendered in ${loadTime.toFixed(2)}ms`);
-      }
-    };
-  }, []);
-
-  // Simulate loading state for better UX
+  // Reduce loading state duration for faster perceived performance
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoading(false);
-      markPerformance('dashboard-complete');
-    }, 1000);
+    }, 300); // Reduced from 1000ms to 300ms
     
     return () => clearTimeout(timer);
   }, []);
   
-  // Network status notification
+  // Network status notification (simplified)
   useEffect(() => {
     if (!online) {
-      toast.warning("You're working offline. Limited functionality available.");
-    } else {
-      // Only show this if returning from offline state
-      const lastOnlineState = sessionStorage.getItem('was-online');
-      if (lastOnlineState === 'false') {
-        toast.success("You're back online!");
-      }
-      sessionStorage.setItem('was-online', 'true');
-    }
-    
-    if (!online) {
-      sessionStorage.setItem('was-online', 'false');
+      toast.warning("You're working offline. Limited functionality available.", {
+        id: 'dashboard-offline',
+        duration: 3000
+      });
     }
   }, [online]);
 
