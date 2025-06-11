@@ -1,7 +1,6 @@
 
 import React, { Suspense, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader } from '@/components/ui/loader';
 import Dashboard from '@/components/dashboard/Dashboard';
 import { useNavigate } from 'react-router-dom';
 import { ErrorBoundary } from '@/components/error/ErrorBoundary';
@@ -15,9 +14,9 @@ const Index = () => {
   const { online } = useNetworkStatus();
   
   useEffect(() => {
-    // If not loading and not authenticated, redirect to login
+    // If not loading and not authenticated, redirect to auth
     if (!loading && !auth) {
-      navigate('/login');
+      navigate('/auth');
     }
   }, [auth, loading, navigate]);
 
@@ -31,22 +30,7 @@ const Index = () => {
     }
   }, [online]);
 
-  // Show loading state
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-100">
-        <div className="flex flex-col items-center">
-          <Loader className="h-12 w-12 text-emergency-600 mb-4" />
-          <p className="text-emergency-700">Loading your dashboard...</p>
-          {!online && (
-            <p className="text-sm text-gray-500 mt-2">Working in offline mode</p>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // If authenticated, show dashboard
+  // If authenticated, show dashboard immediately
   if (auth) {
     return (
       <ErrorBoundary>

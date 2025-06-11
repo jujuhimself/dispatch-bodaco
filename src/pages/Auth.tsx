@@ -105,17 +105,6 @@ const Auth = () => {
       setIsLoading(false);
     }
   };
-  
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-sky-50 via-indigo-50 to-blue-100">
-        <div className="animate-pulse flex flex-col items-center">
-          <Ambulance className="h-12 w-12 text-emergency-600 mb-4" />
-          <p className="text-emergency-700">Loading...</p>
-        </div>
-      </div>
-    );
-  }
 
   // Show registration success page
   if (registrationSuccess) {

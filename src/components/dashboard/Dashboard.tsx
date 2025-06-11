@@ -18,11 +18,9 @@ import { toast } from 'sonner';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import { OnboardingTour, useTour } from '@/components/onboarding/OnboardingTour';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { SkeletonDashboard } from '@/components/ui/skeleton-loader';
 
 const Dashboard = () => {
   const { online } = useNetworkStatus();
-  const [isLoading, setIsLoading] = useState(true);
   const isMobile = useIsMobile();
   
   // Tour setup
@@ -61,15 +59,6 @@ const Dashboard = () => {
       position: 'bottom' as const,
     },
   ];
-
-  // Reduce loading state duration for faster perceived performance
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 300); // Reduced from 1000ms to 300ms
-    
-    return () => clearTimeout(timer);
-  }, []);
   
   // Network status notification (simplified)
   useEffect(() => {
@@ -105,42 +94,36 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {isLoading ? (
-            <SkeletonDashboard cards={4} />
-          ) : (
-            <>
-              <ErrorBoundary componentName="EmergencyStats">
-                <div data-tour="emergency-stats">
-                  <EmergencyStats />
-                </div>
-              </ErrorBoundary>
-              
-              <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-3'} gap-6 mb-6`}>
-                <ErrorBoundary componentName="EmergencyMap">
-                  <div data-tour="emergency-map" className="lg:col-span-2">
-                    <EmergencyMap />
-                  </div>
-                </ErrorBoundary>
-                <ErrorBoundary componentName="ActiveEmergencies">
-                  <div data-tour="active-emergencies">
-                    <ActiveEmergencies />
-                  </div>
-                </ErrorBoundary>
+          <ErrorBoundary componentName="EmergencyStats">
+            <div data-tour="emergency-stats">
+              <EmergencyStats />
+            </div>
+          </ErrorBoundary>
+          
+          <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-3'} gap-6 mb-6`}>
+            <ErrorBoundary componentName="EmergencyMap">
+              <div data-tour="emergency-map" className="lg:col-span-2">
+                <EmergencyMap />
               </div>
-              
-              <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'} gap-6`}>
-                <ErrorBoundary componentName="AvailableResponders">
-                  <AvailableResponders />
-                </ErrorBoundary>
-                <ErrorBoundary componentName="HospitalStatus">
-                  <HospitalStatus />
-                </ErrorBoundary>
-                <ErrorBoundary componentName="RecentCommunications">
-                  <RecentCommunications />
-                </ErrorBoundary>
+            </ErrorBoundary>
+            <ErrorBoundary componentName="ActiveEmergencies">
+              <div data-tour="active-emergencies">
+                <ActiveEmergencies />
               </div>
-            </>
-          )}
+            </ErrorBoundary>
+          </div>
+          
+          <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'} gap-6`}>
+            <ErrorBoundary componentName="AvailableResponders">
+              <AvailableResponders />
+            </ErrorBoundary>
+            <ErrorBoundary componentName="HospitalStatus">
+              <HospitalStatus />
+            </ErrorBoundary>
+            <ErrorBoundary componentName="RecentCommunications">
+              <RecentCommunications />
+            </ErrorBoundary>
+          </div>
         </div>
       </div>
       <Toaster />

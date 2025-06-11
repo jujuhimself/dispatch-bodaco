@@ -6,11 +6,9 @@ import { HelmetProvider } from 'react-helmet-async';
 import LoginPage from '@/pages/LoginPage';
 import Dashboard from '@/components/dashboard/Dashboard';
 import RequireAuth from '@/components/auth/RequireAuth';
-import { Loader } from '@/components/ui/loader';
 import { ErrorBoundary } from '@/components/error/ErrorBoundary';
 import { initializeNetworkListeners, useNetworkStatus } from '@/services/network/network-status';
 import UpdateNotification from '@/components/app/UpdateNotification';
-import { initializeIndexedDB } from '@/services/indexed-db-service';
 import { SkeletonCard } from '@/components/ui/skeleton-loader';
 import { useTour, OnboardingTour, TourStep } from '@/components/onboarding/OnboardingTour';
 
@@ -32,15 +30,10 @@ const ResetPassword = React.lazy(() => import('@/pages/ResetPassword'));
 const UpdatePassword = React.lazy(() => import('@/pages/UpdatePassword'));
 const NotFoundPage = React.lazy(() => import('@/pages/NotFound'));
 
-// Fast loading fallback
+// Minimal loading fallback
 const LoadingFallback = () => (
-  <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-100">
-    <div className="w-full max-w-md px-4">
-      <div className="flex justify-center mb-6">
-        <Loader className="h-12 w-12 text-emergency-600" />
-      </div>
-      <SkeletonCard rows={3} className="bg-white/70 p-6 rounded-xl shadow-lg" />
-    </div>
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <SkeletonCard rows={2} className="w-full max-w-md" />
   </div>
 );
 
@@ -51,7 +44,7 @@ const NetworkStatusIndicator = () => {
   if (online) return null;
   
   return (
-    <div className="fixed bottom-4 right-4 z-50 bg-error-600 text-white px-4 py-2 rounded-full shadow-lg flex items-center animate-pulse">
+    <div className="fixed bottom-4 right-4 z-50 bg-error-600 text-white px-4 py-2 rounded-full shadow-lg flex items-center">
       <span className="inline-block w-3 h-3 bg-red-400 rounded-full mr-2"></span>
       Offline Mode
     </div>
@@ -76,7 +69,7 @@ const AppOnboarding = () => {
   const tourSteps: TourStep[] = [
     {
       target: 'body',
-      title: 'Welcome to Rapid Response',
+      title: 'Welcome to Boda & Co Emergency Response',
       content: 'This quick tour will help you get familiar with our emergency management system.',
       position: 'bottom',
     },
@@ -105,40 +98,15 @@ const AppOnboarding = () => {
 
 function App() {
   const { user, loading } = useAuth();
-  const [appInitialized, setAppInitialized] = useState(false);
 
   useEffect(() => {
-    const initializeApp = async () => {
-      try {
-        // Initialize network status listeners (fast)
-        initializeNetworkListeners();
-        
-        // Mark app as initialized quickly
-        setAppInitialized(true);
-        
-        // Initialize IndexedDB in background (non-blocking)
-        setTimeout(async () => {
-          try {
-            await initializeIndexedDB();
-          } catch (error) {
-            console.error("IndexedDB initialization failed:", error);
-          }
-        }, 0);
-        
-      } catch (error) {
-        console.error("Error initializing app:", error);
-        setAppInitialized(true); // Allow the app to continue
-      }
-    };
-    
-    initializeApp();
+    // Initialize network status listeners in background
+    setTimeout(() => {
+      initializeNetworkListeners();
+    }, 0);
   }, []);
 
-  // Show loading state only while auth is loading or app is initializing
-  if (loading || !appInitialized) {
-    return <LoadingFallback />;
-  }
-
+  // Don't show loading state - let the app start immediately
   return (
     <ErrorBoundary>
       <HelmetProvider>
@@ -146,8 +114,8 @@ function App() {
           <ScrollToTop />
           <Suspense fallback={<LoadingFallback />}>
             <Routes>
-              <Route path="/" element={<Navigate to={user ? "/dashboard" : "/login"} />} />
-              <Route path="/login" element={user ? <Navigate to="/dashboard" /> : <LoginPage />} />
+              <Route path="/" element={<Navigate to={user ? "/dashboard" : "/auth"} />} />
+              <Route path="/login" element={<Navigate to="/auth" />} />
               <Route path="/auth" element={user ? <Navigate to="/dashboard" /> : <Auth />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/update-password" element={<UpdatePassword />} />
