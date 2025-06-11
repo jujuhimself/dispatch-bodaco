@@ -17,17 +17,16 @@ export interface UseAuthReturn {
 
 const useAuth = (): UseAuthReturn => {
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false); // Start with false to avoid loading screens
   const [initialized, setInitialized] = useState(false);
 
   const checkSession = useCallback(async () => {
-    if (initialized) return; // Prevent duplicate calls
+    if (initialized) return;
     
     try {
       const { data } = await supabase.auth.getSession();
       
       if (data.session?.user) {
-        // Create a basic user profile from auth data first
         const basicProfile: UserProfile = {
           id: data.session.user.id,
           email: data.session.user.email || '',
@@ -37,28 +36,6 @@ const useAuth = (): UseAuthReturn => {
         };
         
         setUser(basicProfile);
-        
-        // Fetch extended profile data in background (non-blocking)
-        setTimeout(async () => {
-          try {
-            const { data: profileData } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', data.session.user.id)
-              .single();
-              
-            if (profileData) {
-              setUser({
-                ...basicProfile,
-                avatar_url: profileData.avatar_url || '',
-                created_at: profileData.created_at,
-                last_sign_in_at: profileData.last_sign_in_at
-              });
-            }
-          } catch (error) {
-            console.log('Profile fetch failed, using basic profile');
-          }
-        }, 0);
       } else {
         setUser(null);
       }
@@ -66,7 +43,6 @@ const useAuth = (): UseAuthReturn => {
       console.error('Error checking session:', error);
       setUser(null);
     } finally {
-      setLoading(false);
       setInitialized(true);
     }
   }, [initialized]);
@@ -76,7 +52,6 @@ const useAuth = (): UseAuthReturn => {
       (event, session) => {
         if (event === 'SIGNED_OUT') {
           setUser(null);
-          setLoading(false);
         } else if (['SIGNED_IN', 'TOKEN_REFRESHED'].includes(event) && session?.user) {
           const basicProfile: UserProfile = {
             id: session.user.id,
@@ -86,12 +61,11 @@ const useAuth = (): UseAuthReturn => {
             phone_number: session.user.user_metadata?.phone_number || ''
           };
           setUser(basicProfile);
-          setLoading(false);
         }
+        setLoading(false);
       }
     );
 
-    // Only check session if not already initialized
     if (!initialized) {
       checkSession();
     }
@@ -109,6 +83,8 @@ const useAuth = (): UseAuthReturn => {
     } catch (error: any) {
       console.error('Error signing in:', error);
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -120,7 +96,7 @@ const useAuth = (): UseAuthReturn => {
         password,
         options: {
           data: userData,
-          emailRedirectTo: `${window.location.origin}/login`
+          emailRedirectTo: `${window.location.origin}/auth`
         }
       });
       
@@ -158,7 +134,7 @@ const useAuth = (): UseAuthReturn => {
         type: 'signup',
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/login`
+          emailRedirectTo: `${window.location.origin}/auth`
         }
       });
       if (error) throw error;

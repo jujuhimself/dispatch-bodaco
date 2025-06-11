@@ -1,19 +1,21 @@
-import React, { useEffect, Suspense, useState } from 'react';
+
+import React, { useEffect, Suspense } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { HelmetProvider } from 'react-helmet-async';
 import LoginPage from '@/pages/LoginPage';
 import Dashboard from '@/components/dashboard/Dashboard';
 import RequireAuth from '@/components/auth/RequireAuth';
-import { ErrorBoundary } from '@/components/error/ErrorBoundary';
-import { initializeNetworkListeners, useNetworkStatus } from '@/services/network/network-status';
+import { ProductionErrorBoundary } from '@/components/error/ProductionErrorBoundary';
+import { MobileNavigation } from '@/components/layout/MobileNavigation';
+import { useNetworkStatus } from '@/services/network/network-status';
 import UpdateNotification from '@/components/app/UpdateNotification';
-import { SkeletonCard } from '@/components/ui/skeleton-loader';
 import { useTour, OnboardingTour, TourStep } from '@/components/onboarding/OnboardingTour';
 import EnhancedDashboard from '@/pages/EnhancedDashboard';
 import Auth from '@/pages/Auth';
+import { useIsMobile } from '@/hooks/use-mobile';
 
-// Use dynamic imports to improve initial load time
+// Dynamic imports for better performance
 const RespondersPage = React.lazy(() => import('@/pages/RespondersPage'));
 const HospitalsPage = React.lazy(() => import('@/pages/HospitalsPage'));
 const SettingsPage = React.lazy(() => import('@/pages/SettingsPage'));
@@ -30,10 +32,13 @@ const ResetPassword = React.lazy(() => import('@/pages/ResetPassword'));
 const UpdatePassword = React.lazy(() => import('@/pages/UpdatePassword'));
 const NotFoundPage = React.lazy(() => import('@/pages/NotFound'));
 
-// Minimal loading fallback
+// Simple loading fallback - no more heavy skeleton loaders
 const LoadingFallback = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
-    <SkeletonCard rows={2} className="w-full max-w-md" />
+    <div className="text-center">
+      <div className="text-red-600 text-lg font-semibold">Boda & Co</div>
+      <div className="text-sm text-gray-600">Loading...</div>
+    </div>
   </div>
 );
 
@@ -44,7 +49,7 @@ const NetworkStatusIndicator = () => {
   if (online) return null;
   
   return (
-    <div className="fixed bottom-4 right-4 z-50 bg-error-600 text-white px-4 py-2 rounded-full shadow-lg flex items-center">
+    <div className="fixed bottom-4 right-4 z-50 bg-red-600 text-white px-4 py-2 rounded-full shadow-lg flex items-center">
       <span className="inline-block w-3 h-3 bg-red-400 rounded-full mr-2"></span>
       Offline Mode
     </div>
@@ -62,6 +67,18 @@ const ScrollToTop = () => {
   return null;
 };
 
+// App layout wrapper for authenticated routes
+const AppLayout = ({ children }: { children: React.ReactNode }) => {
+  const isMobile = useIsMobile();
+  
+  return (
+    <div className="min-h-screen bg-background">
+      {isMobile && <MobileNavigation />}
+      {children}
+    </div>
+  );
+};
+
 // Simplified onboarding
 const AppOnboarding = () => {
   const appTour = useTour('app-onboarding');
@@ -70,19 +87,7 @@ const AppOnboarding = () => {
     {
       target: 'body',
       title: 'Welcome to Boda & Co Emergency Response',
-      content: 'This quick tour will help you get familiar with our emergency management system.',
-      position: 'bottom',
-    },
-    {
-      target: '[data-tour="sidebar"]',
-      title: 'Navigation',
-      content: 'Use the sidebar to navigate between different sections of the application.',
-      position: 'right',
-    },
-    {
-      target: '[data-tour="user-menu"]',
-      title: 'User Settings',
-      content: 'Access your profile, preferences and logout from here.',
+      content: 'This platform helps you manage emergency incidents efficiently.',
       position: 'bottom',
     }
   ];
@@ -97,55 +102,49 @@ const AppOnboarding = () => {
 };
 
 function App() {
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
 
-  useEffect(() => {
-    // Initialize network status listeners in background
-    setTimeout(() => {
-      initializeNetworkListeners();
-    }, 0);
-  }, []);
-
-  // Don't show loading state - let the app start immediately
   return (
-    <ErrorBoundary>
+    <ProductionErrorBoundary>
       <HelmetProvider>
         <Router>
           <ScrollToTop />
           <Suspense fallback={<LoadingFallback />}>
             <Routes>
-              <Route path="/" element={<Navigate to={user ? "/dashboard" : "/auth"} />} />
+              <Route path="/" element={<Navigate to={user ? "/enhanced-dashboard" : "/auth"} />} />
               <Route path="/login" element={<Navigate to="/auth" />} />
-              <Route path="/auth" element={user ? <Navigate to="/dashboard" /> : <Auth />} />
+              <Route path="/auth" element={user ? <Navigate to="/enhanced-dashboard" /> : <Auth />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/update-password" element={<UpdatePassword />} />
               
               <Route path="/dashboard" element={
                 <RequireAuth>
-                  <ErrorBoundary>
+                  <AppLayout>
                     <Dashboard />
-                  </ErrorBoundary>
+                  </AppLayout>
                 </RequireAuth>
               } />
               
               <Route path="/enhanced-dashboard" element={
                 <RequireAuth>
-                  <EnhancedDashboard />
+                  <AppLayout>
+                    <EnhancedDashboard />
+                  </AppLayout>
                 </RequireAuth>
               } />
               
-              <Route path="/profile" element={<RequireAuth><ProfilePage /></RequireAuth>} />
-              <Route path="/responders" element={<RequireAuth><RespondersPage /></RequireAuth>} />
-              <Route path="/hospitals" element={<RequireAuth><HospitalsPage /></RequireAuth>} />
-              <Route path="/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />
-              <Route path="/iot" element={<RequireAuth><IoTDevicesPage /></RequireAuth>} />
-              <Route path="/device-registration" element={<RequireAuth><DeviceRegistrationPage /></RequireAuth>} />
-              <Route path="/responder-tracking" element={<RequireAuth><ResponderTrackingPage /></RequireAuth>} />
-              <Route path="/analytics" element={<RequireAuth><AnalyticsPage /></RequireAuth>} />
-              <Route path="/emergencies" element={<RequireAuth><EmergenciesPage /></RequireAuth>} />
-              <Route path="/emergency/create" element={<RequireAuth><EmergencyCreate /></RequireAuth>} />
-              <Route path="/emergency/:id" element={<RequireAuth><EmergencyDetailsPage /></RequireAuth>} />
-              <Route path="/communications" element={<RequireAuth><CommunicationsPage /></RequireAuth>} />
+              <Route path="/profile" element={<RequireAuth><AppLayout><ProfilePage /></AppLayout></RequireAuth>} />
+              <Route path="/responders" element={<RequireAuth><AppLayout><RespondersPage /></AppLayout></RequireAuth>} />
+              <Route path="/hospitals" element={<RequireAuth><AppLayout><HospitalsPage /></AppLayout></RequireAuth>} />
+              <Route path="/settings" element={<RequireAuth><AppLayout><SettingsPage /></AppLayout></RequireAuth>} />
+              <Route path="/iot" element={<RequireAuth><AppLayout><IoTDevicesPage /></AppLayout></RequireAuth>} />
+              <Route path="/device-registration" element={<RequireAuth><AppLayout><DeviceRegistrationPage /></AppLayout></RequireAuth>} />
+              <Route path="/responder-tracking" element={<RequireAuth><AppLayout><ResponderTrackingPage /></AppLayout></RequireAuth>} />
+              <Route path="/analytics" element={<RequireAuth><AppLayout><AnalyticsPage /></AppLayout></RequireAuth>} />
+              <Route path="/emergencies" element={<RequireAuth><AppLayout><EmergenciesPage /></AppLayout></RequireAuth>} />
+              <Route path="/emergency/create" element={<RequireAuth><AppLayout><EmergencyCreate /></AppLayout></RequireAuth>} />
+              <Route path="/emergency/:id" element={<RequireAuth><AppLayout><EmergencyDetailsPage /></AppLayout></RequireAuth>} />
+              <Route path="/communications" element={<RequireAuth><AppLayout><CommunicationsPage /></AppLayout></RequireAuth>} />
               
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
@@ -154,7 +153,7 @@ function App() {
           <AppOnboarding />
         </Router>
       </HelmetProvider>
-    </ErrorBoundary>
+    </ProductionErrorBoundary>
   );
 }
 
