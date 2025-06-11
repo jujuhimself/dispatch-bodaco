@@ -32,12 +32,13 @@ const ResetPassword = React.lazy(() => import('@/pages/ResetPassword'));
 const UpdatePassword = React.lazy(() => import('@/pages/UpdatePassword'));
 const NotFoundPage = React.lazy(() => import('@/pages/NotFound'));
 
-// Simple loading fallback - no more heavy skeleton loaders
+// Minimal loading fallback
 const LoadingFallback = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
-    <div className="text-center">
+    <div className="text-center space-y-4">
+      <div className="w-8 h-8 border-4 border-red-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
       <div className="text-red-600 text-lg font-semibold">Boda & Co</div>
-      <div className="text-sm text-gray-600">Loading...</div>
+      <div className="text-sm text-gray-600">Loading Emergency Response System...</div>
     </div>
   </div>
 );
@@ -49,7 +50,7 @@ const NetworkStatusIndicator = () => {
   if (online) return null;
   
   return (
-    <div className="fixed bottom-4 right-4 z-50 bg-red-600 text-white px-4 py-2 rounded-full shadow-lg flex items-center">
+    <div className="fixed bottom-4 right-4 z-50 bg-red-600 text-white px-4 py-2 rounded-full shadow-lg flex items-center animate-pulse">
       <span className="inline-block w-3 h-3 bg-red-400 rounded-full mr-2"></span>
       Offline Mode
     </div>
@@ -87,7 +88,7 @@ const AppOnboarding = () => {
     {
       target: 'body',
       title: 'Welcome to Boda & Co Emergency Response',
-      content: 'This platform helps you manage emergency incidents efficiently.',
+      content: 'This platform helps you manage emergency incidents efficiently and coordinate response efforts.',
       position: 'bottom',
     }
   ];
@@ -102,7 +103,12 @@ const AppOnboarding = () => {
 };
 
 function App() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+
+  // Show loading state while checking authentication
+  if (loading) {
+    return <LoadingFallback />;
+  }
 
   return (
     <ProductionErrorBoundary>
@@ -150,6 +156,7 @@ function App() {
             </Routes>
           </Suspense>
           <NetworkStatusIndicator />
+          <UpdateNotification />
           <AppOnboarding />
         </Router>
       </HelmetProvider>

@@ -31,13 +31,10 @@ export function LoadingState({
 
   if (variant === 'skeleton') {
     return (
-      <div className={cn("w-full", className)}>
-        <Skeleton className="h-[100px] w-full mb-4" />
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-3/4" />
-          <Skeleton className="h-4 w-1/2" />
-        </div>
+      <div className={cn("w-full space-y-3", className)}>
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-3/4" />
+        <Skeleton className="h-4 w-1/2" />
       </div>
     );
   }
@@ -45,7 +42,7 @@ export function LoadingState({
   if (variant === 'blur') {
     return (
       <div className="relative">
-        <div className="absolute inset-0 backdrop-blur-sm z-10 flex items-center justify-center">
+        <div className="absolute inset-0 backdrop-blur-sm z-10 flex items-center justify-center bg-white/50">
           <Loader className={cn(
             "text-primary",
             spinnerSize === 'sm' ? "h-4 w-4" : 
@@ -60,7 +57,7 @@ export function LoadingState({
 
   // Default spinner
   return (
-    <div className={cn("flex justify-center items-center p-4", className)}>
+    <div className={cn("flex justify-center items-center p-8", className)}>
       <Loader className={cn(
         "text-primary",
         spinnerSize === 'sm' ? "h-4 w-4" : 

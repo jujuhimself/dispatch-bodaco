@@ -1,136 +1,149 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from '@/components/ui/button';
-import { PhoneCall, MapPin, Send, Loader2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { fetchActiveEmergencies, fetchEmergencyAssignments } from '@/services/emergency-service';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { AlertTriangle, MapPin, Clock, Users } from 'lucide-react';
+import { fetchActiveEmergencies } from '@/services/emergency-service';
+import { LoadingState } from '@/components/ui/loading-state';
+import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 
 const ActiveEmergencies = () => {
-  const { 
-    data: emergencies, 
-    isLoading: emergenciesLoading, 
-    error: emergenciesError 
-  } = useQuery({
-    queryKey: ['activeEmergencies'],
+  const navigate = useNavigate();
+  const { data: emergencies, isLoading, error } = useQuery({
+    queryKey: ['active-emergencies'],
     queryFn: fetchActiveEmergencies,
-    refetchInterval: 30000, // Refetch every 30 seconds
+    refetchInterval: 15000, // Refresh every 15 seconds for real-time updates
   });
 
-  const { 
-    data: assignments, 
-    isLoading: assignmentsLoading
-  } = useQuery({
-    queryKey: ['emergencyAssignments'],
-    queryFn: () => fetchEmergencyAssignments(),
-    refetchInterval: 30000,
-  });
-
-  const getEmergencyAssignments = (emergencyId: string) => {
-    return assignments?.filter(a => a.emergency_id === emergencyId) || [];
-  };
-
-  const getTimeElapsed = (timestamp: string) => {
-    try {
-      return formatDistanceToNow(new Date(timestamp), { addSuffix: true });
-    } catch (e) {
-      return 'Unknown time';
+  const getPriorityColor = (priority: number) => {
+    switch (priority) {
+      case 1:
+        return 'bg-red-100 text-red-800 border-red-200';
+      case 2:
+        return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 3:
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
-  if (emergenciesLoading || assignmentsLoading) {
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'bg-red-100 text-red-800';
+      case 'assigned':
+        return 'bg-blue-100 text-blue-800';
+      case 'in_transit':
+        return 'bg-orange-100 text-orange-800';
+      case 'on_site':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  if (isLoading) {
     return (
-      <Card className="col-span-1 lg:col-span-2">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg font-medium">Active Emergencies</CardTitle>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <AlertTriangle className="h-5 w-5 mr-2 text-red-600" />
+            Active Emergencies
+          </CardTitle>
         </CardHeader>
-        <CardContent className="flex justify-center items-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <CardContent>
+          <LoadingState isLoading={true} variant="skeleton" />
         </CardContent>
       </Card>
     );
   }
 
-  if (emergenciesError) {
-    console.error('Error loading emergencies:', emergenciesError);
+  if (error) {
     return (
-      <Card className="col-span-1 lg:col-span-2">
+      <Card>
         <CardHeader>
-          <CardTitle className="text-lg font-medium">Active Emergencies</CardTitle>
+          <CardTitle className="flex items-center">
+            <AlertTriangle className="h-5 w-5 mr-2 text-red-600" />
+            Active Emergencies
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center text-red-500">Error loading emergencies</div>
+          <div className="text-center text-red-600 py-4">
+            Failed to load emergencies. Please try again.
+          </div>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className="col-span-1 lg:col-span-2">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-lg font-medium">Active Emergencies</CardTitle>
-        <Button variant="outline" size="sm">View All</Button>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center">
+            <AlertTriangle className="h-5 w-5 mr-2 text-red-600" />
+            Active Emergencies
+          </div>
+          <Badge variant="secondary">{emergencies?.length || 0}</Badge>
+        </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {emergencies && emergencies.length > 0 ? (
-            emergencies.map((emergency) => (
-              <div key={emergency.id} className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <div className="flex items-center">
-                      <h3 className="font-medium text-gray-900">{emergency.type}</h3>
-                      <span className={`ml-2 px-2 py-1 text-xs rounded-full ${
-                        emergency.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                        emergency.status === 'assigned' ? 'bg-blue-100 text-blue-800' :
-                        emergency.status === 'in_transit' ? 'bg-indigo-100 text-indigo-800' :
-                        emergency.status === 'on_site' ? 'bg-green-100 text-green-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        {emergency.status.charAt(0).toUpperCase() + emergency.status.slice(1)}
-                      </span>
-                    </div>
-                    <div className="flex items-center text-sm text-gray-500 mt-1">
-                      <MapPin className="h-3 w-3 mr-1" />
-                      {emergency.location}
-                    </div>
+        {!emergencies || emergencies.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+            <p>No active emergencies</p>
+          </div>
+        ) : (
+          <div className="space-y-4 max-h-96 overflow-y-auto">
+            {emergencies.map((emergency) => (
+              <div
+                key={emergency.id}
+                className="border rounded-lg p-4 hover:bg-gray-50 transition-colors cursor-pointer"
+                onClick={() => navigate(`/emergency/${emergency.id}`)}
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <h4 className="font-medium">{emergency.type}</h4>
+                  <div className="flex gap-2">
+                    <Badge className={getPriorityColor(emergency.priority)}>
+                      Priority {emergency.priority}
+                    </Badge>
+                    <Badge className={getStatusColor(emergency.status)}>
+                      {emergency.status.replace('_', ' ')}
+                    </Badge>
                   </div>
-                  <span className="text-xs text-gray-400">
-                    {getTimeElapsed(emergency.reported_at)}
-                  </span>
                 </div>
                 
-                {getEmergencyAssignments(emergency.id).length > 0 && (
-                  <div className="mt-2 space-y-1">
-                    <p className="text-xs text-gray-500">Assigned Responders:</p>
-                    {getEmergencyAssignments(emergency.id).map((assignment) => (
-                      <div key={assignment.id} className="flex items-center justify-between bg-gray-50 p-1 px-2 rounded text-xs">
-                        <span className="font-medium">{assignment.responders?.name || 'Unknown Responder'}</span>
-                        <span className="text-green-600">{assignment.eta || 'Unknown ETA'}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                  {emergency.description || 'No description available'}
+                </p>
                 
-                <div className="flex mt-3 space-x-2">
-                  <Button variant="outline" size="sm" className="text-xs">
-                    <MapPin className="h-3 w-3 mr-1" /> View on Map
-                  </Button>
-                  <Button variant="outline" size="sm" className="text-xs">
-                    <Send className="h-3 w-3 mr-1" /> Assign
-                  </Button>
-                  <Button variant="outline" size="sm" className="text-xs text-emergency-600 hover:text-emergency-700 hover:bg-emergency-50">
-                    <PhoneCall className="h-3 w-3 mr-1" /> Call
-                  </Button>
+                <div className="flex items-center justify-between text-sm text-gray-500">
+                  <div className="flex items-center">
+                    <MapPin className="h-4 w-4 mr-1" />
+                    {emergency.location}
+                  </div>
+                  <div className="flex items-center">
+                    <Clock className="h-4 w-4 mr-1" />
+                    {formatDistanceToNow(new Date(emergency.reported_at), { addSuffix: true })}
+                  </div>
                 </div>
               </div>
-            ))
-          ) : (
-            <div className="text-center py-8 text-gray-500">
-              No active emergencies at the moment
-            </div>
-          )}
+            ))}
+          </div>
+        )}
+        
+        <div className="mt-4 pt-4 border-t">
+          <Button 
+            variant="outline" 
+            className="w-full"
+            onClick={() => navigate('/emergencies')}
+          >
+            View All Emergencies
+          </Button>
         </div>
       </CardContent>
     </Card>

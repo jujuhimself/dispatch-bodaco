@@ -1,76 +1,130 @@
 
 import React, { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { MapPin, Clock, AlertTriangle } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { AlertTriangle, MapPin, Plus } from 'lucide-react';
+import { createEmergency } from '@/services/emergency-service';
 import { toast } from 'sonner';
-import { optimizedEmergencyService } from '@/services/optimized-emergency-service';
+import { useNavigate } from 'react-router-dom';
 
 const emergencyTypes = [
+  'Vehicle Crash',
   'Medical Emergency',
   'Fire Emergency',
-  'Vehicle Crash',
+  'Traffic Accident',
+  'Theft/Crime',
   'Natural Disaster',
-  'Security Incident',
-  'Chemical Spill',
-  'Other'
+  'Other Emergency'
 ];
 
-const priorityLevels = [
-  { value: 1, label: 'Critical', color: 'text-red-600' },
-  { value: 2, label: 'High', color: 'text-orange-600' },
-  { value: 3, label: 'Medium', color: 'text-yellow-600' },
-  { value: 4, label: 'Low', color: 'text-green-600' }
-];
-
-export const QuickEmergencyCreate = ({ onEmergencyCreated }: { onEmergencyCreated?: () => void }) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+export const QuickEmergencyCreate = () => {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [isExpanded, setIsExpanded] = useState(false);
+  
   const [formData, setFormData] = useState({
     type: '',
-    location: '',
     description: '',
-    priority: 3
+    location: '',
+    priority: '3',
+    coordinates: { x: 0, y: 0 }
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.type || !formData.location) {
-      toast.error('Please fill in required fields');
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      await optimizedEmergencyService.createEmergency(formData);
-      toast.success('Emergency created successfully');
+  const createEmergencyMutation = useMutation({
+    mutationFn: createEmergency,
+    onSuccess: (data) => {
+      toast.success('Emergency created successfully!');
       
       // Reset form
       setFormData({
         type: '',
-        location: '',
         description: '',
-        priority: 3
+        location: '',
+        priority: '3',
+        coordinates: { x: 0, y: 0 }
       });
+      setIsExpanded(false);
       
-      onEmergencyCreated?.();
-    } catch (error) {
+      // Invalidate and refetch related queries
+      queryClient.invalidateQueries({ queryKey: ['active-emergencies'] });
+      queryClient.invalidateQueries({ queryKey: ['emergency-statistics'] });
+      
+      // Navigate to the emergency details
+      navigate(`/emergency/${data.id}`);
+    },
+    onError: (error) => {
+      toast.error('Failed to create emergency. Please try again.');
       console.error('Error creating emergency:', error);
-      toast.error('Failed to create emergency');
-    } finally {
-      setIsSubmitting(false);
+    }
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.type || !formData.location) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    createEmergencyMutation.mutate({
+      type: formData.type,
+      description: formData.description,
+      location: formData.location,
+      priority: parseInt(formData.priority),
+      coordinates: formData.coordinates
+    });
+  };
+
+  const handleLocationClick = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setFormData(prev => ({
+            ...prev,
+            coordinates: {
+              x: position.coords.longitude,
+              y: position.coords.latitude
+            }
+          }));
+          toast.success('Location captured successfully');
+        },
+        (error) => {
+          toast.error('Failed to get current location');
+          console.error('Geolocation error:', error);
+        }
+      );
+    } else {
+      toast.error('Geolocation is not supported by this browser');
     }
   };
 
+  if (!isExpanded) {
+    return (
+      <Card className="mb-6">
+        <CardContent className="p-4">
+          <Button 
+            onClick={() => setIsExpanded(true)}
+            className="w-full bg-red-600 hover:bg-red-700 text-white"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Create New Emergency
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Card className="w-full max-w-2xl">
+    <Card className="mb-6">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <AlertTriangle className="h-5 w-5 text-red-500" />
-          Quick Emergency Report
+        <CardTitle className="flex items-center">
+          <AlertTriangle className="h-5 w-5 mr-2 text-red-600" />
+          Create New Emergency
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -78,16 +132,15 @@ export const QuickEmergencyCreate = ({ onEmergencyCreated }: { onEmergencyCreate
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="type">Emergency Type *</Label>
-              <Select 
-                value={formData.type} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}
-              >
+              <Select value={formData.type} onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select emergency type" />
                 </SelectTrigger>
                 <SelectContent>
-                  {emergencyTypes.map(type => (
-                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                  {emergencyTypes.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -95,36 +148,38 @@ export const QuickEmergencyCreate = ({ onEmergencyCreated }: { onEmergencyCreate
             
             <div>
               <Label htmlFor="priority">Priority Level</Label>
-              <Select 
-                value={formData.priority.toString()} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, priority: parseInt(value) }))}
-              >
+              <Select value={formData.priority} onValueChange={(value) => setFormData(prev => ({ ...prev, priority: value }))}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {priorityLevels.map(level => (
-                    <SelectItem key={level.value} value={level.value.toString()}>
-                      <span className={level.color}>{level.label}</span>
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="1">High Priority (1)</SelectItem>
+                  <SelectItem value="2">Medium Priority (2)</SelectItem>
+                  <SelectItem value="3">Low Priority (3)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
 
           <div>
-            <Label htmlFor="location" className="flex items-center gap-2">
-              <MapPin className="h-4 w-4" />
-              Location *
-            </Label>
-            <Input
-              id="location"
-              value={formData.location}
-              onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-              placeholder="Enter emergency location"
-              required
-            />
+            <Label htmlFor="location">Location *</Label>
+            <div className="flex gap-2">
+              <Input
+                id="location"
+                value={formData.location}
+                onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                placeholder="Enter location address"
+                required
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleLocationClick}
+                className="shrink-0"
+              >
+                <MapPin className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
 
           <div>
@@ -133,25 +188,27 @@ export const QuickEmergencyCreate = ({ onEmergencyCreated }: { onEmergencyCreate
               id="description"
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              placeholder="Provide details about the emergency..."
+              placeholder="Provide additional details about the emergency"
               rows={3}
             />
           </div>
 
-          <Button 
-            type="submit" 
-            disabled={isSubmitting}
-            className="w-full bg-red-600 hover:bg-red-700"
-          >
-            {isSubmitting ? (
-              <>
-                <Clock className="h-4 w-4 mr-2 animate-spin" />
-                Creating Emergency...
-              </>
-            ) : (
-              'Create Emergency'
-            )}
-          </Button>
+          <div className="flex gap-2 pt-4">
+            <Button
+              type="submit"
+              disabled={createEmergencyMutation.isPending}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {createEmergencyMutation.isPending ? 'Creating...' : 'Create Emergency'}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsExpanded(false)}
+            >
+              Cancel
+            </Button>
+          </div>
         </form>
       </CardContent>
     </Card>

@@ -1,186 +1,193 @@
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Send, Users, MessageSquare } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { MessageSquare, Send, Users } from 'lucide-react';
+import { fetchRecentCommunications, sendCommunication, subscribeToMessages } from '@/services/emergency-service';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { formatDistanceToNow } from 'date-fns';
 
-interface Message {
-  id: string;
-  message: string;
-  sender: string;
-  sent_at: string;
-  emergency_id?: string;
-}
-
-interface RealTimeChatProps {
-  emergencyId?: string;
-  title?: string;
-}
-
-export const RealTimeChat = ({ emergencyId, title = "Emergency Communications" }: RealTimeChatProps) => {
+export const RealTimeChat = () => {
   const { user } = useAuth();
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [newMessage, setNewMessage] = useState('');
+  const queryClient = useQueryClient();
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [message, setMessage] = useState('');
   const [isConnected, setIsConnected] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  const { data: messages = [], isLoading } = useQuery({
+    queryKey: ['recent-communications'],
+    queryFn: () => fetchRecentCommunications(20),
+    refetchInterval: 5000, // Refetch every 5 seconds for real-time feel
+  });
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  useEffect(() => {
-    // Fetch existing messages
-    const fetchMessages = async () => {
-      let query = supabase
-        .from('communications')
-        .select('*')
-        .order('sent_at', { ascending: true })
-        .limit(50);
-
-      if (emergencyId) {
-        query = query.eq('emergency_id', emergencyId);
-      }
-
-      const { data, error } = await query;
-      if (error) {
-        console.error('Error fetching messages:', error);
-        return;
-      }
-
-      setMessages(data || []);
-    };
-
-    fetchMessages();
-
-    // Set up real-time subscription
-    const channel = supabase
-      .channel('chat-messages')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'communications',
-          ...(emergencyId && { filter: `emergency_id=eq.${emergencyId}` })
-        },
-        (payload) => {
-          const newMessage = payload.new as Message;
-          setMessages(prev => [...prev, newMessage]);
+  const sendMessageMutation = useMutation({
+    mutationFn: (messageText: string) => 
+      sendCommunication(messageText, user?.name || user?.email || 'Unknown User'),
+    onSuccess: () => {
+      setMessage('');
+      queryClient.invalidateQueries({ queryKey: ['recent-communications'] });
+      // Scroll to bottom after sending
+      setTimeout(() => {
+        if (scrollAreaRef.current) {
+          const scrollElement = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+          if (scrollElement) {
+            scrollElement.scrollTop = scrollElement.scrollHeight;
+          }
         }
-      )
-      .subscribe((status) => {
-        setIsConnected(status === 'SUBSCRIBED');
-      });
+      }, 100);
+    },
+    onError: (error) => {
+      toast.error('Failed to send message');
+      console.error('Error sending message:', error);
+    }
+  });
+
+  // Set up real-time subscription
+  useEffect(() => {
+    const subscription = subscribeToMessages((payload) => {
+      console.log('New message received:', payload);
+      setIsConnected(true);
+      queryClient.invalidateQueries({ queryKey: ['recent-communications'] });
+    });
+
+    // Set connection status
+    setIsConnected(true);
 
     return () => {
-      supabase.removeChannel(channel);
+      if (subscription) {
+        subscription.unsubscribe();
+      }
     };
-  }, [emergencyId]);
+  }, [queryClient]);
 
-  const sendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMessage.trim() || !user) return;
-
-    try {
-      const { error } = await supabase
-        .from('communications')
-        .insert({
-          message: newMessage.trim(),
-          sender: user.email || 'Unknown User',
-          type: 'message',
-          emergency_id: emergencyId || null
-        });
-
-      if (error) throw error;
-
-      setNewMessage('');
-    } catch (error) {
-      console.error('Error sending message:', error);
-      toast.error('Failed to send message');
+  // Auto scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (scrollAreaRef.current && messages.length > 0) {
+      const scrollElement = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollElement) {
+        scrollElement.scrollTop = scrollElement.scrollHeight;
+      }
     }
+  }, [messages]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!message.trim()) return;
+    
+    sendMessageMutation.mutate(message.trim());
   };
 
-  const formatTime = (timestamp: string) => {
-    return new Date(timestamp).toLocaleTimeString([], { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit(e);
+    }
   };
 
   return (
     <Card className="h-96 flex flex-col">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center justify-between text-lg">
-          <div className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" />
-            {title}
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center">
+            <MessageSquare className="h-5 w-5 mr-2 text-blue-600" />
+            Emergency Communications
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant={isConnected ? "default" : "secondary"}>
-              {isConnected ? "Connected" : "Connecting..."}
+            <Badge variant={isConnected ? "default" : "destructive"} className="text-xs">
+              {isConnected ? "Connected" : "Disconnected"}
             </Badge>
-            <Badge variant="outline">
-              <Users className="h-3 w-3 mr-1" />
+            <Badge variant="secondary" className="text-xs">
               {messages.length}
             </Badge>
           </div>
         </CardTitle>
       </CardHeader>
       
-      <CardContent className="flex-1 flex flex-col p-4">
-        <div className="flex-1 overflow-y-auto space-y-3 mb-4">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex flex-col space-y-1 ${
-                message.sender === user?.email 
-                  ? 'items-end' 
-                  : 'items-start'
-              }`}
-            >
-              <div
-                className={`max-w-[80%] p-3 rounded-lg ${
-                  message.sender === user?.email
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-100 text-gray-900'
-                }`}
-              >
-                <p className="text-sm">{message.message}</p>
-              </div>
-              <div className="flex items-center gap-2 text-xs text-gray-500">
-                <span>{message.sender}</span>
-                <span>•</span>
-                <span>{formatTime(message.sent_at)}</span>
+      <CardContent className="flex-1 flex flex-col p-0">
+        <ScrollArea className="flex-1 px-4" ref={scrollAreaRef}>
+          {isLoading ? (
+            <div className="flex items-center justify-center h-32 text-gray-500">
+              Loading messages...
+            </div>
+          ) : messages.length === 0 ? (
+            <div className="flex items-center justify-center h-32 text-gray-500">
+              <div className="text-center">
+                <MessageSquare className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                <p>No messages yet</p>
+                <p className="text-xs">Start the conversation!</p>
               </div>
             </div>
-          ))}
-          <div ref={messagesEndRef} />
+          ) : (
+            <div className="space-y-3 py-2">
+              {messages.map((msg) => {
+                const isCurrentUser = msg.sender === (user?.name || user?.email);
+                return (
+                  <div
+                    key={msg.id}
+                    className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-[80%] p-3 rounded-lg ${
+                        isCurrentUser
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-100 text-gray-900'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className={`text-xs font-medium ${
+                          isCurrentUser ? 'text-blue-100' : 'text-gray-600'
+                        }`}>
+                          {msg.sender}
+                        </span>
+                        <span className={`text-xs ${
+                          isCurrentUser ? 'text-blue-200' : 'text-gray-500'
+                        }`}>
+                          {formatDistanceToNow(new Date(msg.sent_at), { addSuffix: true })}
+                        </span>
+                      </div>
+                      <p className="text-sm">{msg.message}</p>
+                      {msg.type && msg.type !== 'message' && (
+                        <Badge variant="outline" className="mt-1 text-xs">
+                          {msg.type}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </ScrollArea>
+        
+        <div className="p-4 border-t">
+          <form onSubmit={handleSubmit} className="flex gap-2">
+            <Input
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Type your message..."
+              disabled={sendMessageMutation.isPending || !user}
+              className="flex-1"
+            />
+            <Button
+              type="submit"
+              disabled={sendMessageMutation.isPending || !message.trim() || !user}
+              size="icon"
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          </form>
+          {!user && (
+            <p className="text-xs text-gray-500 mt-1">
+              Please sign in to send messages
+            </p>
+          )}
         </div>
-
-        <form onSubmit={sendMessage} className="flex gap-2">
-          <Input
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Type your message..."
-            className="flex-1"
-          />
-          <Button 
-            type="submit" 
-            size="sm"
-            disabled={!newMessage.trim()}
-          >
-            <Send className="h-4 w-4" />
-          </Button>
-        </form>
       </CardContent>
     </Card>
   );
