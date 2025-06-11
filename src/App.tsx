@@ -1,4 +1,3 @@
-
 import React, { useEffect, Suspense, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,6 +10,8 @@ import { initializeNetworkListeners, useNetworkStatus } from '@/services/network
 import UpdateNotification from '@/components/app/UpdateNotification';
 import { SkeletonCard } from '@/components/ui/skeleton-loader';
 import { useTour, OnboardingTour, TourStep } from '@/components/onboarding/OnboardingTour';
+import EnhancedDashboard from '@/pages/EnhancedDashboard';
+import Auth from '@/pages/Auth';
 
 // Use dynamic imports to improve initial load time
 const RespondersPage = React.lazy(() => import('@/pages/RespondersPage'));
@@ -24,7 +25,6 @@ const EmergenciesPage = React.lazy(() => import('@/pages/EmergenciesPage'));
 const EmergencyDetailsPage = React.lazy(() => import('@/pages/EmergencyDetailsPage'));
 const EmergencyCreate = React.lazy(() => import('@/pages/EmergencyCreate'));
 const CommunicationsPage = React.lazy(() => import('@/pages/Communications'));
-const Auth = React.lazy(() => import('@/pages/Auth'));
 const ProfilePage = React.lazy(() => import('@/pages/ProfilePage'));
 const ResetPassword = React.lazy(() => import('@/pages/ResetPassword'));
 const UpdatePassword = React.lazy(() => import('@/pages/UpdatePassword'));
@@ -125,6 +125,12 @@ function App() {
                   <ErrorBoundary>
                     <Dashboard />
                   </ErrorBoundary>
+                </RequireAuth>
+              } />
+              
+              <Route path="/enhanced-dashboard" element={
+                <RequireAuth>
+                  <EnhancedDashboard />
                 </RequireAuth>
               } />
               
