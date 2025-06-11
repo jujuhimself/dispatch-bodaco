@@ -65,11 +65,12 @@ class SecurityService {
       const { error } = await supabase
         .from('audit_logs')
         .insert({
-          user_id: userId || null,
+          performed_by: userId || null,
           action,
           resource,
           performed_at: new Date().toISOString(),
-          table_name: 'security_events'
+          table_name: 'security_events',
+          record_id: crypto.randomUUID()
         });
 
       if (error) throw error;
@@ -119,18 +120,43 @@ class SecurityService {
   // GDPR compliance helpers
   async requestDataExport(userId: string) {
     try {
-      const tables = ['profiles', 'emergencies', 'communications', 'audit_logs'];
       const userData: Record<string, any> = {};
 
-      for (const table of tables) {
-        const { data, error } = await supabase
-          .from(table)
-          .select('*')
-          .eq('user_id', userId);
+      // Export profiles data
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId);
 
-        if (error) throw error;
-        userData[table] = data;
-      }
+      if (profilesError) throw profilesError;
+      userData.profiles = profiles;
+
+      // Export emergencies data (where user is involved)
+      const { data: emergencies, error: emergenciesError } = await supabase
+        .from('emergencies')
+        .select('*')
+        .eq('resolved_by', userId);
+
+      if (emergenciesError) throw emergenciesError;
+      userData.emergencies = emergencies;
+
+      // Export communications data
+      const { data: communications, error: communicationsError } = await supabase
+        .from('communications')
+        .select('*')
+        .eq('responder_id', userId);
+
+      if (communicationsError) throw communicationsError;
+      userData.communications = communications;
+
+      // Export audit logs
+      const { data: auditLogs, error: auditError } = await supabase
+        .from('audit_logs')
+        .select('*')
+        .eq('performed_by', userId);
+
+      if (auditError) throw auditError;
+      userData.audit_logs = auditLogs;
 
       return userData;
     } catch (error) {
@@ -141,8 +167,7 @@ class SecurityService {
 
   async requestDataDeletion(userId: string) {
     try {
-      // This would typically be handled by database cascades
-      // but we log the request for compliance
+      // Log the deletion request for compliance
       await this.logSecurityEvent('data_deletion_request', 'user_data', userId);
       
       const { error } = await supabase.auth.admin.deleteUser(userId);
