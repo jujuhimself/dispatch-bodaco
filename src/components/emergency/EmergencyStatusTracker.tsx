@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,7 +7,7 @@ import { Clock, MapPin, User, AlertTriangle } from 'lucide-react';
 import { Emergency } from '@/types/emergency-types';
 import { updateEmergencyStatus } from '@/services/emergency-service';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 
 interface EmergencyStatusTrackerProps {

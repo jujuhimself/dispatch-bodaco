@@ -1,4 +1,3 @@
-
 import React, { Suspense } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -7,7 +6,7 @@ import RequireAuth from '@/components/auth/RequireAuth';
 import { ProductionErrorBoundary } from '@/components/error/ProductionErrorBoundary';
 import { MobileNavigation } from '@/components/layout/MobileNavigation';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Toaster } from 'sonner';
+import { Toaster } from '@/components/ui/sonner';
 import Auth from '@/pages/Auth';
 import EnhancedDashboard from '@/pages/EnhancedDashboard';
 
@@ -41,7 +40,6 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
     <div className="min-h-screen bg-slate-50">
       {isMobile && <MobileNavigation />}
       {children}
-      <Toaster position="top-right" richColors />
     </div>
   );
 };
@@ -140,6 +138,8 @@ function App() {
               
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
+            {/* Move Toaster outside of routes but inside Router */}
+            <Toaster />
           </Suspense>
         </Router>
       </HelmetProvider>
