@@ -46,7 +46,7 @@ const Auth = () => {
   // Check if user is already authenticated
   useEffect(() => {
     if (user && !loading) {
-      const from = (location.state as any)?.from?.pathname || '/enhanced-dashboard';
+      const from = (location.state as any)?.from?.pathname || '/';
       navigate(from, { replace: true });
     }
   }, [user, loading, navigate, location]);

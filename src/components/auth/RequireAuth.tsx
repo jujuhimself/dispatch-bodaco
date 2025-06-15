@@ -12,8 +12,8 @@ const RequireAuth: React.FC<RequireAuthProps> = ({ children }) => {
   const location = useLocation();
 
   if (!user) {
-    // Redirect to the auth page if not authenticated
-    return <Navigate to="/auth" state={{ from: location }} replace />;
+    // Redirect to the login page if not authenticated
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   // If the user is authenticated, render the protected component

@@ -97,7 +97,7 @@ const useAuth = (): UseAuthReturn => {
         password,
         options: {
           data: userData,
-          emailRedirectTo: `${window.location.origin}/auth`
+          emailRedirectTo: `${window.location.origin}/login`
         }
       });
       
@@ -135,7 +135,7 @@ const useAuth = (): UseAuthReturn => {
         type: 'signup',
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth`
+          emailRedirectTo: `${window.location.origin}/login`
         }
       });
       if (error) throw error;

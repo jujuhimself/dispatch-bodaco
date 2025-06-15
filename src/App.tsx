@@ -14,6 +14,7 @@ import './App.css';
 // Lazy load components
 const Dashboard = lazy(() => import('@/components/dashboard/Dashboard'));
 const LoginPage = lazy(() => import('@/pages/LoginPage'));
+const Auth = lazy(() => import('@/pages/Auth'));
 const EmergenciesPage = lazy(() => import('@/pages/EmergenciesPage'));
 const RespondersPage = lazy(() => import('@/pages/RespondersPage'));
 const HospitalsPage = lazy(() => import('@/pages/HospitalsPage'));
@@ -56,6 +57,7 @@ function App() {
                   <Suspense fallback={<LoadingState isLoading={true} />}>
                     <Routes>
                       <Route path="/login" element={<LoginPage />} />
+                      <Route path="/auth" element={<Auth />} />
                       <Route path="/" element={
                         <RequireAuth>
                           <Dashboard />
