@@ -1,4 +1,3 @@
-
 import { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -29,6 +28,7 @@ const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 const EnhancedDashboard = lazy(() => import('@/pages/EnhancedDashboard'));
 const AdvancedEmergencyManagement = lazy(() => import('@/pages/AdvancedEmergencyManagement'));
+const EnhancedUX = lazy(() => import('@/pages/EnhancedUX'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
