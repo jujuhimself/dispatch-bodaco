@@ -6,24 +6,16 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { RBACProvider } from '@/services/rbac-service';
 import { ProductionErrorBoundary } from '@/components/error/ProductionErrorBoundary';
 import { Toaster } from '@/components/ui/use-toast';
-import { pwaService } from '@/services/pwa-service';
 import App from './App.tsx';
 import './index.css';
 
-// Production-optimized React Query client
+// Optimized React Query client for faster startup
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: (failureCount, error: any) => {
-        // Don't retry on 4xx errors
-        if (error?.status >= 400 && error?.status < 500) {
-          return false;
-        }
-        return failureCount < 2;
-      },
+      retry: 1,
       refetchOnWindowFocus: false,
       staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes
       networkMode: 'online',
     },
     mutations: {
@@ -32,33 +24,13 @@ const queryClient = new QueryClient({
   },
 });
 
-// Enhanced error reporting
-const reportError = (error: Error, errorInfo?: any) => {
-  console.error('Application Error:', error);
-  
-  // In production, send to error tracking service
-  if (process.env.NODE_ENV === 'production') {
-    // Example: Sentry.captureException(error, { extra: errorInfo });
+// Initialize PWA service in background (non-blocking)
+setTimeout(() => {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/service-worker.js')
+      .catch(error => console.log('SW registration failed:', error));
   }
-};
-
-// Global error handlers
-window.addEventListener('error', (event) => {
-  reportError(new Error(event.message), {
-    filename: event.filename,
-    lineno: event.lineno,
-    colno: event.colno
-  });
-});
-
-window.addEventListener('unhandledrejection', (event) => {
-  reportError(new Error(`Unhandled Promise Rejection: ${event.reason}`), {
-    reason: event.reason
-  });
-});
-
-// Initialize PWA service
-pwaService;
+}, 2000);
 
 const rootElement = document.getElementById("root");
 if (!rootElement) {
@@ -69,7 +41,7 @@ const root = createRoot(rootElement);
 
 root.render(
   <React.StrictMode>
-    <ProductionErrorBoundary onError={reportError}>
+    <ProductionErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <RBACProvider>

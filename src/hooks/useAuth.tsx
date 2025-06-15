@@ -17,7 +17,7 @@ export interface UseAuthReturn {
 
 const useAuth = (): UseAuthReturn => {
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState<boolean>(false); // Start with false to avoid loading screens
+  const [loading, setLoading] = useState<boolean>(false);
   const [initialized, setInitialized] = useState(false);
 
   const checkSession = useCallback(async () => {
@@ -66,6 +66,7 @@ const useAuth = (): UseAuthReturn => {
       }
     );
 
+    // Check session immediately without blocking
     if (!initialized) {
       checkSession();
     }
