@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent } from '@/components/ui/card';
@@ -20,11 +19,27 @@ interface NetworkInfo {
   rtt: number;
 }
 
+interface BatteryManager {
+  charging: boolean;
+  chargingTime: number;
+  dischargingTime: number;
+  level: number;
+  addEventListener: (type: string, listener: EventListener) => void;
+  removeEventListener: (type: string, listener: EventListener) => void;
+}
+
+declare global {
+  interface Navigator {
+    getBattery?(): Promise<BatteryManager>;
+  }
+}
+
 export const MobileOptimizer: React.FC = () => {
   const isMobile = useIsMobile();
   const [networkInfo, setNetworkInfo] = useState<NetworkInfo | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [installPrompt, setInstallPrompt] = useState<any>(null);
+  const [batteryLevel, setBatteryLevel] = useState<number | null>(null);
 
   useEffect(() => {
     // Network information
@@ -46,6 +61,25 @@ export const MobileOptimizer: React.FC = () => {
 
       connection.addEventListener('change', updateConnection);
       return () => connection.removeEventListener('change', updateConnection);
+    }
+  }, []);
+
+  useEffect(() => {
+    // Battery API
+    if (navigator.getBattery) {
+      navigator.getBattery().then((battery) => {
+        setBatteryLevel(Math.round(battery.level * 100));
+        
+        const updateBattery = () => {
+          setBatteryLevel(Math.round(battery.level * 100));
+        };
+        
+        battery.addEventListener('levelchange', updateBattery);
+        return () => battery.removeEventListener('levelchange', updateBattery);
+      }).catch(() => {
+        // Battery API not supported
+        setBatteryLevel(null);
+      });
     }
   }, []);
 
@@ -115,6 +149,21 @@ export const MobileOptimizer: React.FC = () => {
     }
   };
 
+  const getBatteryStatus = () => {
+    if (batteryLevel === null) return 'Unknown';
+    if (batteryLevel > 80) return 'Excellent';
+    if (batteryLevel > 50) return 'Good';
+    if (batteryLevel > 20) return 'Low';
+    return 'Critical';
+  };
+
+  const getBatteryVariant = () => {
+    if (batteryLevel === null) return 'outline';
+    if (batteryLevel > 50) return 'default';
+    if (batteryLevel > 20) return 'secondary';
+    return 'destructive';
+  };
+
   if (!isMobile) {
     return null;
   }
@@ -147,8 +196,8 @@ export const MobileOptimizer: React.FC = () => {
               <Battery className="h-4 w-4" />
               <span className="text-sm">Battery</span>
             </div>
-            <Badge variant="outline">
-              {navigator.getBattery ? 'Monitoring' : 'Unknown'}
+            <Badge variant={getBatteryVariant()}>
+              {batteryLevel !== null ? `${batteryLevel}%` : getBatteryStatus()}
             </Badge>
           </div>
 
