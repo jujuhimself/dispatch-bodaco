@@ -50,7 +50,7 @@ function App() {
             <AuthProvider>
               <Router>
                 <div className="min-h-screen bg-background">
-                  <Suspense fallback={<LoadingState />}>
+                  <Suspense fallback={<LoadingState isLoading={true} />}>
                     <Routes>
                       <Route path="/login" element={<LoginPage />} />
                       <Route path="/" element={
