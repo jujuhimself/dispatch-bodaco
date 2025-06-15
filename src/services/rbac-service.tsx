@@ -2,7 +2,6 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { UserRole } from '@/types/auth-types';
 import useAuthHook from '@/hooks/useAuth';
-import { useAuth } from '@/contexts/AuthContext';
 
 // Define permission structure
 export type Permission = 
@@ -111,9 +110,9 @@ const RBACContext = createContext<RBACContextType>({
   hasRole: () => false
 });
 
-// Provider component
+// Provider component - FIXED: Use auth hook directly to avoid circular dependency
 export const RBACProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { user } = useAuth();
+  const { user } = useAuthHook();
   
   const userRole = user?.role as UserRole || null;
   

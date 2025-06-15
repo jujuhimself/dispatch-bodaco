@@ -42,7 +42,7 @@ function App() {
             <RBACProvider>
               <Router>
                 <div className="min-h-screen bg-slate-50">
-                  <Suspense fallback={<LoadingState isLoading={true} />}>
+                  <Suspense fallback={<LoadingState isLoading={true} className="min-h-screen" />}>
                     <Routes>
                       <Route path="/auth" element={<Auth />} />
                       <Route path="/" element={
