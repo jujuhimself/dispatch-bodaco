@@ -39,21 +39,25 @@ export const RealTimeUpdates = () => {
         schema: 'public',
         table: 'emergencies'
       }, (payload) => {
+        const emergencyData = payload.new as any;
+        const emergencyType = emergencyData?.type || 'Unknown';
+        const emergencyPriority = emergencyData?.priority || 3;
+        
         const newEvent: RealTimeEvent = {
           id: `emergency-${Date.now()}`,
           type: 'emergency',
           title: 'Emergency Update',
-          description: `Emergency ${payload.eventType}: ${payload.new?.type || 'Unknown'}`,
+          description: `Emergency ${payload.eventType}: ${emergencyType}`,
           timestamp: new Date(),
-          priority: payload.new?.priority > 3 ? 'critical' : 'high',
+          priority: emergencyPriority > 3 ? 'critical' : 'high',
           data: payload
         };
         
         setEvents(prev => [newEvent, ...prev.slice(0, 19)]);
         
         if (payload.eventType === 'INSERT') {
-          toast.error(`New Emergency: ${payload.new?.type}`, {
-            description: `Location: ${payload.new?.location}`
+          toast.error(`New Emergency: ${emergencyType}`, {
+            description: `Location: ${emergencyData?.location || 'Unknown location'}`
           });
         }
       })
@@ -69,11 +73,15 @@ export const RealTimeUpdates = () => {
         schema: 'public',
         table: 'responders'
       }, (payload) => {
+        const responderData = payload.new as any;
+        const responderName = responderData?.name || 'Unknown';
+        const responderStatus = responderData?.status || 'unknown';
+        
         const newEvent: RealTimeEvent = {
           id: `responder-${Date.now()}`,
           type: 'responder',
           title: 'Responder Update',
-          description: `Responder ${payload.new?.name || 'Unknown'} status: ${payload.new?.status}`,
+          description: `Responder ${responderName} status: ${responderStatus}`,
           timestamp: new Date(),
           priority: 'medium',
           data: payload
