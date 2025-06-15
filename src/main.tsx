@@ -30,7 +30,7 @@ if (!rootElement) {
 
 const root = createRoot(rootElement);
 
-// Ensure proper React initialization
+// Ensure proper React initialization with strict provider order
 root.render(
   <React.StrictMode>
     <ProductionErrorBoundary>

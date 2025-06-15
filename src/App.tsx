@@ -1,7 +1,8 @@
+
 import React, { Suspense } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
 import { HelmetProvider } from 'react-helmet-async';
+import { useAuth } from '@/contexts/AuthContext';
 import RequireAuth from '@/components/auth/RequireAuth';
 import { ProductionErrorBoundary } from '@/components/error/ProductionErrorBoundary';
 import { MobileNavigation } from '@/components/layout/MobileNavigation';
@@ -44,104 +45,110 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-function App() {
+// Main app routes component
+const AppRoutes = () => {
   const { user } = useAuth();
 
   return (
+    <Router>
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          {/* Root route - immediate redirect */}
+          <Route path="/" element={<Navigate to={user ? "/enhanced-dashboard" : "/auth"} replace />} />
+          
+          {/* Auth routes - no lazy loading */}
+          <Route path="/auth" element={user ? <Navigate to="/enhanced-dashboard" replace /> : <Auth />} />
+          <Route path="/login" element={<Navigate to="/auth" replace />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/update-password" element={<UpdatePassword />} />
+          
+          {/* Critical protected routes - no lazy loading */}
+          <Route path="/enhanced-dashboard" element={
+            <RequireAuth>
+              <AppLayout>
+                <EnhancedDashboard />
+              </AppLayout>
+            </RequireAuth>
+          } />
+          
+          <Route path="/emergencies" element={
+            <RequireAuth>
+              <AppLayout>
+                <EmergenciesPage />
+              </AppLayout>
+            </RequireAuth>
+          } />
+          
+          <Route path="/emergency/create" element={
+            <RequireAuth>
+              <AppLayout>
+                <EmergencyCreate />
+              </AppLayout>
+            </RequireAuth>
+          } />
+          
+          <Route path="/emergency/:id" element={
+            <RequireAuth>
+              <AppLayout>
+                <EmergencyDetailsPage />
+              </AppLayout>
+            </RequireAuth>
+          } />
+          
+          {/* Secondary protected routes - lazy loaded */}
+          <Route path="/profile" element={
+            <RequireAuth>
+              <AppLayout>
+                <ProfilePage />
+              </AppLayout>
+            </RequireAuth>
+          } />
+          
+          <Route path="/responders" element={
+            <RequireAuth>
+              <AppLayout>
+                <RespondersPage />
+              </AppLayout>
+            </RequireAuth>
+          } />
+          
+          <Route path="/hospitals" element={
+            <RequireAuth>
+              <AppLayout>
+                <HospitalsPage />
+              </AppLayout>
+            </RequireAuth>
+          } />
+          
+          <Route path="/settings" element={
+            <RequireAuth>
+              <AppLayout>
+                <SettingsPage />
+              </AppLayout>
+            </RequireAuth>
+          } />
+          
+          <Route path="/communications" element={
+            <RequireAuth>
+              <AppLayout>
+                <CommunicationsPage />
+              </AppLayout>
+            </RequireAuth>
+          } />
+          
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </Suspense>
+      <Toaster />
+    </Router>
+  );
+};
+
+function App() {
+  return (
     <ProductionErrorBoundary>
       <HelmetProvider>
-        <Router>
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
-              {/* Root route - immediate redirect */}
-              <Route path="/" element={<Navigate to={user ? "/enhanced-dashboard" : "/auth"} replace />} />
-              
-              {/* Auth routes - no lazy loading */}
-              <Route path="/auth" element={user ? <Navigate to="/enhanced-dashboard" replace /> : <Auth />} />
-              <Route path="/login" element={<Navigate to="/auth" replace />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/update-password" element={<UpdatePassword />} />
-              
-              {/* Critical protected routes - no lazy loading */}
-              <Route path="/enhanced-dashboard" element={
-                <RequireAuth>
-                  <AppLayout>
-                    <EnhancedDashboard />
-                  </AppLayout>
-                </RequireAuth>
-              } />
-              
-              <Route path="/emergencies" element={
-                <RequireAuth>
-                  <AppLayout>
-                    <EmergenciesPage />
-                  </AppLayout>
-                </RequireAuth>
-              } />
-              
-              <Route path="/emergency/create" element={
-                <RequireAuth>
-                  <AppLayout>
-                    <EmergencyCreate />
-                  </AppLayout>
-                </RequireAuth>
-              } />
-              
-              <Route path="/emergency/:id" element={
-                <RequireAuth>
-                  <AppLayout>
-                    <EmergencyDetailsPage />
-                  </AppLayout>
-                </RequireAuth>
-              } />
-              
-              {/* Secondary protected routes - lazy loaded */}
-              <Route path="/profile" element={
-                <RequireAuth>
-                  <AppLayout>
-                    <ProfilePage />
-                  </AppLayout>
-                </RequireAuth>
-              } />
-              
-              <Route path="/responders" element={
-                <RequireAuth>
-                  <AppLayout>
-                    <RespondersPage />
-                  </AppLayout>
-                </RequireAuth>
-              } />
-              
-              <Route path="/hospitals" element={
-                <RequireAuth>
-                  <AppLayout>
-                    <HospitalsPage />
-                  </AppLayout>
-                </RequireAuth>
-              } />
-              
-              <Route path="/settings" element={
-                <RequireAuth>
-                  <AppLayout>
-                    <SettingsPage />
-                  </AppLayout>
-                </RequireAuth>
-              } />
-              
-              <Route path="/communications" element={
-                <RequireAuth>
-                  <AppLayout>
-                    <CommunicationsPage />
-                  </AppLayout>
-                </RequireAuth>
-              } />
-              
-              <Route path="*" element={<NotFoundPage />} />
-            </Routes>
-            {/* Move Toaster outside of routes but inside Router */}
-            <Toaster />
-          </Suspense>
-        </Router>
+        <AppRoutes />
       </HelmetProvider>
     </ProductionErrorBoundary>
   );

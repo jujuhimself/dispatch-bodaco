@@ -235,7 +235,7 @@ const AdvancedAnalytics = () => {
                     <h4 className="font-medium">Peak Hour Prediction</h4>
                     <p className="text-sm text-muted-foreground">Expected high activity between 2-4 PM</p>
                   </div>
-                  <Badge variant="warning">Alert</Badge>
+                  <Badge variant="destructive">Alert</Badge>
                 </div>
                 <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div>
