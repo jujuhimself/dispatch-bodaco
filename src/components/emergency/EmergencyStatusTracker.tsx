@@ -66,6 +66,10 @@ export const EmergencyStatusTracker: React.FC<EmergencyStatusTrackerProps> = ({
     }
   };
 
+  const handleStatusChange = (value: string) => {
+    setSelectedStatus(value as Emergency['status']);
+  };
+
   useEffect(() => {
     setSelectedStatus(emergency.status);
   }, [emergency.status]);
@@ -126,7 +130,7 @@ export const EmergencyStatusTracker: React.FC<EmergencyStatusTrackerProps> = ({
           <div className="border-t pt-4">
             <h4 className="font-medium mb-3">Update Status</h4>
             <div className="flex gap-2">
-              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+              <Select value={selectedStatus} onValueChange={handleStatusChange}>
                 <SelectTrigger className="flex-1">
                   <SelectValue />
                 </SelectTrigger>

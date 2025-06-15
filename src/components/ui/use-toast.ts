@@ -1,7 +1,16 @@
 
-import { toast } from "sonner";
-import { useToast } from "@/hooks/use-toast";
-import { Toaster } from "sonner";
+import { toast as sonnerToast } from "sonner";
 
-// Export components from the hooks implementation
-export { useToast, toast, Toaster };
+export type ToastProps = {
+  title?: string;
+  description?: string;
+  action?: React.ReactNode;
+};
+
+export const useToast = () => {
+  return {
+    toast: sonnerToast,
+  };
+};
+
+export const toast = sonnerToast;

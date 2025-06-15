@@ -11,12 +11,12 @@ export interface Communication {
   read_by_ids: string[];
   attachment_url: string | null;
   isOutgoing?: boolean;
-  status?: 'sending' | 'sent' | 'failed';
+  status?: 'sending' | 'sent' | 'failed' | 'delivered' | 'read';
 }
 
 export interface ChatMessage extends Communication {
   isOutgoing?: boolean;
-  status?: 'sending' | 'sent' | 'failed';
+  status?: 'sending' | 'sent' | 'failed' | 'delivered' | 'read';
 }
 
 export interface CommunicationChannel {
@@ -35,4 +35,13 @@ export interface ChannelMember {
   joined_at: string;
   last_read_at: string;
   role: string;
+}
+
+export interface EmergencyWithChannel {
+  id: string;
+  name: string;
+  channel_id: string;
+  type: string;
+  status: string;
+  priority: number;
 }

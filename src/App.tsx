@@ -7,6 +7,7 @@ import RequireAuth from '@/components/auth/RequireAuth';
 import { ProductionErrorBoundary } from '@/components/error/ProductionErrorBoundary';
 import { MobileNavigation } from '@/components/layout/MobileNavigation';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Toaster } from 'sonner';
 import Auth from '@/pages/Auth';
 import EnhancedDashboard from '@/pages/EnhancedDashboard';
 
@@ -40,6 +41,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
     <div className="min-h-screen bg-slate-50">
       {isMobile && <MobileNavigation />}
       {children}
+      <Toaster position="top-right" richColors />
     </div>
   );
 };
