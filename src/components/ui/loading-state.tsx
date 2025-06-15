@@ -6,7 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 interface LoadingStateProps {
   isLoading: boolean;
-  children: React.ReactNode;
+  children?: React.ReactNode;
   variant?: 'spinner' | 'skeleton' | 'blur';
   spinnerSize?: 'sm' | 'md' | 'lg';
   fallback?: React.ReactNode;
@@ -39,7 +39,7 @@ export function LoadingState({
     );
   }
 
-  if (variant === 'blur') {
+  if (variant === 'blur' && children) {
     return (
       <div className="relative">
         <div className="absolute inset-0 backdrop-blur-sm z-10 flex items-center justify-center bg-white/50">

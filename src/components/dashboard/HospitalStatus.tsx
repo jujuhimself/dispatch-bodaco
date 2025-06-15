@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,7 +34,9 @@ const HospitalStatus = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <LoadingState isLoading={true} variant="skeleton" />
+          <LoadingState isLoading={true} variant="skeleton">
+            <div></div>
+          </LoadingState>
         </CardContent>
       </Card>
     );

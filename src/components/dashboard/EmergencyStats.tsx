@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,7 +18,9 @@ const EmergencyStats = () => {
         {[1, 2, 3, 4].map((i) => (
           <Card key={i}>
             <CardContent className="p-6">
-              <LoadingState isLoading={true} variant="skeleton" />
+              <LoadingState isLoading={true} variant="skeleton">
+                <div></div>
+              </LoadingState>
             </CardContent>
           </Card>
         ))}
