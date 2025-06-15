@@ -1,8 +1,6 @@
 
 import React from 'react';
 import { AppHeader } from '@/components/layout/AppHeader';
-import { MobileNavigation } from '@/components/layout/MobileNavigation';
-import Header from './Header';
 import EmergencyStats from './EmergencyStats';
 import ActiveEmergencies from './ActiveEmergencies';
 import AvailableResponders from './AvailableResponders';
@@ -13,9 +11,6 @@ import RecentCommunications from './RecentCommunications';
 const Dashboard = () => {
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Mobile Navigation */}
-      <MobileNavigation />
-      
       {/* App Header */}
       <AppHeader />
       

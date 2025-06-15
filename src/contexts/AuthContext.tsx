@@ -22,16 +22,40 @@ interface AuthProviderProps {
 
 // Provider component that uses our useAuth hook internally
 export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const auth = useAuthHook();
-  
-  // Show loading state while initializing auth
-  if (auth.loading && auth.user === null) {
-    return <LoadingState isLoading={true} className="min-h-screen" />;
+  try {
+    const auth = useAuthHook();
+    
+    // Show loading state while initializing auth
+    if (auth.loading && auth.user === null) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-slate-50">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading...</p>
+          </div>
+        </div>
+      );
+    }
+    
+    return (
+      <AuthContext.Provider value={auth}>
+        {children}
+      </AuthContext.Provider>
+    );
+  } catch (error) {
+    console.error('Auth provider error:', error);
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Authentication system error</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+          >
+            Reload App
+          </button>
+        </div>
+      </div>
+    );
   }
-  
-  return (
-    <AuthContext.Provider value={auth}>
-      {children}
-    </AuthContext.Provider>
-  );
 };

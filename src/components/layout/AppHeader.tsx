@@ -32,8 +32,19 @@ interface AppHeaderProps {
 }
 
 export function AppHeader({ className }: AppHeaderProps) {
-  const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  
+  // Safely get auth context
+  let user = null;
+  let signOut = () => {};
+  
+  try {
+    const auth = useAuth();
+    user = auth.user;
+    signOut = auth.signOut;
+  } catch (error) {
+    console.log('Auth context not available:', error);
+  }
 
   const handleLogout = async () => {
     try {
@@ -41,6 +52,8 @@ export function AppHeader({ className }: AppHeaderProps) {
       navigate('/auth');
     } catch (error) {
       console.error('Error signing out:', error);
+      // Fallback - redirect anyway
+      window.location.href = '/auth';
     }
   };
 
@@ -118,16 +131,16 @@ export function AppHeader({ className }: AppHeaderProps) {
                 </AvatarFallback>
               </Avatar>
               <div className="hidden md:block text-left">
-                <p className="text-sm font-medium">{user?.name || user?.email}</p>
-                <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
+                <p className="text-sm font-medium">{user?.name || user?.email || 'User'}</p>
+                <p className="text-xs text-gray-500 capitalize">{user?.role || 'user'}</p>
               </div>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56 bg-white border border-gray-200 shadow-lg">
             <div className="px-3 py-2 border-b border-gray-100">
-              <p className="text-sm font-medium">{user?.name || user?.email}</p>
-              <p className="text-xs text-gray-500">{user?.email}</p>
-              <p className="text-xs text-gray-400 capitalize">{user?.role}</p>
+              <p className="text-sm font-medium">{user?.name || user?.email || 'User'}</p>
+              <p className="text-xs text-gray-500">{user?.email || ''}</p>
+              <p className="text-xs text-gray-400 capitalize">{user?.role || 'user'}</p>
             </div>
             
             <DropdownMenuItem asChild>

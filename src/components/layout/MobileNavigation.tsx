@@ -14,17 +14,16 @@ import {
   Activity,
   Smartphone
 } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 
 const navigationItems = [
-  { path: '/dashboard', label: 'Dashboard', icon: Home },
+  { path: '/', label: 'Dashboard', icon: Home },
   { path: '/enhanced-dashboard', label: 'Mission Control', icon: Activity },
   { path: '/emergencies', label: 'Emergencies', icon: AlertTriangle },
   { path: '/responders', label: 'Responders', icon: Users },
   { path: '/hospitals', label: 'Hospitals', icon: Building2 },
   { path: '/communications', label: 'Communications', icon: MessageSquare },
-  { path: '/iot', label: 'IoT Devices', icon: Smartphone },
+  { path: '/iot-devices', label: 'IoT Devices', icon: Smartphone },
   { path: '/analytics', label: 'Analytics', icon: Activity },
   { path: '/settings', label: 'Settings', icon: Settings },
 ];
@@ -32,10 +31,32 @@ const navigationItems = [
 export const MobileNavigation = () => {
   const [open, setOpen] = useState(false);
   const location = useLocation();
-  const { user, signOut } = useAuth();
+
+  // Safely handle auth context
+  let user = null;
+  let signOut = () => {};
+  
+  try {
+    const { useAuth } = require('@/contexts/AuthContext');
+    const auth = useAuth();
+    user = auth.user;
+    signOut = auth.signOut;
+  } catch (error) {
+    console.log('Auth context not available in mobile nav:', error);
+  }
 
   const handleNavigation = () => {
     setOpen(false);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      setOpen(false);
+    } catch (error) {
+      console.error('Error signing out:', error);
+      window.location.href = '/auth';
+    }
   };
 
   return (
@@ -82,13 +103,13 @@ export const MobileNavigation = () => {
             {/* User Info & Logout */}
             <div className="p-4 border-t">
               <div className="mb-4">
-                <p className="text-sm font-medium">{user?.name || user?.email}</p>
-                <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
+                <p className="text-sm font-medium">{user?.name || user?.email || 'User'}</p>
+                <p className="text-xs text-gray-500 capitalize">{user?.role || 'user'}</p>
               </div>
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={signOut}
+                onClick={handleLogout}
                 className="w-full"
               >
                 Sign Out
