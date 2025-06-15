@@ -9,6 +9,10 @@ import { ResponderManagement } from '@/components/responder/ResponderManagement'
 import { HospitalIntegration } from '@/components/hospital/HospitalIntegration';
 import ActiveEmergencies from '@/components/dashboard/ActiveEmergencies';
 import AvailableResponders from '@/components/dashboard/AvailableResponders';
+import AdvancedAnalytics from '@/components/analytics/AdvancedAnalytics';
+import IoTDeviceManagement from '@/components/iot/IoTDeviceManagement';
+import PerformanceMonitor from '@/components/performance/PerformanceMonitor';
+import PredictiveAnalytics from '@/components/analytics/PredictiveAnalytics';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Emergency, Responder } from '@/types/emergency-types';
@@ -36,17 +40,22 @@ const EnhancedDashboard = () => {
           {/* Main Content Tabs for Mobile, Grid for Desktop */}
           {isMobile ? (
             <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="grid w-full grid-cols-5">
+              <TabsList className="grid w-full grid-cols-6 text-xs">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="responders">Responders</TabsTrigger>
                 <TabsTrigger value="hospitals">Hospitals</TabsTrigger>
-                <TabsTrigger value="comm">Comm</TabsTrigger>
+                <TabsTrigger value="analytics">Analytics</TabsTrigger>
+                <TabsTrigger value="iot">IoT</TabsTrigger>
                 <TabsTrigger value="create">Create</TabsTrigger>
               </TabsList>
               
               <TabsContent value="overview" className="space-y-6">
                 <ActiveEmergencies />
                 <AvailableResponders />
+                <CommunicationHub 
+                  emergency={selectedEmergency}
+                  responder={selectedResponder}
+                />
               </TabsContent>
               
               <TabsContent value="responders" className="space-y-6">
@@ -57,11 +66,30 @@ const EnhancedDashboard = () => {
                 <HospitalIntegration />
               </TabsContent>
               
-              <TabsContent value="comm" className="space-y-6">
-                <CommunicationHub 
-                  emergency={selectedEmergency}
-                  responder={selectedResponder}
-                />
+              <TabsContent value="analytics" className="space-y-6">
+                <Tabs defaultValue="advanced" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="advanced">Advanced</TabsTrigger>
+                    <TabsTrigger value="predictive">Predictive</TabsTrigger>
+                    <TabsTrigger value="performance">Performance</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="advanced">
+                    <AdvancedAnalytics />
+                  </TabsContent>
+                  
+                  <TabsContent value="predictive">
+                    <PredictiveAnalytics />
+                  </TabsContent>
+                  
+                  <TabsContent value="performance">
+                    <PerformanceMonitor />
+                  </TabsContent>
+                </Tabs>
+              </TabsContent>
+              
+              <TabsContent value="iot" className="space-y-6">
+                <IoTDeviceManagement />
               </TabsContent>
               
               <TabsContent value="create" className="space-y-6">
@@ -77,9 +105,11 @@ const EnhancedDashboard = () => {
                 
                 {/* Enhanced tabs for desktop */}
                 <Tabs defaultValue="responders" className="w-full">
-                  <TabsList>
-                    <TabsTrigger value="responders">Responder Management</TabsTrigger>
-                    <TabsTrigger value="hospitals">Hospital Integration</TabsTrigger>
+                  <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="responders">Responders</TabsTrigger>
+                    <TabsTrigger value="hospitals">Hospitals</TabsTrigger>
+                    <TabsTrigger value="analytics">Analytics</TabsTrigger>
+                    <TabsTrigger value="iot">IoT Devices</TabsTrigger>
                   </TabsList>
                   
                   <TabsContent value="responders" className="mt-6">
@@ -88,6 +118,32 @@ const EnhancedDashboard = () => {
                   
                   <TabsContent value="hospitals" className="mt-6">
                     <HospitalIntegration />
+                  </TabsContent>
+                  
+                  <TabsContent value="analytics" className="mt-6">
+                    <Tabs defaultValue="advanced" className="w-full">
+                      <TabsList>
+                        <TabsTrigger value="advanced">Advanced Analytics</TabsTrigger>
+                        <TabsTrigger value="predictive">Predictive</TabsTrigger>
+                        <TabsTrigger value="performance">Performance</TabsTrigger>
+                      </TabsList>
+                      
+                      <TabsContent value="advanced" className="mt-4">
+                        <AdvancedAnalytics />
+                      </TabsContent>
+                      
+                      <TabsContent value="predictive" className="mt-4">
+                        <PredictiveAnalytics />
+                      </TabsContent>
+                      
+                      <TabsContent value="performance" className="mt-4">
+                        <PerformanceMonitor />
+                      </TabsContent>
+                    </Tabs>
+                  </TabsContent>
+                  
+                  <TabsContent value="iot" className="mt-6">
+                    <IoTDeviceManagement />
                   </TabsContent>
                 </Tabs>
               </div>
