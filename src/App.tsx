@@ -1,154 +1,142 @@
 
-import React, { Suspense } from 'react';
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { Suspense, lazy } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { HelmetProvider } from 'react-helmet-async';
-import { useAuth } from '@/contexts/AuthContext';
+import { ThemeProvider } from 'next-themes';
+import { Toaster } from '@/components/ui/sonner';
+import { AuthProvider } from '@/contexts/AuthContext';
 import RequireAuth from '@/components/auth/RequireAuth';
 import { ProductionErrorBoundary } from '@/components/error/ProductionErrorBoundary';
-import { MobileNavigation } from '@/components/layout/MobileNavigation';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { Toaster } from '@/components/ui/sonner';
-import Auth from '@/pages/Auth';
-import EnhancedDashboard from '@/pages/EnhancedDashboard';
+import { LoadingState } from '@/components/ui/loading-state';
+import './App.css';
 
-// Critical pages loaded immediately
-import EmergenciesPage from '@/pages/EmergenciesPage';
-import EmergencyDetailsPage from '@/pages/EmergencyDetailsPage';
-import EmergencyCreate from '@/pages/EmergencyCreate';
+// Lazy load components
+const Dashboard = lazy(() => import('@/components/dashboard/Dashboard'));
+const LoginPage = lazy(() => import('@/pages/LoginPage'));
+const EmergenciesPage = lazy(() => import('@/pages/EmergenciesPage'));
+const RespondersPage = lazy(() => import('@/pages/RespondersPage'));
+const HospitalsPage = lazy(() => import('@/pages/HospitalsPage'));
+const Analytics = lazy(() => import('@/pages/Analytics'));
+const Communications = lazy(() => import('@/pages/Communications'));
+const EmergencyCreate = lazy(() => import('@/pages/EmergencyCreate'));
+const EmergencyDetailsPage = lazy(() => import('@/pages/EmergencyDetailsPage'));
+const IoTDevices = lazy(() => import('@/pages/IoTDevices'));
+const DeviceRegistration = lazy(() => import('@/pages/DeviceRegistration'));
+const ResponderTracking = lazy(() => import('@/pages/ResponderTracking'));
+const ProfilePage = lazy(() => import('@/pages/ProfilePage'));
+const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
+const NotFound = lazy(() => import('@/pages/NotFound'));
+const EnhancedDashboard = lazy(() => import('@/pages/EnhancedDashboard'));
+const AdvancedEmergencyManagement = lazy(() => import('@/pages/AdvancedEmergencyManagement'));
 
-// Secondary pages lazy loaded
-const RespondersPage = React.lazy(() => import('@/pages/RespondersPage'));
-const HospitalsPage = React.lazy(() => import('@/pages/HospitalsPage'));
-const SettingsPage = React.lazy(() => import('@/pages/SettingsPage'));
-const CommunicationsPage = React.lazy(() => import('@/pages/Communications'));
-const ProfilePage = React.lazy(() => import('@/pages/ProfilePage'));
-const ResetPassword = React.lazy(() => import('@/pages/ResetPassword'));
-const UpdatePassword = React.lazy(() => import('@/pages/UpdatePassword'));
-const NotFoundPage = React.lazy(() => import('@/pages/NotFound'));
-
-// Minimal loading fallback
-const PageLoader = () => (
-  <div className="min-h-screen flex items-center justify-center bg-slate-50">
-    <div className="w-6 h-6 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
-  </div>
-);
-
-// Simplified app layout
-const AppLayout = ({ children }: { children: React.ReactNode }) => {
-  const isMobile = useIsMobile();
-  
-  return (
-    <div className="min-h-screen bg-slate-50">
-      {isMobile && <MobileNavigation />}
-      {children}
-    </div>
-  );
-};
-
-// Main app routes component
-const AppRoutes = () => {
-  const { user } = useAuth();
-
-  return (
-    <Router>
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
-          {/* Root route - immediate redirect */}
-          <Route path="/" element={<Navigate to={user ? "/enhanced-dashboard" : "/auth"} replace />} />
-          
-          {/* Auth routes - no lazy loading */}
-          <Route path="/auth" element={user ? <Navigate to="/enhanced-dashboard" replace /> : <Auth />} />
-          <Route path="/login" element={<Navigate to="/auth" replace />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/update-password" element={<UpdatePassword />} />
-          
-          {/* Critical protected routes - no lazy loading */}
-          <Route path="/enhanced-dashboard" element={
-            <RequireAuth>
-              <AppLayout>
-                <EnhancedDashboard />
-              </AppLayout>
-            </RequireAuth>
-          } />
-          
-          <Route path="/emergencies" element={
-            <RequireAuth>
-              <AppLayout>
-                <EmergenciesPage />
-              </AppLayout>
-            </RequireAuth>
-          } />
-          
-          <Route path="/emergency/create" element={
-            <RequireAuth>
-              <AppLayout>
-                <EmergencyCreate />
-              </AppLayout>
-            </RequireAuth>
-          } />
-          
-          <Route path="/emergency/:id" element={
-            <RequireAuth>
-              <AppLayout>
-                <EmergencyDetailsPage />
-              </AppLayout>
-            </RequireAuth>
-          } />
-          
-          {/* Secondary protected routes - lazy loaded */}
-          <Route path="/profile" element={
-            <RequireAuth>
-              <AppLayout>
-                <ProfilePage />
-              </AppLayout>
-            </RequireAuth>
-          } />
-          
-          <Route path="/responders" element={
-            <RequireAuth>
-              <AppLayout>
-                <RespondersPage />
-              </AppLayout>
-            </RequireAuth>
-          } />
-          
-          <Route path="/hospitals" element={
-            <RequireAuth>
-              <AppLayout>
-                <HospitalsPage />
-              </AppLayout>
-            </RequireAuth>
-          } />
-          
-          <Route path="/settings" element={
-            <RequireAuth>
-              <AppLayout>
-                <SettingsPage />
-              </AppLayout>
-            </RequireAuth>
-          } />
-          
-          <Route path="/communications" element={
-            <RequireAuth>
-              <AppLayout>
-                <CommunicationsPage />
-              </AppLayout>
-            </RequireAuth>
-          } />
-          
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
-      </Suspense>
-      <Toaster />
-    </Router>
-  );
-};
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      gcTime: 1000 * 60 * 30, // 30 minutes
+      retry: 3,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function App() {
   return (
     <ProductionErrorBoundary>
       <HelmetProvider>
-        <AppRoutes />
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <QueryClientProvider client={queryClient}>
+            <AuthProvider>
+              <Router>
+                <div className="min-h-screen bg-background">
+                  <Suspense fallback={<LoadingState />}>
+                    <Routes>
+                      <Route path="/login" element={<LoginPage />} />
+                      <Route path="/" element={
+                        <RequireAuth>
+                          <Dashboard />
+                        </RequireAuth>
+                      } />
+                      <Route path="/enhanced-dashboard" element={
+                        <RequireAuth>
+                          <EnhancedDashboard />
+                        </RequireAuth>
+                      } />
+                      <Route path="/advanced-emergency-management" element={
+                        <RequireAuth>
+                          <AdvancedEmergencyManagement />
+                        </RequireAuth>
+                      } />
+                      <Route path="/emergencies" element={
+                        <RequireAuth>
+                          <EmergenciesPage />
+                        </RequireAuth>
+                      } />
+                      <Route path="/emergency/create" element={
+                        <RequireAuth>
+                          <EmergencyCreate />
+                        </RequireAuth>
+                      } />
+                      <Route path="/emergency/:id" element={
+                        <RequireAuth>
+                          <EmergencyDetailsPage />
+                        </RequireAuth>
+                      } />
+                      <Route path="/responders" element={
+                        <RequireAuth>
+                          <RespondersPage />
+                        </RequireAuth>
+                      } />
+                      <Route path="/responder-tracking" element={
+                        <RequireAuth>
+                          <ResponderTracking />
+                        </RequireAuth>
+                      } />
+                      <Route path="/hospitals" element={
+                        <RequireAuth>
+                          <HospitalsPage />
+                        </RequireAuth>
+                      } />
+                      <Route path="/analytics" element={
+                        <RequireAuth>
+                          <Analytics />
+                        </RequireAuth>
+                      } />
+                      <Route path="/communications" element={
+                        <RequireAuth>
+                          <Communications />
+                        </RequireAuth>
+                      } />
+                      <Route path="/iot-devices" element={
+                        <RequireAuth>
+                          <IoTDevices />
+                        </RequireAuth>
+                      } />
+                      <Route path="/device-registration" element={
+                        <RequireAuth>
+                          <DeviceRegistration />
+                        </RequireAuth>
+                      } />
+                      <Route path="/profile" element={
+                        <RequireAuth>
+                          <ProfilePage />
+                        </RequireAuth>
+                      } />
+                      <Route path="/settings" element={
+                        <RequireAuth>
+                          <SettingsPage />
+                        </RequireAuth>
+                      } />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </Suspense>
+                  <Toaster />
+                </div>
+              </Router>
+            </AuthProvider>
+          </QueryClientProvider>
+        </ThemeProvider>
       </HelmetProvider>
     </ProductionErrorBoundary>
   );
