@@ -1,6 +1,5 @@
-
 /**
- * IndexedDB service for offline data storage and synchronization
+ * IndexedDB service - lazy loaded when needed
  */
 
 // Database name and version
@@ -26,41 +25,48 @@ interface PendingSyncRequest {
   retryCount: number;
 }
 
-// Open or create the database
+// Lazy database initialization - only when first used
+let dbPromise: Promise<IDBDatabase> | null = null;
+
+// Open or create the database only when needed
 export async function openDatabase(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-    
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => resolve(request.result);
-    
-    // Create object stores on database upgrade
-    request.onupgradeneeded = (event: IDBVersionChangeEvent) => {
-      const db = (event.target as IDBOpenDBRequest).result;
+  if (!dbPromise) {
+    dbPromise = new Promise((resolve, reject) => {
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
       
-      // Create stores if they don't exist
-      if (!db.objectStoreNames.contains(StoreNames.EMERGENCIES)) {
-        const emergencyStore = db.createObjectStore(StoreNames.EMERGENCIES, { keyPath: 'id' });
-        emergencyStore.createIndex('status', 'status', { unique: false });
-        emergencyStore.createIndex('priority', 'priority', { unique: false });
-      }
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result);
       
-      if (!db.objectStoreNames.contains(StoreNames.RESPONDERS)) {
-        const responderStore = db.createObjectStore(StoreNames.RESPONDERS, { keyPath: 'id' });
-        responderStore.createIndex('availability', 'availability', { unique: false });
-      }
-      
-      if (!db.objectStoreNames.contains(StoreNames.PENDING_SYNC)) {
-        const pendingSyncStore = db.createObjectStore(StoreNames.PENDING_SYNC, { keyPath: 'id' });
-        pendingSyncStore.createIndex('createdAt', 'createdAt', { unique: false });
-      }
-      
-      if (!db.objectStoreNames.contains(StoreNames.CACHE)) {
-        const cacheStore = db.createObjectStore(StoreNames.CACHE, { keyPath: 'url' });
-        cacheStore.createIndex('expiry', 'expiry', { unique: false });
-      }
-    };
-  });
+      // Create object stores on database upgrade
+      request.onupgradeneeded = (event: IDBVersionChangeEvent) => {
+        const db = (event.target as IDBOpenDBRequest).result;
+        
+        // Create stores if they don't exist
+        if (!db.objectStoreNames.contains(StoreNames.EMERGENCIES)) {
+          const emergencyStore = db.createObjectStore(StoreNames.EMERGENCIES, { keyPath: 'id' });
+          emergencyStore.createIndex('status', 'status', { unique: false });
+          emergencyStore.createIndex('priority', 'priority', { unique: false });
+        }
+        
+        if (!db.objectStoreNames.contains(StoreNames.RESPONDERS)) {
+          const responderStore = db.createObjectStore(StoreNames.RESPONDERS, { keyPath: 'id' });
+          responderStore.createIndex('availability', 'availability', { unique: false });
+        }
+        
+        if (!db.objectStoreNames.contains(StoreNames.PENDING_SYNC)) {
+          const pendingSyncStore = db.createObjectStore(StoreNames.PENDING_SYNC, { keyPath: 'id' });
+          pendingSyncStore.createIndex('createdAt', 'createdAt', { unique: false });
+        }
+        
+        if (!db.objectStoreNames.contains(StoreNames.CACHE)) {
+          const cacheStore = db.createObjectStore(StoreNames.CACHE, { keyPath: 'url' });
+          cacheStore.createIndex('expiry', 'expiry', { unique: false });
+        }
+      };
+    });
+  }
+  
+  return dbPromise;
 }
 
 // Generic function to add item to a store
@@ -257,13 +263,11 @@ export async function cleanExpiredCache(): Promise<void> {
   }
 }
 
-// Initialize database and set up maintenance
+// Initialize database only when explicitly called - not on startup
 export async function initializeIndexedDB(): Promise<void> {
   try {
     await openDatabase();
-    
-    // Clean expired cache entries periodically
-    setInterval(cleanExpiredCache, 15 * 60 * 1000); // 15 minutes
+    console.log('IndexedDB initialized on demand');
   } catch (error) {
     console.error('Failed to initialize IndexedDB:', error);
   }

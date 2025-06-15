@@ -9,28 +9,20 @@ import { Toaster } from '@/components/ui/use-toast';
 import App from './App.tsx';
 import './index.css';
 
-// Optimized React Query client for faster startup
+// Minimal React Query client for faster startup
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      staleTime: 2 * 60 * 1000, // 2 minutes
       networkMode: 'online',
     },
     mutations: {
-      retry: 1,
+      retry: 0, // No retries for mutations to be faster
     },
   },
 });
-
-// Initialize PWA service in background (non-blocking)
-setTimeout(() => {
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/service-worker.js')
-      .catch(error => console.log('SW registration failed:', error));
-  }
-}, 2000);
 
 const rootElement = document.getElementById("root");
 if (!rootElement) {
@@ -39,6 +31,7 @@ if (!rootElement) {
 
 const root = createRoot(rootElement);
 
+// Render immediately without blocking
 root.render(
   <React.StrictMode>
     <ProductionErrorBoundary>
@@ -53,3 +46,12 @@ root.render(
     </ProductionErrorBoundary>
   </React.StrictMode>
 );
+
+// Background initialization (non-blocking)
+setTimeout(() => {
+  // Register service worker in background
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/service-worker.js')
+      .catch(error => console.log('SW registration failed:', error));
+  }
+}, 3000); // Delay to not interfere with initial load
