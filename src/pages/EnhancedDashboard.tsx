@@ -13,6 +13,10 @@ import AdvancedAnalytics from '@/components/analytics/AdvancedAnalytics';
 import IoTDeviceManagement from '@/components/iot/IoTDeviceManagement';
 import PerformanceMonitor from '@/components/performance/PerformanceMonitor';
 import PredictiveAnalytics from '@/components/analytics/PredictiveAnalytics';
+import { RealTimeUpdates } from '@/components/realtime/RealTimeUpdates';
+import { UserManagement } from '@/components/admin/UserManagement';
+import { SystemOptimization } from '@/components/system/SystemOptimization';
+import { AdvancedMonitoring } from '@/components/advanced/AdvancedMonitoring';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Emergency, Responder } from '@/types/emergency-types';
@@ -46,12 +50,13 @@ const EnhancedDashboard = () => {
                 <TabsTrigger value="hospitals">Hospitals</TabsTrigger>
                 <TabsTrigger value="analytics">Analytics</TabsTrigger>
                 <TabsTrigger value="iot">IoT</TabsTrigger>
-                <TabsTrigger value="create">Create</TabsTrigger>
+                <TabsTrigger value="admin">Admin</TabsTrigger>
               </TabsList>
               
               <TabsContent value="overview" className="space-y-6">
                 <ActiveEmergencies />
                 <AvailableResponders />
+                <RealTimeUpdates />
                 <CommunicationHub 
                   emergency={selectedEmergency}
                   responder={selectedResponder}
@@ -92,8 +97,26 @@ const EnhancedDashboard = () => {
                 <IoTDeviceManagement />
               </TabsContent>
               
-              <TabsContent value="create" className="space-y-6">
-                <QuickEmergencyCreate />
+              <TabsContent value="admin" className="space-y-6">
+                <Tabs defaultValue="users" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="users">Users</TabsTrigger>
+                    <TabsTrigger value="system">System</TabsTrigger>
+                    <TabsTrigger value="monitoring">Monitoring</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="users">
+                    <UserManagement />
+                  </TabsContent>
+                  
+                  <TabsContent value="system">
+                    <SystemOptimization />
+                  </TabsContent>
+                  
+                  <TabsContent value="monitoring">
+                    <AdvancedMonitoring />
+                  </TabsContent>
+                </Tabs>
               </TabsContent>
             </Tabs>
           ) : (
@@ -105,11 +128,12 @@ const EnhancedDashboard = () => {
                 
                 {/* Enhanced tabs for desktop */}
                 <Tabs defaultValue="responders" className="w-full">
-                  <TabsList className="grid w-full grid-cols-4">
+                  <TabsList className="grid w-full grid-cols-5">
                     <TabsTrigger value="responders">Responders</TabsTrigger>
                     <TabsTrigger value="hospitals">Hospitals</TabsTrigger>
                     <TabsTrigger value="analytics">Analytics</TabsTrigger>
-                    <TabsTrigger value="iot">IoT Devices</TabsTrigger>
+                    <TabsTrigger value="iot">IoT</TabsTrigger>
+                    <TabsTrigger value="admin">Admin</TabsTrigger>
                   </TabsList>
                   
                   <TabsContent value="responders" className="mt-6">
@@ -145,12 +169,35 @@ const EnhancedDashboard = () => {
                   <TabsContent value="iot" className="mt-6">
                     <IoTDeviceManagement />
                   </TabsContent>
+                  
+                  <TabsContent value="admin" className="mt-6">
+                    <Tabs defaultValue="users" className="w-full">
+                      <TabsList>
+                        <TabsTrigger value="users">User Management</TabsTrigger>
+                        <TabsTrigger value="system">System Optimization</TabsTrigger>
+                        <TabsTrigger value="monitoring">Advanced Monitoring</TabsTrigger>
+                      </TabsList>
+                      
+                      <TabsContent value="users" className="mt-4">
+                        <UserManagement />
+                      </TabsContent>
+                      
+                      <TabsContent value="system" className="mt-4">
+                        <SystemOptimization />
+                      </TabsContent>
+                      
+                      <TabsContent value="monitoring" className="mt-4">
+                        <AdvancedMonitoring />
+                      </TabsContent>
+                    </Tabs>
+                  </TabsContent>
                 </Tabs>
               </div>
               
               {/* Right Column */}
               <div className="space-y-6">
                 <AvailableResponders />
+                <RealTimeUpdates />
                 <CommunicationHub 
                   emergency={selectedEmergency}
                   responder={selectedResponder}
