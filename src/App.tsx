@@ -1,4 +1,3 @@
-
 import { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
@@ -13,7 +12,6 @@ import './App.css';
 
 // Lazy load components
 const Dashboard = lazy(() => import('@/components/dashboard/Dashboard'));
-const LoginPage = lazy(() => import('@/pages/LoginPage'));
 const Auth = lazy(() => import('@/pages/Auth'));
 const EmergenciesPage = lazy(() => import('@/pages/EmergenciesPage'));
 const RespondersPage = lazy(() => import('@/pages/RespondersPage'));
@@ -42,10 +40,9 @@ function App() {
           <AuthProvider>
             <RBACProvider>
               <Router>
-                <div className="min-h-screen bg-background">
+                <div className="min-h-screen bg-slate-50">
                   <Suspense fallback={<LoadingState isLoading={true} />}>
                     <Routes>
-                      <Route path="/login" element={<LoginPage />} />
                       <Route path="/auth" element={<Auth />} />
                       <Route path="/" element={
                         <RequireAuth>

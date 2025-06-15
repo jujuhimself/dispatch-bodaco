@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -183,55 +182,15 @@ const Auth = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="login" className="w-full">
+              <Tabs defaultValue="register" className="w-full">
                 <TabsList className="grid w-full grid-cols-2 mb-6 bg-slate-100">
-                  <TabsTrigger value="login" className="data-[state=active]:bg-white">
-                    Sign In
-                  </TabsTrigger>
                   <TabsTrigger value="register" className="data-[state=active]:bg-white">
                     Register
                   </TabsTrigger>
+                  <TabsTrigger value="login" className="data-[state=active]:bg-white">
+                    Sign In
+                  </TabsTrigger>
                 </TabsList>
-                
-                <TabsContent value="login">
-                  <form onSubmit={handleLogin} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="email" className="text-slate-700">Email Address</Label>
-                      <Input 
-                        id="email" 
-                        type="email" 
-                        value={loginEmail}
-                        onChange={(e) => setLoginEmail(e.target.value)}
-                        placeholder="you@example.com" 
-                        required 
-                        className="border-slate-200 focus:border-red-500"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="password" className="text-slate-700">Password</Label>
-                      <Input 
-                        id="password" 
-                        type="password" 
-                        value={loginPassword}
-                        onChange={(e) => setLoginPassword(e.target.value)}
-                        required 
-                        className="border-slate-200 focus:border-red-500"
-                      />
-                      <div className="text-right">
-                        <Link to="/reset-password" className="text-sm text-red-600 hover:underline">
-                          Forgot password?
-                        </Link>
-                      </div>
-                    </div>
-                    <Button 
-                      type="submit" 
-                      className="w-full bg-gradient-to-r from-red-600 to-blue-600 hover:from-red-700 hover:to-blue-700 text-white font-medium py-2.5" 
-                      disabled={isLoading}
-                    >
-                      {isLoading ? 'Signing in...' : 'Sign In'}
-                    </Button>
-                  </form>
-                </TabsContent>
                 
                 <TabsContent value="register">
                   <form onSubmit={handleRegister} className="space-y-4">
@@ -318,6 +277,46 @@ const Auth = () => {
                       disabled={isLoading}
                     >
                       {isLoading ? 'Creating Account...' : 'Create Account'}
+                    </Button>
+                  </form>
+                </TabsContent>
+                
+                <TabsContent value="login">
+                  <form onSubmit={handleLogin} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="email" className="text-slate-700">Email Address</Label>
+                      <Input 
+                        id="email" 
+                        type="email" 
+                        value={loginEmail}
+                        onChange={(e) => setLoginEmail(e.target.value)}
+                        placeholder="you@example.com" 
+                        required 
+                        className="border-slate-200 focus:border-red-500"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="password" className="text-slate-700">Password</Label>
+                      <Input 
+                        id="password" 
+                        type="password" 
+                        value={loginPassword}
+                        onChange={(e) => setLoginPassword(e.target.value)}
+                        required 
+                        className="border-slate-200 focus:border-red-500"
+                      />
+                      <div className="text-right">
+                        <Link to="/reset-password" className="text-sm text-red-600 hover:underline">
+                          Forgot password?
+                        </Link>
+                      </div>
+                    </div>
+                    <Button 
+                      type="submit" 
+                      className="w-full bg-gradient-to-r from-red-600 to-blue-600 hover:from-red-700 hover:to-blue-700 text-white font-medium py-2.5" 
+                      disabled={isLoading}
+                    >
+                      {isLoading ? 'Signing in...' : 'Sign In'}
                     </Button>
                   </form>
                 </TabsContent>
