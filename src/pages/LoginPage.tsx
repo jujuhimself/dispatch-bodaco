@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -24,7 +25,7 @@ const LoginPage: React.FC = () => {
     
     try {
       await signIn(email, password);
-      navigate('/dashboard');
+      navigate('/');
       toast.success('Successfully logged in');
     } catch (error: any) {
       toast.error(error.message || 'Error during sign in');
@@ -39,16 +40,16 @@ const LoginPage: React.FC = () => {
       <div className="w-full max-w-md">
         <div className="mb-8 flex justify-center">
           <div className="flex items-center space-x-3">
-            <Ambulance className="h-10 w-10 text-emergency-600" />
-            <h1 className="text-4xl font-bold text-emergency-700 flex items-center">
-              <span className="text-emergency-600">Respond</span>
+            <Ambulance className="h-10 w-10 text-red-600" />
+            <h1 className="text-4xl font-bold text-red-700 flex items-center">
+              <span className="text-red-600">Respond</span>
             </h1>
           </div>
         </div>
         
         <Card className="bg-white/90 backdrop-blur-lg border border-gray-100 shadow-lg">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl bg-gradient-to-r from-emergency-600 to-purple-600 bg-clip-text text-transparent">Welcome Back</CardTitle>
+            <CardTitle className="text-2xl bg-gradient-to-r from-red-600 to-purple-600 bg-clip-text text-transparent">Welcome Back</CardTitle>
             <CardDescription>Emergency Response Management System</CardDescription>
           </CardHeader>
           <CardContent>
@@ -83,14 +84,14 @@ const LoginPage: React.FC = () => {
                         className="bg-white/70"
                       />
                       <div className="text-right">
-                        <Link to="/reset-password" className="text-sm text-emergency-600 hover:underline">
+                        <Link to="/reset-password" className="text-sm text-red-600 hover:underline">
                           Forgot password?
                         </Link>
                       </div>
                     </div>
                     <Button 
                       type="submit" 
-                      className="w-full bg-gradient-to-r from-emergency-600 to-purple-600 hover:from-emergency-700 hover:to-purple-700" 
+                      className="w-full bg-gradient-to-r from-red-600 to-purple-600 hover:from-red-700 hover:to-purple-700" 
                       disabled={isLoading}
                     >
                       {isLoading ? 'Signing in...' : 'Sign In'}
@@ -106,7 +107,7 @@ const LoginPage: React.FC = () => {
             </p>
             <p>
               Don't have an account?{' '}
-              <Link to="/auth" className="text-emergency-600 hover:underline font-medium">
+              <Link to="/auth" className="text-red-600 hover:underline font-medium">
                 Sign up
               </Link>
             </p>

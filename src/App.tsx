@@ -1,11 +1,11 @@
 
 import { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { HelmetProvider } from 'react-helmet-async';
 import { ThemeProvider } from 'next-themes';
 import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { RBACProvider } from '@/services/rbac-service';
 import RequireAuth from '@/components/auth/RequireAuth';
 import { ProductionErrorBoundary } from '@/components/error/ProductionErrorBoundary';
 import { LoadingState } from '@/components/ui/loading-state';
@@ -34,24 +34,13 @@ const EnhancedUX = lazy(() => import('@/pages/EnhancedUX'));
 const AIEnhancedOperations = lazy(() => import('@/pages/AIEnhancedOperations'));
 const SystemIntegrationPage = lazy(() => import('@/pages/SystemIntegrationPage'));
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      gcTime: 1000 * 60 * 30, // 30 minutes
-      retry: 3,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
-
 function App() {
   return (
     <ProductionErrorBoundary>
       <HelmetProvider>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <QueryClientProvider client={queryClient}>
-            <AuthProvider>
+          <AuthProvider>
+            <RBACProvider>
               <Router>
                 <div className="min-h-screen bg-background">
                   <Suspense fallback={<LoadingState isLoading={true} />}>
@@ -154,8 +143,8 @@ function App() {
                   <Toaster />
                 </div>
               </Router>
-            </AuthProvider>
-          </QueryClientProvider>
+            </RBACProvider>
+          </AuthProvider>
         </ThemeProvider>
       </HelmetProvider>
     </ProductionErrorBoundary>

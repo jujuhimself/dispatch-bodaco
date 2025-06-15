@@ -2,8 +2,6 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider } from '@/contexts/AuthContext';
-import { RBACProvider } from '@/services/rbac-service';
 import { ProductionErrorBoundary } from '@/components/error/ProductionErrorBoundary';
 import App from './App.tsx';
 import './index.css';
@@ -30,16 +28,12 @@ if (!rootElement) {
 
 const root = createRoot(rootElement);
 
-// Ensure proper React initialization with strict provider order
+// Ensure proper React initialization with correct provider order
 root.render(
   <React.StrictMode>
     <ProductionErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <RBACProvider>
-            <App />
-          </RBACProvider>
-        </AuthProvider>
+        <App />
       </QueryClientProvider>
     </ProductionErrorBoundary>
   </React.StrictMode>
