@@ -22,7 +22,8 @@ import {
   Building2,
   MessageSquare,
   BarChart3,
-  Smartphone
+  Smartphone,
+  Bike
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
@@ -80,18 +81,18 @@ export function AppHeader({ className }: AppHeaderProps) {
 
   return (
     <header className={cn(
-      "bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm",
+      "bg-gradient-to-r from-purple-600 to-purple-700 border-b border-purple-800 px-4 py-3 flex items-center justify-between shadow-lg",
       className
     )}>
       {/* Logo and Title */}
       <div className="flex items-center space-x-4">
         <Link to="/" className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">B&C</span>
+          <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-md">
+            <Bike className="h-6 w-6 text-purple-600" />
           </div>
           <div>
-            <h1 className="text-lg font-semibold text-gray-900">Boda & Co</h1>
-            <p className="text-xs text-gray-500">Emergency Response Platform</p>
+            <h1 className="text-xl font-bold text-white">Boda & Co</h1>
+            <p className="text-xs text-purple-100">Emergency Response Platform</p>
           </div>
         </Link>
       </div>
@@ -104,7 +105,7 @@ export function AppHeader({ className }: AppHeaderProps) {
             <Link
               key={item.href}
               to={item.href}
-              className="flex items-center space-x-1 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+              className="flex items-center space-x-1 px-3 py-2 text-sm text-purple-100 hover:text-white hover:bg-purple-500/30 rounded-md transition-colors"
             >
               <Icon className="h-4 w-4" />
               <span>{item.label}</span>
@@ -116,7 +117,7 @@ export function AppHeader({ className }: AppHeaderProps) {
       {/* Right side - Notifications and User Menu */}
       <div className="flex items-center space-x-3">
         {/* Notifications */}
-        <Button variant="ghost" size="icon" className="relative">
+        <Button variant="ghost" size="icon" className="relative text-purple-100 hover:text-white hover:bg-purple-500/30">
           <Bell className="h-5 w-5" />
           <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full text-xs"></span>
         </Button>
@@ -124,15 +125,15 @@ export function AppHeader({ className }: AppHeaderProps) {
         {/* User Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex items-center space-x-2 p-1">
+            <Button variant="ghost" className="flex items-center space-x-2 p-1 text-purple-100 hover:text-white hover:bg-purple-500/30">
               <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-red-100 text-red-600 text-sm">
+                <AvatarFallback className="bg-white text-purple-600 text-sm font-medium">
                   {getInitials(user?.name, user?.email)}
                 </AvatarFallback>
               </Avatar>
               <div className="hidden md:block text-left">
-                <p className="text-sm font-medium">{user?.name || user?.email || 'User'}</p>
-                <p className="text-xs text-gray-500 capitalize">{user?.role || 'user'}</p>
+                <p className="text-sm font-medium text-white">{user?.name || user?.email || 'User'}</p>
+                <p className="text-xs text-purple-200 capitalize">{user?.role || 'user'}</p>
               </div>
             </Button>
           </DropdownMenuTrigger>

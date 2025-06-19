@@ -1,15 +1,17 @@
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { AppHeader } from '@/components/layout/AppHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertCircle, Search } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { AlertCircle, Search, Users, MapPin, Phone, Clock, Filter, Plus } from 'lucide-react';
 import { Loader } from '@/components/ui/loader';
 import { fetchResponders } from '@/services/emergency-service';
 import { Responder } from '@/types/emergency-types';
-import { Badge } from '@/components/ui/badge';
+import { formatDistanceToNow } from 'date-fns';
 
 const Responders = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -23,21 +25,15 @@ const Responders = () => {
   
   // Filter responders based on search term and active tab
   const filteredResponders = data?.filter((responder: Responder) => {
-    // Filter by search term
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch = responder.name.toLowerCase().includes(searchLower) || 
                          responder.type.toLowerCase().includes(searchLower) ||
                          (responder.phone && responder.phone.includes(searchTerm)) ||
                          (responder.current_location && responder.current_location.toLowerCase().includes(searchLower));
     
-    // Filter by tab
     if (activeTab === 'all') return matchesSearch;
     return matchesSearch && responder.status === activeTab;
   }) || [];
-  
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-  };
   
   // Count responders by status for the tab badges
   const responderCounts = {
@@ -47,165 +43,194 @@ const Responders = () => {
     off_duty: data?.filter(r => r.status === 'off_duty').length || 0,
   };
   
-  // Format the date
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleString();
-  };
-  
-  // Get responder type display
-  const getResponderTypeDisplay = (type: string) => {
-    switch (type) {
-      case 'ambulance':
-        return 'Ambulance';
-      case 'bajaj':
-        return 'Bajaj';
-      case 'traffic':
-        return 'Traffic Police';
-      default:
-        return type;
-    }
-  };
-  
-  // Get status badge styling
   const getStatusBadge = (status: string | null) => {
     if (!status) return <Badge variant="outline">Unknown</Badge>;
     
     switch (status) {
       case 'available':
-        return <Badge className="bg-green-500">Available</Badge>;
+        return <Badge className="bg-green-500 text-white">Available</Badge>;
       case 'on_call':
-        return <Badge className="bg-orange-500">On Call</Badge>;
+        return <Badge className="bg-orange-500 text-white">On Call</Badge>;
       case 'off_duty':
-        return <Badge className="bg-gray-500">Off Duty</Badge>;
+        return <Badge className="bg-gray-500 text-white">Off Duty</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  const getTypeBadge = (type: string) => {
+    switch (type) {
+      case 'ambulance':
+        return <Badge className="bg-red-100 text-red-800">Ambulance</Badge>;
+      case 'bajaj':
+        return <Badge className="bg-blue-100 text-blue-800">Bajaj</Badge>;
+      case 'traffic':
+        return <Badge className="bg-purple-100 text-purple-800">Traffic Police</Badge>;
+      default:
+        return <Badge variant="outline">{type}</Badge>;
     }
   };
   
   if (isLoading) {
     return (
-      <div className="container mx-auto p-4 flex justify-center items-center min-h-[50vh]">
-        <Loader />
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-purple-50">
+        <AppHeader />
+        <div className="container mx-auto p-4 flex justify-center items-center min-h-[50vh]">
+          <Loader />
+        </div>
       </div>
     );
   }
   
   if (error) {
     return (
-      <div className="container mx-auto p-4 text-center">
-        <div className="flex justify-center items-center gap-2 text-emergency-600">
-          <AlertCircle />
-          <h2>Failed to load responders</h2>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-purple-50">
+        <AppHeader />
+        <div className="container mx-auto p-4 text-center">
+          <div className="flex justify-center items-center gap-2 text-red-600">
+            <AlertCircle />
+            <h2>Failed to load responders</h2>
+          </div>
+          <Button className="mt-4" onClick={() => refetch()}>Retry</Button>
         </div>
-        <Button className="mt-4" onClick={() => refetch()}>Retry</Button>
       </div>
     );
   }
   
   return (
-    <div className="container mx-auto p-4 space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-        <h1 className="text-2xl font-bold">Responders</h1>
-        
-        <div className="relative flex-grow sm:flex-grow-0">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search responders..."
-            className="pl-8 w-full sm:w-64"
-            value={searchTerm}
-            onChange={handleSearch}
-          />
-        </div>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-purple-50">
+      <AppHeader />
       
-      <Card>
-        <CardHeader className="pb-2">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList>
-              <TabsTrigger value="all">
-                All
-                <Badge className="ml-2 bg-gray-500">{responderCounts.all}</Badge>
-              </TabsTrigger>
-              <TabsTrigger value="available">
-                Available
-                <Badge className="ml-2 bg-green-500">{responderCounts.available}</Badge>
-              </TabsTrigger>
-              <TabsTrigger value="on_call">
-                On Call
-                <Badge className="ml-2 bg-orange-500">{responderCounts.on_call}</Badge>
-              </TabsTrigger>
-              <TabsTrigger value="off_duty">
-                Off Duty
-                <Badge className="ml-2 bg-gray-500">{responderCounts.off_duty}</Badge>
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </CardHeader>
-        <CardContent>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="hidden">
-            <TabsContent value="all">
-              {/* Content rendered in the main component */}
-            </TabsContent>
-            <TabsContent value="available">
-              {/* Content rendered in the main component */}
-            </TabsContent>
-            <TabsContent value="on_call">
-              {/* Content rendered in the main component */}
-            </TabsContent>
-            <TabsContent value="off_duty">
-              {/* Content rendered in the main component */}
-            </TabsContent>
-          </Tabs>
+      <div className="container mx-auto p-4 md:p-6 space-y-6">
+        {/* Page Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
+              <Users className="h-8 w-8 text-purple-600" />
+              Responders Management
+            </h1>
+            <p className="text-gray-600 mt-1">Monitor and manage emergency responders in real-time</p>
+          </div>
           
-          {filteredResponders.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">No responders found.</p>
+          <div className="flex gap-2">
+            <Button className="bg-purple-600 hover:bg-purple-700">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Responder
+            </Button>
+          </div>
+        </div>
+
+        {/* Search and Filters */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Filter className="h-5 w-5" />
+              Search & Filter
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="Search by name, type, location..."
+                  className="pl-8"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
             </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                    <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                    <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-                    <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-                    <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Active</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredResponders.map((responder) => (
-                    <tr key={responder.id} className="hover:bg-gray-50">
-                      <td className="px-3 py-4 whitespace-nowrap">
-                        <div className="font-medium text-gray-900">{responder.name}</div>
-                      </td>
-                      <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-700">
-                        {getResponderTypeDisplay(responder.type)}
-                      </td>
-                      <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-700">
-                        {responder.phone || 'N/A'}
-                      </td>
-                      <td className="px-3 py-4 whitespace-nowrap">
-                        {getStatusBadge(responder.status)}
-                      </td>
-                      <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-700">
-                        {responder.current_location || 'Unknown'}
-                      </td>
-                      <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formatDate(responder.last_active)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+        
+        {/* Responders List */}
+        <Card>
+          <CardHeader>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid grid-cols-4 w-fit">
+                <TabsTrigger value="all" className="flex items-center gap-2">
+                  All
+                  <Badge variant="secondary">{responderCounts.all}</Badge>
+                </TabsTrigger>
+                <TabsTrigger value="available" className="flex items-center gap-2">
+                  Available
+                  <Badge className="bg-green-500">{responderCounts.available}</Badge>
+                </TabsTrigger>
+                <TabsTrigger value="on_call" className="flex items-center gap-2">
+                  On Call
+                  <Badge className="bg-orange-500">{responderCounts.on_call}</Badge>
+                </TabsTrigger>
+                <TabsTrigger value="off_duty" className="flex items-center gap-2">
+                  Off Duty
+                  <Badge className="bg-gray-500">{responderCounts.off_duty}</Badge>
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </CardHeader>
+          <CardContent>
+            {filteredResponders.length === 0 ? (
+              <div className="text-center py-12">
+                <Users className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                <p className="text-xl font-medium text-gray-600 mb-2">No responders found</p>
+                <p className="text-gray-500">Try adjusting your search criteria</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredResponders.map((responder) => (
+                  <Card key={responder.id} className="hover:shadow-md transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <h3 className="font-semibold text-lg">{responder.name}</h3>
+                          <div className="flex gap-2 mt-1">
+                            {getTypeBadge(responder.type)}
+                            {getStatusBadge(responder.status)}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2 text-sm text-gray-600">
+                        {responder.phone && (
+                          <div className="flex items-center gap-2">
+                            <Phone className="h-4 w-4" />
+                            <span>{responder.phone}</span>
+                          </div>
+                        )}
+                        
+                        {responder.current_location && (
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4" />
+                            <span>{responder.current_location}</span>
+                          </div>
+                        )}
+                        
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4" />
+                          <span>
+                            Last active: {formatDistanceToNow(new Date(responder.last_active), { addSuffix: true })}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-4 pt-3 border-t flex gap-2">
+                        <Button size="sm" variant="outline" className="flex-1">
+                          <Phone className="h-4 w-4 mr-1" />
+                          Call
+                        </Button>
+                        <Button size="sm" variant="outline" className="flex-1">
+                          <MapPin className="h-4 w-4 mr-1" />
+                          Track
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

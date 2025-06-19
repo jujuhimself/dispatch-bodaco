@@ -7,12 +7,53 @@ import AvailableResponders from './AvailableResponders';
 import HospitalStatus from './HospitalStatus';
 import EmergencyMap from './EmergencyMap';
 import RecentCommunications from './RecentCommunications';
+import { Bike, Shield, Users, AlertTriangle } from 'lucide-react';
 
 const Dashboard = () => {
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-purple-50">
       {/* App Header */}
       <AppHeader />
+      
+      {/* Hero Section */}
+      <div className="bg-gradient-to-r from-purple-600 to-purple-700 text-white py-8">
+        <div className="container mx-auto px-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
+                <Bike className="h-8 w-8" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold">Emergency Response Command</h1>
+                <p className="text-purple-100 text-lg">Real-time monitoring and coordination</p>
+              </div>
+            </div>
+            <div className="hidden md:flex space-x-6">
+              <div className="text-center">
+                <div className="flex items-center justify-center space-x-2 text-2xl font-bold">
+                  <Shield className="h-6 w-6 text-green-300" />
+                  <span>24/7</span>
+                </div>
+                <p className="text-sm text-purple-200">Active</p>
+              </div>
+              <div className="text-center">
+                <div className="flex items-center justify-center space-x-2 text-2xl font-bold">
+                  <Users className="h-6 w-6 text-blue-300" />
+                  <span>15</span>
+                </div>
+                <p className="text-sm text-purple-200">Responders</p>
+              </div>
+              <div className="text-center">
+                <div className="flex items-center justify-center space-x-2 text-2xl font-bold">
+                  <AlertTriangle className="h-6 w-6 text-yellow-300" />
+                  <span>3</span>
+                </div>
+                <p className="text-sm text-purple-200">Active</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       
       {/* Main Content */}
       <main className="p-4 md:p-6 space-y-6">
