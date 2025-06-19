@@ -1,7 +1,6 @@
 
 import React from 'react';
-import { AppHeader } from '@/components/layout/AppHeader';
-import { MobileNavigation } from '@/components/layout/MobileNavigation';
+import { BackNavigation } from '@/components/navigation/BackNavigation';
 import EmergencyStats from './EmergencyStats';
 import ActiveEmergencies from './ActiveEmergencies';
 import AvailableResponders from './AvailableResponders';
@@ -13,11 +12,7 @@ import { Bike, Shield, Users, AlertTriangle } from 'lucide-react';
 const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50">
-      {/* App Header */}
-      <AppHeader />
-      
-      {/* Mobile Navigation */}
-      <MobileNavigation />
+      <BackNavigation title="Dashboard" showHome={false} />
       
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white py-8">
