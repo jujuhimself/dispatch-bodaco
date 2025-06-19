@@ -28,13 +28,13 @@ export function BackNavigation({
   const pathSegments = location.pathname.split('/').filter(Boolean);
   
   return (
-    <div className={cn("flex flex-col space-y-2 mb-4", className)}>
+    <div className={cn("flex flex-col space-y-2 mb-4 bg-white p-4 rounded-lg shadow-sm border", className)}>
       <div className="flex items-center space-x-2">
         <Button 
           variant="outline" 
           size="sm" 
           onClick={handleBack} 
-          className="flex items-center"
+          className="flex items-center hover:bg-orange-50 border-orange-200"
         >
           <ChevronLeft className="h-4 w-4 mr-1" /> Back
         </Button>
@@ -44,9 +44,9 @@ export function BackNavigation({
             variant="ghost" 
             size="sm" 
             asChild
-            className="flex items-center"
+            className="flex items-center hover:bg-orange-50"
           >
-            <Link to="/dashboard">
+            <Link to="/">
               <Home className="h-4 w-4 mr-1" /> Home
             </Link>
           </Button>
@@ -54,8 +54,8 @@ export function BackNavigation({
       </div>
       
       {/* Breadcrumb path */}
-      <div className="flex items-center text-sm text-muted-foreground">
-        <Link to="/" className="hover:text-foreground">Home</Link>
+      <div className="flex items-center text-sm text-gray-600">
+        <Link to="/" className="hover:text-orange-600 transition-colors">Home</Link>
         {pathSegments.map((segment, index) => {
           // Create path up to this segment
           const path = `/${pathSegments.slice(0, index + 1).join('/')}`;
@@ -67,11 +67,11 @@ export function BackNavigation({
           
           return (
             <React.Fragment key={path}>
-              <span className="mx-1">/</span>
+              <span className="mx-1 text-gray-400">/</span>
               {isLast ? (
-                <span className="font-medium text-foreground">{title || name}</span>
+                <span className="font-medium text-orange-600">{title || name}</span>
               ) : (
-                <Link to={path} className="hover:text-foreground">{name}</Link>
+                <Link to={path} className="hover:text-orange-600 transition-colors">{name}</Link>
               )}
             </React.Fragment>
           );

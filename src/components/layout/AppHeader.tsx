@@ -81,31 +81,29 @@ export function AppHeader({ className }: AppHeaderProps) {
 
   return (
     <header className={cn(
-      "bg-gradient-to-r from-purple-600 to-purple-700 border-b border-purple-800 px-4 py-3 flex items-center justify-between shadow-lg",
+      "bg-gradient-to-r from-orange-500 to-red-500 border-b border-red-600 px-4 py-3 flex items-center justify-between shadow-lg relative z-50",
       className
     )}>
       {/* Logo and Title */}
       <div className="flex items-center space-x-4">
         <Link to="/" className="flex items-center space-x-2">
-          <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-md">
-            <Bike className="h-6 w-6 text-purple-600" />
-          </div>
+          <Bike className="h-8 w-8 text-red-600" />
           <div>
             <h1 className="text-xl font-bold text-white">Boda & Co</h1>
-            <p className="text-xs text-purple-100">Emergency Response Platform</p>
+            <p className="text-xs text-orange-100">Emergency Response Platform</p>
           </div>
         </Link>
       </div>
 
-      {/* Navigation Menu */}
-      <nav className="hidden md:flex items-center space-x-1">
+      {/* Navigation Menu - Hidden on mobile to avoid overlap */}
+      <nav className="hidden lg:flex items-center space-x-1">
         {navigationItems.map((item) => {
           const Icon = item.icon;
           return (
             <Link
               key={item.href}
               to={item.href}
-              className="flex items-center space-x-1 px-3 py-2 text-sm text-purple-100 hover:text-white hover:bg-purple-500/30 rounded-md transition-colors"
+              className="flex items-center space-x-1 px-3 py-2 text-sm text-orange-100 hover:text-white hover:bg-orange-600/30 rounded-md transition-colors"
             >
               <Icon className="h-4 w-4" />
               <span>{item.label}</span>
@@ -117,27 +115,27 @@ export function AppHeader({ className }: AppHeaderProps) {
       {/* Right side - Notifications and User Menu */}
       <div className="flex items-center space-x-3">
         {/* Notifications */}
-        <Button variant="ghost" size="icon" className="relative text-purple-100 hover:text-white hover:bg-purple-500/30">
+        <Button variant="ghost" size="icon" className="relative text-orange-100 hover:text-white hover:bg-orange-600/30">
           <Bell className="h-5 w-5" />
-          <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full text-xs"></span>
+          <span className="absolute -top-1 -right-1 h-3 w-3 bg-yellow-400 rounded-full text-xs"></span>
         </Button>
 
         {/* User Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex items-center space-x-2 p-1 text-purple-100 hover:text-white hover:bg-purple-500/30">
+            <Button variant="ghost" className="flex items-center space-x-2 p-1 text-orange-100 hover:text-white hover:bg-orange-600/30">
               <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-white text-purple-600 text-sm font-medium">
+                <AvatarFallback className="bg-white text-red-600 text-sm font-medium">
                   {getInitials(user?.name, user?.email)}
                 </AvatarFallback>
               </Avatar>
               <div className="hidden md:block text-left">
                 <p className="text-sm font-medium text-white">{user?.name || user?.email || 'User'}</p>
-                <p className="text-xs text-purple-200 capitalize">{user?.role || 'user'}</p>
+                <p className="text-xs text-orange-200 capitalize">{user?.role || 'user'}</p>
               </div>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 bg-white border border-gray-200 shadow-lg">
+          <DropdownMenuContent align="end" className="w-56 bg-white border border-gray-200 shadow-lg z-50">
             <div className="px-3 py-2 border-b border-gray-100">
               <p className="text-sm font-medium">{user?.name || user?.email || 'User'}</p>
               <p className="text-xs text-gray-500">{user?.email || ''}</p>

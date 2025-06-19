@@ -12,7 +12,9 @@ import {
   MessageSquare,
   Settings,
   Activity,
-  Smartphone
+  Smartphone,
+  X,
+  Bike
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -60,19 +62,34 @@ export const MobileNavigation = () => {
   };
 
   return (
-    <div className="md:hidden">
+    <div className="lg:hidden fixed top-4 left-4 z-50">
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild>
-          <Button variant="ghost" size="icon" className="fixed top-4 left-4 z-50">
+          <Button variant="ghost" size="icon" className="bg-white/10 text-white hover:bg-white/20">
             <Menu className="h-6 w-6" />
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="w-72 p-0">
+        <SheetContent side="left" className="w-72 p-0 bg-white">
           <div className="flex flex-col h-full">
             {/* Header */}
-            <div className="p-6 border-b">
-              <h2 className="text-lg font-semibold text-red-600">Boda & Co</h2>
-              <p className="text-sm text-gray-600">Emergency Response</p>
+            <div className="p-6 border-b bg-gradient-to-r from-orange-500 to-red-500">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Bike className="h-6 w-6 text-red-600" />
+                  <div>
+                    <h2 className="text-lg font-semibold text-white">Boda & Co</h2>
+                    <p className="text-sm text-orange-100">Emergency Response</p>
+                  </div>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => setOpen(false)}
+                  className="text-white hover:bg-white/20"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
             </div>
 
             {/* Navigation */}
@@ -89,7 +106,7 @@ export const MobileNavigation = () => {
                     className={cn(
                       "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm transition-colors",
                       isActive 
-                        ? "bg-red-50 text-red-700 border-l-4 border-red-500" 
+                        ? "bg-orange-50 text-orange-700 border-l-4 border-orange-500" 
                         : "text-gray-700 hover:bg-gray-100"
                     )}
                   >
@@ -101,9 +118,9 @@ export const MobileNavigation = () => {
             </nav>
 
             {/* User Info & Logout */}
-            <div className="p-4 border-t">
+            <div className="p-4 border-t bg-gray-50">
               <div className="mb-4">
-                <p className="text-sm font-medium">{user?.name || user?.email || 'User'}</p>
+                <p className="text-sm font-medium text-gray-900">{user?.name || user?.email || 'User'}</p>
                 <p className="text-xs text-gray-500 capitalize">{user?.role || 'user'}</p>
               </div>
               <Button 

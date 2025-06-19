@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { AppHeader } from '@/components/layout/AppHeader';
+import { MobileNavigation } from '@/components/layout/MobileNavigation';
 import EmergencyStats from './EmergencyStats';
 import ActiveEmergencies from './ActiveEmergencies';
 import AvailableResponders from './AvailableResponders';
@@ -11,21 +12,24 @@ import { Bike, Shield, Users, AlertTriangle } from 'lucide-react';
 
 const Dashboard = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50">
       {/* App Header */}
       <AppHeader />
       
+      {/* Mobile Navigation */}
+      <MobileNavigation />
+      
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-purple-600 to-purple-700 text-white py-8">
+      <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white py-8">
         <div className="container mx-auto px-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
-                <Bike className="h-8 w-8" />
+                <Bike className="h-8 w-8 text-red-600" />
               </div>
               <div>
                 <h1 className="text-3xl font-bold">Emergency Response Command</h1>
-                <p className="text-purple-100 text-lg">Real-time monitoring and coordination</p>
+                <p className="text-orange-100 text-lg">Real-time monitoring and coordination</p>
               </div>
             </div>
             <div className="hidden md:flex space-x-6">
@@ -34,21 +38,21 @@ const Dashboard = () => {
                   <Shield className="h-6 w-6 text-green-300" />
                   <span>24/7</span>
                 </div>
-                <p className="text-sm text-purple-200">Active</p>
+                <p className="text-sm text-orange-200">Active</p>
               </div>
               <div className="text-center">
                 <div className="flex items-center justify-center space-x-2 text-2xl font-bold">
                   <Users className="h-6 w-6 text-blue-300" />
                   <span>15</span>
                 </div>
-                <p className="text-sm text-purple-200">Responders</p>
+                <p className="text-sm text-orange-200">Responders</p>
               </div>
               <div className="text-center">
                 <div className="flex items-center justify-center space-x-2 text-2xl font-bold">
                   <AlertTriangle className="h-6 w-6 text-yellow-300" />
                   <span>3</span>
                 </div>
-                <p className="text-sm text-purple-200">Active</p>
+                <p className="text-sm text-orange-200">Active</p>
               </div>
             </div>
           </div>
