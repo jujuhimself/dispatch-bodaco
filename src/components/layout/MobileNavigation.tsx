@@ -75,7 +75,7 @@ export const MobileNavigation = () => {
             <div className="p-6 border-b bg-gradient-to-r from-orange-500 to-red-500">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  <Bike className="h-6 w-6 text-red-600" />
+                  <Bike className="h-6 w-6 text-red-700" />
                   <div>
                     <h2 className="text-lg font-semibold text-white">Boda & Co</h2>
                     <p className="text-sm text-orange-100">Emergency Response</p>
@@ -127,7 +127,7 @@ export const MobileNavigation = () => {
                 variant="outline" 
                 size="sm" 
                 onClick={handleLogout}
-                className="w-full"
+                className="w-full border-orange-200 hover:bg-orange-50"
               >
                 Sign Out
               </Button>

@@ -87,7 +87,7 @@ export function AppHeader({ className }: AppHeaderProps) {
       {/* Logo and Title */}
       <div className="flex items-center space-x-4">
         <Link to="/" className="flex items-center space-x-2">
-          <Bike className="h-8 w-8 text-red-600" />
+          <Bike className="h-8 w-8 text-red-700" />
           <div>
             <h1 className="text-xl font-bold text-white">Boda & Co</h1>
             <p className="text-xs text-orange-100">Emergency Response Platform</p>

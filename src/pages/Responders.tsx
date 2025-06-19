@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { BackNavigation } from '@/components/navigation/BackNavigation';
-import { User, Phone, MapPin, Clock, Shield, Search, Filter } from 'lucide-react';
+import { User, Phone, MapPin, Clock, Shield, Search } from 'lucide-react';
 
 interface Responder {
   id: string;
@@ -127,7 +127,7 @@ const RespondersPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50">
+    <div className="min-h-screen">
       <BackNavigation title="Responder Management" />
       
       <div className="container mx-auto p-4 space-y-6">

@@ -91,9 +91,7 @@ const EmergenciesPage: React.FC = () => {
   };
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50">
-      <BackNavigation title="Emergency Management" />
-      
+    <div className="min-h-screen">
       <div className="container mx-auto p-4 space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
           <h1 className="text-2xl font-bold text-gray-900">Emergency Management</h1>

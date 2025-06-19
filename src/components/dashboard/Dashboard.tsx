@@ -1,31 +1,23 @@
 
 import React from 'react';
-import { BackNavigation } from '@/components/navigation/BackNavigation';
 import EmergencyStats from './EmergencyStats';
 import ActiveEmergencies from './ActiveEmergencies';
 import AvailableResponders from './AvailableResponders';
 import HospitalStatus from './HospitalStatus';
 import EmergencyMap from './EmergencyMap';
 import RecentCommunications from './RecentCommunications';
-import { Bike, Shield, Users, AlertTriangle } from 'lucide-react';
+import { Shield, Users, AlertTriangle } from 'lucide-react';
 
 const Dashboard = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50">
-      <BackNavigation title="Dashboard" showHome={false} />
-      
+    <div className="min-h-screen">
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white py-8">
         <div className="container mx-auto px-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
-                <Bike className="h-8 w-8 text-red-600" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold">Emergency Response Command</h1>
-                <p className="text-orange-100 text-lg">Real-time monitoring and coordination</p>
-              </div>
+            <div>
+              <h1 className="text-3xl font-bold">Emergency Response Command</h1>
+              <p className="text-orange-100 text-lg">Real-time monitoring and coordination</p>
             </div>
             <div className="hidden md:flex space-x-6">
               <div className="text-center">
