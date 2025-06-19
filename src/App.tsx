@@ -15,7 +15,7 @@ import './App.css';
 const Dashboard = lazy(() => import('@/components/dashboard/Dashboard'));
 const Auth = lazy(() => import('@/pages/Auth'));
 const EmergenciesPage = lazy(() => import('@/pages/EmergenciesPage'));
-const RespondersPage = lazy(() => import('@/pages/RespondersPage'));
+const Responders = lazy(() => import('@/pages/Responders'));
 const HospitalsPage = lazy(() => import('@/pages/HospitalsPage'));
 const Analytics = lazy(() => import('@/pages/Analytics'));
 const Communications = lazy(() => import('@/pages/Communications'));
@@ -92,7 +92,7 @@ function App() {
                       } />
                       <Route path="/responders" element={
                         <RequireAuth>
-                          <RespondersPage />
+                          <Responders />
                         </RequireAuth>
                       } />
                       <Route path="/responder-tracking" element={
