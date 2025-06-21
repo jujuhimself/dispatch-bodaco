@@ -9,6 +9,36 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          message: string
+          notification_type: string
+          read: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message: string
+          notification_type?: string
+          read?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message?: string
+          notification_type?: string
+          read?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       agencies: {
         Row: {
           active: boolean | null
@@ -599,6 +629,9 @@ export type Database = {
       }
       profiles: {
         Row: {
+          approval_status: string | null
+          approved_at: string | null
+          approved_by: string | null
           avatar_url: string | null
           created_at: string | null
           email: string | null
@@ -606,9 +639,13 @@ export type Database = {
           last_sign_in_at: string | null
           name: string | null
           phone_number: string | null
+          rejection_reason: string | null
           role: string | null
         }
         Insert: {
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           avatar_url?: string | null
           created_at?: string | null
           email?: string | null
@@ -616,9 +653,13 @@ export type Database = {
           last_sign_in_at?: string | null
           name?: string | null
           phone_number?: string | null
+          rejection_reason?: string | null
           role?: string | null
         }
         Update: {
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           avatar_url?: string | null
           created_at?: string | null
           email?: string | null
@@ -626,6 +667,7 @@ export type Database = {
           last_sign_in_at?: string | null
           name?: string | null
           phone_number?: string | null
+          rejection_reason?: string | null
           role?: string | null
         }
         Relationships: []
@@ -770,7 +812,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      approve_user: {
+        Args: { user_id_param: string }
+        Returns: boolean
+      }
+      reject_user: {
+        Args: { user_id_param: string; reason_param?: string }
+        Returns: boolean
+      }
     }
     Enums: {
       emergency_status:

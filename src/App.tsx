@@ -1,4 +1,3 @@
-
 import { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
@@ -44,6 +43,7 @@ const AdvancedEmergencyManagement = lazy(() => import('@/pages/AdvancedEmergency
 const EnhancedUX = lazy(() => import('@/pages/EnhancedUX'));
 const AIEnhancedOperations = lazy(() => import('@/pages/AIEnhancedOperations'));
 const SystemIntegrationPage = lazy(() => import('@/pages/SystemIntegrationPage'));
+const AdminDashboard = lazy(() => import('@/pages/AdminDashboard'));
 
 // Layout wrapper for authenticated pages
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
@@ -69,6 +69,13 @@ function App() {
                       <RequireAuth>
                         <AppLayout>
                           <Dashboard />
+                        </AppLayout>
+                      </RequireAuth>
+                    } />
+                    <Route path="/admin" element={
+                      <RequireAuth>
+                        <AppLayout>
+                          <AdminDashboard />
                         </AppLayout>
                       </RequireAuth>
                     } />

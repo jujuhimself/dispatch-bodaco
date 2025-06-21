@@ -13,12 +13,14 @@ export interface UseAuthReturn {
   signUp: (email: string, password: string, userData: Partial<UserProfile>) => Promise<void>;
   signOut: () => Promise<void>;
   sendVerificationEmail: (email: string) => Promise<void>;
+  approvalStatus: string | null;
 }
 
 const useAuth = (): UseAuthReturn => {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [initialized, setInitialized] = useState(false);
+  const [approvalStatus, setApprovalStatus] = useState<string | null>(null);
 
   const checkSession = useCallback(async () => {
     if (initialized) return;
@@ -28,21 +30,50 @@ const useAuth = (): UseAuthReturn => {
       const { data } = await supabase.auth.getSession();
       
       if (data.session?.user) {
-        const basicProfile: UserProfile = {
-          id: data.session.user.id,
-          email: data.session.user.email || '',
-          role: (data.session.user.user_metadata?.role as UserRole) || 'user',
-          name: data.session.user.user_metadata?.name || '',
-          phone_number: data.session.user.user_metadata?.phone_number || ''
-        };
-        
-        setUser(basicProfile);
+        // Fetch user profile with approval status
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', data.session.user.id)
+          .single();
+
+        if (error) {
+          console.error('Error fetching profile:', error);
+          setUser(null);
+          setApprovalStatus(null);
+          return;
+        }
+
+        if (profile) {
+          const basicProfile: UserProfile = {
+            id: profile.id,
+            email: profile.email || data.session.user.email || '',
+            role: (profile.role as UserRole) || 'user',
+            name: profile.name || '',
+            phone_number: profile.phone_number || '',
+            approval_status: profile.approval_status
+          };
+          
+          setUser(basicProfile);
+          setApprovalStatus(profile.approval_status);
+
+          // Check if user is not approved
+          if (profile.approval_status !== 'approved') {
+            if (profile.approval_status === 'rejected') {
+              toast.error(`Account access denied. ${profile.rejection_reason || 'Please contact administrator.'}`);
+            } else if (profile.approval_status === 'pending') {
+              toast.info('Your account is pending admin approval. Please wait for approval before accessing the system.');
+            }
+          }
+        }
       } else {
         setUser(null);
+        setApprovalStatus(null);
       }
     } catch (error) {
       console.error('Error checking session:', error);
       setUser(null);
+      setApprovalStatus(null);
     } finally {
       setLoading(false);
       setInitialized(true);
@@ -51,25 +82,36 @@ const useAuth = (): UseAuthReturn => {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         console.log('Auth state change:', event, session?.user?.id);
         if (event === 'SIGNED_OUT') {
           setUser(null);
+          setApprovalStatus(null);
         } else if (['SIGNED_IN', 'TOKEN_REFRESHED'].includes(event) && session?.user) {
-          const basicProfile: UserProfile = {
-            id: session.user.id,
-            email: session.user.email || '',
-            role: (session.user.user_metadata?.role as UserRole) || 'user',
-            name: session.user.user_metadata?.name || '',
-            phone_number: session.user.user_metadata?.phone_number || ''
-          };
-          setUser(basicProfile);
+          // Fetch profile with approval status
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+
+          if (profile) {
+            const basicProfile: UserProfile = {
+              id: profile.id,
+              email: profile.email || session.user.email || '',
+              role: (profile.role as UserRole) || 'user',
+              name: profile.name || '',
+              phone_number: profile.phone_number || '',
+              approval_status: profile.approval_status
+            };
+            setUser(basicProfile);
+            setApprovalStatus(profile.approval_status);
+          }
         }
         setLoading(false);
       }
     );
 
-    // Check session immediately
     if (!initialized) {
       checkSession();
     }
@@ -108,6 +150,8 @@ const useAuth = (): UseAuthReturn => {
       
       if (data?.user && !data.session) {
         toast.info('Please check your email to verify your account before logging in.');
+      } else if (data?.user) {
+        toast.success('Account created! Your registration is pending admin approval.');
       }
     } catch (error: any) {
       console.error('Error signing up:', error);
@@ -123,6 +167,7 @@ const useAuth = (): UseAuthReturn => {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       setUser(null);
+      setApprovalStatus(null);
     } catch (error: any) {
       console.error('Error signing out:', error);
       throw error;
@@ -159,7 +204,8 @@ const useAuth = (): UseAuthReturn => {
     signIn,
     signUp,
     signOut,
-    sendVerificationEmail
+    sendVerificationEmail,
+    approvalStatus
   };
 };
 

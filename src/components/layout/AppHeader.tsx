@@ -23,7 +23,8 @@ import {
   MessageSquare,
   BarChart3,
   Smartphone,
-  Bike
+  Bike,
+  Shield
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
@@ -110,6 +111,16 @@ export function AppHeader({ className }: AppHeaderProps) {
             </Link>
           );
         })}
+        {/* Admin link for admin users */}
+        {user?.role === 'admin' && (
+          <Link
+            to="/admin"
+            className="flex items-center space-x-1 px-3 py-2 text-sm text-orange-100 hover:text-white hover:bg-orange-600/30 rounded-md transition-colors"
+          >
+            <Shield className="h-4 w-4" />
+            <span>Admin</span>
+          </Link>
+        )}
       </nav>
 
       {/* Right side - Notifications and User Menu */}
@@ -148,6 +159,15 @@ export function AppHeader({ className }: AppHeaderProps) {
                 <span>Profile</span>
               </Link>
             </DropdownMenuItem>
+            
+            {user?.role === 'admin' && (
+              <DropdownMenuItem asChild>
+                <Link to="/admin" className="flex items-center space-x-2 px-3 py-2 cursor-pointer">
+                  <Shield className="h-4 w-4" />
+                  <span>Admin Dashboard</span>
+                </Link>
+              </DropdownMenuItem>
+            )}
             
             <DropdownMenuItem asChild>
               <Link to="/settings" className="flex items-center space-x-2 px-3 py-2 cursor-pointer">

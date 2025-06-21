@@ -2,6 +2,7 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import ApprovalGuard from './ApprovalGuard';
 
 interface RequireAuthProps {
   children: React.ReactNode;
@@ -12,12 +13,15 @@ const RequireAuth: React.FC<RequireAuthProps> = ({ children }) => {
   const location = useLocation();
 
   if (!user) {
-    // Redirect to the auth page if not authenticated
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 
-  // If the user is authenticated, render the protected component
-  return <>{children}</>;
+  // Wrap with approval guard to check approval status
+  return (
+    <ApprovalGuard>
+      {children}
+    </ApprovalGuard>
+  );
 };
 
 export default RequireAuth;

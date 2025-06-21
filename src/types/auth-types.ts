@@ -12,6 +12,7 @@ export interface UserProfile {
   avatar_url?: string;
   created_at?: string;
   last_sign_in_at?: string;
+  approval_status?: string;
 }
 
 // User settings interface
