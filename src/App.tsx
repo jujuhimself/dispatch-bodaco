@@ -12,22 +12,22 @@ import { ProductionErrorBoundary } from '@/components/error/ProductionErrorBound
 import { LoadingState } from '@/components/ui/loading-state';
 import './App.css';
 
-// Create a stable query client instance outside component to prevent recreation
+// Create a stable query client instance
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 2,
+      retry: 1,
       refetchOnWindowFocus: false,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes
+      staleTime: 2 * 60 * 1000, // 2 minutes
+      gcTime: 5 * 60 * 1000, // 5 minutes
     },
     mutations: {
-      retry: 1,
+      retry: 0,
     },
   },
 });
 
-// Lazy load components
+// Optimized lazy loading - only load what's needed
 const Dashboard = lazy(() => import('@/components/dashboard/Dashboard'));
 const Auth = lazy(() => import('@/pages/Auth'));
 const EmergenciesPage = lazy(() => import('@/pages/EmergenciesPage'));
@@ -43,12 +43,14 @@ const ResponderTracking = lazy(() => import('@/pages/ResponderTracking'));
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
-const EnhancedDashboard = lazy(() => import('@/pages/EnhancedDashboard'));
-const AdvancedEmergencyManagement = lazy(() => import('@/pages/AdvancedEmergencyManagement'));
-const EnhancedUX = lazy(() => import('@/pages/EnhancedUX'));
-const AIEnhancedOperations = lazy(() => import('@/pages/AIEnhancedOperations'));
-const SystemIntegrationPage = lazy(() => import('@/pages/SystemIntegrationPage'));
 const AdminDashboard = lazy(() => import('@/pages/AdminDashboard'));
+
+// Simple loading fallback
+const PageLoader = () => (
+  <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50 flex items-center justify-center">
+    <LoadingState isLoading={true} />
+  </div>
+);
 
 // Layout wrapper for authenticated pages
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
@@ -68,7 +70,7 @@ function App() {
             <Router>
               <AuthProvider>
                 <RBACProvider>
-                  <Suspense fallback={<LoadingState isLoading={true} className="min-h-screen" />}>
+                  <Suspense fallback={<PageLoader />}>
                     <Routes>
                       <Route path="/auth" element={<Auth />} />
                       <Route path="/" element={
@@ -82,41 +84,6 @@ function App() {
                         <RequireAuth>
                           <AppLayout>
                             <AdminDashboard />
-                          </AppLayout>
-                        </RequireAuth>
-                      } />
-                      <Route path="/enhanced-dashboard" element={
-                        <RequireAuth>
-                          <AppLayout>
-                            <EnhancedDashboard />
-                          </AppLayout>
-                        </RequireAuth>
-                      } />
-                      <Route path="/advanced-emergency-management" element={
-                        <RequireAuth>
-                          <AppLayout>
-                            <AdvancedEmergencyManagement />
-                          </AppLayout>
-                        </RequireAuth>
-                      } />
-                      <Route path="/enhanced-ux" element={
-                        <RequireAuth>
-                          <AppLayout>
-                            <EnhancedUX />
-                          </AppLayout>
-                        </RequireAuth>
-                      } />
-                      <Route path="/ai-enhanced-operations" element={
-                        <RequireAuth>
-                          <AppLayout>
-                            <AIEnhancedOperations />
-                          </AppLayout>
-                        </RequireAuth>
-                      } />
-                      <Route path="/system-integration" element={
-                        <RequireAuth>
-                          <AppLayout>
-                            <SystemIntegrationPage />
                           </AppLayout>
                         </RequireAuth>
                       } />

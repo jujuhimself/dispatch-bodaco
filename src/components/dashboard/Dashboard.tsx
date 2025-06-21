@@ -6,11 +6,15 @@ import AvailableResponders from './AvailableResponders';
 import HospitalStatus from './HospitalStatus';
 import EmergencyMap from './EmergencyMap';
 import RecentCommunications from './RecentCommunications';
+import { MobileNavigation } from '@/components/layout/MobileNavigation';
 import { Shield, Users, AlertTriangle } from 'lucide-react';
 
 const Dashboard = () => {
   return (
     <div className="min-h-screen">
+      {/* Mobile Navigation */}
+      <MobileNavigation />
+      
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white py-8">
         <div className="container mx-auto px-6">

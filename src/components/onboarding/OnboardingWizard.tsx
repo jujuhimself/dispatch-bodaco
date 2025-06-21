@@ -2,237 +2,329 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { 
-  CheckCircle, 
-  Circle, 
-  ArrowRight, 
-  ArrowLeft,
-  User,
-  Settings,
-  Shield,
-  Bell,
-  Smartphone,
-  MapPin
-} from 'lucide-react';
+import { CheckCircle2, ArrowRight, ArrowLeft, UserPlus, Settings, Shield } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
-interface OnboardingStep {
-  id: string;
-  title: string;
-  description: string;
-  icon: React.ComponentType<any>;
-  content: React.ReactNode;
-  completed: boolean;
+interface OnboardingData {
+  personalInfo: {
+    name: string;
+    phone: string;
+    department: string;
+    role: string;
+  };
+  preferences: {
+    notifications: boolean;
+    emailAlerts: boolean;
+    smsAlerts: boolean;
+  };
+  security: {
+    twoFactor: boolean;
+    emergencyContact: string;
+  };
 }
 
-interface OnboardingWizardProps {
-  onComplete: () => void;
-  onSkip: () => void;
-}
-
-export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
-  onComplete,
-  onSkip
-}) => {
+const OnboardingWizard = ({ onComplete }: { onComplete: () => void }) => {
+  const { user, updateProfile } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
-  const [completedSteps, setCompletedSteps] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState<OnboardingData>({
+    personalInfo: {
+      name: user?.name || '',
+      phone: user?.phone_number || '',
+      department: '',
+      role: user?.role || 'user'
+    },
+    preferences: {
+      notifications: true,
+      emailAlerts: true,
+      smsAlerts: false
+    },
+    security: {
+      twoFactor: false,
+      emergencyContact: ''
+    }
+  });
 
-  const steps: OnboardingStep[] = [
+  const steps = [
     {
-      id: 'welcome',
-      title: 'Welcome to Rapid Response Guardian',
-      description: 'Your comprehensive emergency management platform',
+      title: 'Personal Information',
+      icon: UserPlus,
+      description: 'Tell us about yourself'
+    },
+    {
+      title: 'Preferences',
+      icon: Settings,
+      description: 'Configure your settings'
+    },
+    {
+      title: 'Security',
       icon: Shield,
-      completed: false,
-      content: (
-        <div className="text-center space-y-4">
-          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-            <Shield className="h-8 w-8 text-primary" />
-          </div>
-          <h3 className="text-xl font-semibold">Welcome aboard!</h3>
-          <p className="text-muted-foreground">
-            We'll help you get started with managing emergencies efficiently and effectively.
-          </p>
-        </div>
-      )
-    },
-    {
-      id: 'profile',
-      title: 'Set Up Your Profile',
-      description: 'Configure your personal information and role',
-      icon: User,
-      completed: false,
-      content: (
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Profile Setup</h3>
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <span className="text-sm">Basic information configured</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <span className="text-sm">Role permissions set</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Circle className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Profile picture (optional)</span>
-            </div>
-          </div>
-        </div>
-      )
-    },
-    {
-      id: 'notifications',
-      title: 'Configure Notifications',
-      description: 'Set up alerts and notification preferences',
-      icon: Bell,
-      completed: false,
-      content: (
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Notification Settings</h3>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Emergency alerts</span>
-              <Badge variant="default">Enabled</Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Status updates</span>
-              <Badge variant="default">Enabled</Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Mobile notifications</span>
-              <Badge variant="secondary">Configure</Badge>
-            </div>
-          </div>
-        </div>
-      )
-    },
-    {
-      id: 'location',
-      title: 'Location Services',
-      description: 'Enable location access for better emergency response',
-      icon: MapPin,
-      completed: false,
-      content: (
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Location Access</h3>
-          <p className="text-sm text-muted-foreground">
-            Allow location access to provide accurate emergency response and tracking.
-          </p>
-          <Button 
-            onClick={() => {
-              navigator.geolocation?.getCurrentPosition(() => {
-                setCompletedSteps(prev => new Set([...prev, 'location']));
-              });
-            }}
-            className="w-full"
-          >
-            <MapPin className="h-4 w-4 mr-2" />
-            Enable Location Access
-          </Button>
-        </div>
-      )
-    },
-    {
-      id: 'mobile',
-      title: 'Mobile Setup',
-      description: 'Optimize your mobile experience',
-      icon: Smartphone,
-      completed: false,
-      content: (
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Mobile Optimization</h3>
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <span className="text-sm">Responsive design enabled</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <span className="text-sm">Touch gestures configured</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Circle className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Install as PWA (optional)</span>
-            </div>
-          </div>
-        </div>
-      )
+      description: 'Secure your account'
     }
   ];
 
-  const progress = ((currentStep + 1) / steps.length) * 100;
-
   const handleNext = () => {
-    setCompletedSteps(prev => new Set([...prev, steps[currentStep].id]));
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      onComplete();
+      handleComplete();
     }
   };
 
-  const handlePrevious = () => {
+  const handleBack = () => {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
     }
   };
 
-  const currentStepData = steps[currentStep];
+  const handleComplete = async () => {
+    setLoading(true);
+    try {
+      // Update user profile
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          name: data.personalInfo.name,
+          phone_number: data.personalInfo.phone,
+          department: data.personalInfo.department,
+          onboarding_completed: true,
+          preferences: {
+            notifications: data.preferences.notifications,
+            email_alerts: data.preferences.emailAlerts,
+            sms_alerts: data.preferences.smsAlerts,
+            two_factor: data.security.twoFactor
+          },
+          emergency_contact: data.security.emergencyContact
+        })
+        .eq('id', user?.id);
+
+      if (error) throw error;
+
+      toast.success('Onboarding completed successfully!');
+      onComplete();
+    } catch (error) {
+      console.error('Error completing onboarding:', error);
+      toast.error('Failed to complete onboarding');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 0:
+        return (
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="name">Full Name</Label>
+              <Input
+                id="name"
+                value={data.personalInfo.name}
+                onChange={(e) =>
+                  setData({
+                    ...data,
+                    personalInfo: { ...data.personalInfo, name: e.target.value }
+                  })
+                }
+                placeholder="Enter your full name"
+              />
+            </div>
+            <div>
+              <Label htmlFor="phone">Phone Number</Label>
+              <Input
+                id="phone"
+                value={data.personalInfo.phone}
+                onChange={(e) =>
+                  setData({
+                    ...data,
+                    personalInfo: { ...data.personalInfo, phone: e.target.value }
+                  })
+                }
+                placeholder="Enter your phone number"
+              />
+            </div>
+            <div>
+              <Label htmlFor="department">Department</Label>
+              <Select
+                value={data.personalInfo.department}
+                onValueChange={(value) =>
+                  setData({
+                    ...data,
+                    personalInfo: { ...data.personalInfo, department: value }
+                  })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select your department" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="emergency">Emergency Services</SelectItem>
+                  <SelectItem value="medical">Medical</SelectItem>
+                  <SelectItem value="fire">Fire Department</SelectItem>
+                  <SelectItem value="police">Police</SelectItem>
+                  <SelectItem value="traffic">Traffic Control</SelectItem>
+                  <SelectItem value="dispatch">Dispatch</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        );
+
+      case 1:
+        return (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label>Push Notifications</Label>
+              <input
+                type="checkbox"
+                className="toggle"
+                checked={data.preferences.notifications}
+                onChange={(e) =>
+                  setData({
+                    ...data,
+                    preferences: { ...data.preferences, notifications: e.target.checked }
+                  })
+                }
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <Label>Email Alerts</Label>
+              <input
+                type="checkbox"
+                className="toggle"
+                checked={data.preferences.emailAlerts}
+                onChange={(e) =>
+                  setData({
+                    ...data,
+                    preferences: { ...data.preferences, emailAlerts: e.target.checked }
+                  })
+                }
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <Label>SMS Alerts</Label>
+              <input
+                type="checkbox"
+                className="toggle"
+                checked={data.preferences.smsAlerts}
+                onChange={(e) =>
+                  setData({
+                    ...data,
+                    preferences: { ...data.preferences, smsAlerts: e.target.checked }
+                  })
+                }
+              />
+            </div>
+          </div>
+        );
+
+      case 2:
+        return (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Two-Factor Authentication</Label>
+                <p className="text-sm text-gray-600">Add an extra layer of security</p>
+              </div>
+              <input
+                type="checkbox"
+                className="toggle"
+                checked={data.security.twoFactor}
+                onChange={(e) =>
+                  setData({
+                    ...data,
+                    security: { ...data.security, twoFactor: e.target.checked }
+                  })
+                }
+              />
+            </div>
+            <div>
+              <Label htmlFor="emergency-contact">Emergency Contact</Label>
+              <Input
+                id="emergency-contact"
+                value={data.security.emergencyContact}
+                onChange={(e) =>
+                  setData({
+                    ...data,
+                    security: { ...data.security, emergencyContact: e.target.value }
+                  })
+                }
+                placeholder="Emergency contact phone number"
+              />
+            </div>
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  const progress = ((currentStep + 1) / steps.length) * 100;
 
   return (
-    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
+    <div className="max-w-2xl mx-auto p-6">
+      <Card>
         <CardHeader>
           <div className="flex items-center justify-between mb-4">
-            <CardTitle className="text-lg">Setup Wizard</CardTitle>
-            <Button variant="ghost" size="sm" onClick={onSkip}>
-              Skip
-            </Button>
+            <CardTitle className="text-2xl">Welcome to Emergency Response</CardTitle>
+            <span className="text-sm text-gray-500">
+              Step {currentStep + 1} of {steps.length}
+            </span>
           </div>
-          <Progress value={progress} className="h-2" />
-          <div className="flex items-center gap-2 mt-2">
-            <currentStepData.icon className="h-5 w-5 text-primary" />
+          <Progress value={progress} className="mb-4" />
+          <div className="flex items-center space-x-2">
+            {steps[currentStep].icon && (
+              <steps[currentStep].icon className="h-5 w-5 text-orange-600" />
+            )}
             <div>
-              <h3 className="font-medium">{currentStepData.title}</h3>
-              <p className="text-sm text-muted-foreground">{currentStepData.description}</p>
+              <h3 className="font-semibold">{steps[currentStep].title}</h3>
+              <p className="text-sm text-gray-600">{steps[currentStep].description}</p>
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="mb-6">
-            {currentStepData.content}
-          </div>
+          {renderStepContent()}
           
-          <div className="flex justify-between">
+          <div className="flex justify-between mt-6">
             <Button
               variant="outline"
-              onClick={handlePrevious}
+              onClick={handleBack}
               disabled={currentStep === 0}
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Previous
+              Back
             </Button>
-            <Button onClick={handleNext}>
-              {currentStep === steps.length - 1 ? 'Complete' : 'Next'}
-              <ArrowRight className="h-4 w-4 ml-2" />
+            
+            <Button
+              onClick={handleNext}
+              disabled={loading}
+              className="bg-orange-600 hover:bg-orange-700"
+            >
+              {currentStep === steps.length - 1 ? (
+                <>
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  Complete
+                </>
+              ) : (
+                <>
+                  Next
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </>
+              )}
             </Button>
-          </div>
-          
-          <div className="flex justify-center mt-4 gap-2">
-            {steps.map((_, index) => (
-              <div
-                key={index}
-                className={`w-2 h-2 rounded-full ${
-                  index <= currentStep ? 'bg-primary' : 'bg-muted'
-                }`}
-              />
-            ))}
           </div>
         </CardContent>
       </Card>
     </div>
   );
 };
+
+export default OnboardingWizard;
