@@ -268,6 +268,7 @@ const OnboardingWizard = ({ onComplete }: { onComplete: () => void }) => {
   };
 
   const progress = ((currentStep + 1) / steps.length) * 100;
+  const StepIcon = steps[currentStep].icon;
 
   return (
     <div className="max-w-2xl mx-auto p-6">
@@ -281,9 +282,7 @@ const OnboardingWizard = ({ onComplete }: { onComplete: () => void }) => {
           </div>
           <Progress value={progress} className="mb-4" />
           <div className="flex items-center space-x-2">
-            {steps[currentStep].icon && (
-              <steps[currentStep].icon className="h-5 w-5 text-orange-600" />
-            )}
+            <StepIcon className="h-5 w-5 text-orange-600" />
             <div>
               <h3 className="font-semibold">{steps[currentStep].title}</h3>
               <p className="text-sm text-gray-600">{steps[currentStep].description}</p>
