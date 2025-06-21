@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   Menu, 
   Home, 
@@ -33,19 +34,7 @@ const navigationItems = [
 export const MobileNavigation = () => {
   const [open, setOpen] = useState(false);
   const location = useLocation();
-
-  // Safely handle auth context
-  let user = null;
-  let signOut = () => {};
-  
-  try {
-    const { useAuth } = require('@/contexts/AuthContext');
-    const auth = useAuth();
-    user = auth.user;
-    signOut = auth.signOut;
-  } catch (error) {
-    console.log('Auth context not available in mobile nav:', error);
-  }
+  const { user, signOut } = useAuth();
 
   const handleNavigation = () => {
     setOpen(false);
@@ -57,6 +46,7 @@ export const MobileNavigation = () => {
       setOpen(false);
     } catch (error) {
       console.error('Error signing out:', error);
+      // Fallback redirect
       window.location.href = '/auth';
     }
   };
@@ -120,8 +110,12 @@ export const MobileNavigation = () => {
             {/* User Info & Logout */}
             <div className="p-4 border-t bg-gray-50">
               <div className="mb-4">
-                <p className="text-sm font-medium text-gray-900">{user?.name || user?.email || 'User'}</p>
-                <p className="text-xs text-gray-500 capitalize">{user?.role || 'user'}</p>
+                <p className="text-sm font-medium text-gray-900">
+                  {user?.name || user?.email || 'User'}
+                </p>
+                <p className="text-xs text-gray-500 capitalize">
+                  {user?.role || 'user'}
+                </p>
               </div>
               <Button 
                 variant="outline" 

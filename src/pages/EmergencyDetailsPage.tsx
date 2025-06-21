@@ -1,18 +1,18 @@
-
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { fetchEmergencyWithDeviceAlert, fetchEmergencyAssignments, updateEmergencyStatus } from '@/services/emergency-service';
+import { SafeEmergencyService } from '@/services/safe-emergency-service';
 import { Loader2, MapPin, ArrowLeft, AlertTriangle, CalendarClock, Ambulance, CheckCircle } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { toast } from 'sonner';
 import ResponderAssignmentFlow from '@/components/emergencies/ResponderAssignmentFlow';
 import EmergencyTimeline from '@/components/emergencies/EmergencyTimeline';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import BackNavigation from '@/components/navigation/BackNavigation';
 
 const EmergencyDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -27,8 +27,9 @@ const EmergencyDetailsPage = () => {
     refetch
   } = useQuery({
     queryKey: ['emergency', id],
-    queryFn: () => fetchEmergencyWithDeviceAlert(id!),
-    enabled: !!id
+    queryFn: () => SafeEmergencyService.fetchEmergencyById(id!),
+    enabled: !!id,
+    retry: 2
   });
 
   const {
@@ -37,18 +38,21 @@ const EmergencyDetailsPage = () => {
     refetch: refetchAssignments
   } = useQuery({
     queryKey: ['emergency-assignments', id],
-    queryFn: () => fetchEmergencyAssignments(id!),
-    enabled: !!id
+    queryFn: () => SafeEmergencyService.fetchEmergencyAssignments(id!),
+    enabled: !!id,
+    retry: 2
   });
   
   const handleResolveEmergency = async () => {
     if (!id) return;
     
     try {
-      await updateEmergencyStatus(id, 'resolved');
-      toast.success('Emergency has been marked as resolved');
-      setShowResolveDialog(false);
-      refetch();
+      const result = await SafeEmergencyService.updateEmergencyStatus(id, 'resolved');
+      if (result) {
+        toast.success('Emergency has been marked as resolved');
+        setShowResolveDialog(false);
+        refetch();
+      }
     } catch (error) {
       console.error('Error resolving emergency:', error);
       toast.error('Failed to resolve emergency');
@@ -93,7 +97,7 @@ const EmergencyDetailsPage = () => {
   const getPriorityBadge = (priority: number) => {
     switch(priority) {
       case 1:
-        return <Badge className="bg-emergency-600">High Priority</Badge>;
+        return <Badge className="bg-red-600">High Priority</Badge>;
       case 2:
         return <Badge className="bg-orange-500">Medium Priority</Badge>;
       case 3:
@@ -106,25 +110,28 @@ const EmergencyDetailsPage = () => {
   if (isLoading) {
     return (
       <div className="container mx-auto p-4 flex justify-center items-center h-[calc(100vh-8rem)]">
-        <Loader2 className="h-8 w-8 animate-spin text-emergency-500" />
+        <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
       </div>
     );
   }
 
   if (error || !data || !data.emergency) {
     return (
-      <div className="container mx-auto p-4 text-center">
-        <div className="mb-4">
-          <AlertTriangle className="h-12 w-12 text-emergency-500 mx-auto" />
-          <h1 className="text-2xl font-bold mt-4">Error Loading Emergency</h1>
-          <p className="text-muted-foreground mt-2">
-            We couldn't load the emergency details. The emergency may have been deleted or you don't have permission to view it.
-          </p>
+      <div className="container mx-auto p-4">
+        <BackNavigation title="Emergency Details" />
+        <div className="text-center">
+          <div className="mb-4">
+            <AlertTriangle className="h-12 w-12 text-red-500 mx-auto" />
+            <h1 className="text-2xl font-bold mt-4">Error Loading Emergency</h1>
+            <p className="text-muted-foreground mt-2">
+              We couldn't load the emergency details. The emergency may have been deleted or you don't have permission to view it.
+            </p>
+          </div>
+          <Button onClick={() => navigate('/emergencies')}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Emergencies
+          </Button>
         </div>
-        <Button onClick={() => navigate('/emergencies')}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Emergencies
-        </Button>
       </div>
     );
   }
@@ -134,18 +141,11 @@ const EmergencyDetailsPage = () => {
 
   return (
     <div className="container mx-auto p-4 space-y-6">
+      <BackNavigation title={`Emergency: ${emergency.type}`} />
+      
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => navigate('/emergencies')}
-              className="p-0 h-8 w-8"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span className="sr-only">Back</span>
-            </Button>
             <h1 className="text-2xl font-bold">{emergency.type}</h1>
             {getStatusBadge(emergency.status)}
             {getPriorityBadge(emergency.priority)}
@@ -334,10 +334,10 @@ const EmergencyDetailsPage = () => {
         
         <div className="space-y-6">
           {deviceAlert && (
-            <Card className="bg-emergency-50 border-emergency-200">
+            <Card className="bg-orange-50 border-orange-200">
               <CardHeader>
                 <CardTitle className="flex items-center">
-                  <AlertTriangle className="h-5 w-5 text-emergency-600 mr-2" />
+                  <AlertTriangle className="h-5 w-5 text-orange-600 mr-2" />
                   Device Alert
                 </CardTitle>
               </CardHeader>
@@ -345,20 +345,20 @@ const EmergencyDetailsPage = () => {
                 <div className="space-y-4">
                   <div className="space-y-1">
                     <div className="font-medium">Alert Type</div>
-                    <div className="bg-emergency-100 text-emergency-800 px-2 py-1 rounded text-sm inline-block">
+                    <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded text-sm inline-block">
                       {deviceAlert.alert_type}
                     </div>
                   </div>
                   <div className="space-y-1">
                     <div className="font-medium">Severity</div>
-                    <Badge variant="outline" className="bg-emergency-100 border-emergency-200">
+                    <Badge variant="outline" className="bg-orange-100 border-orange-200">
                       Level {deviceAlert.severity}
                     </Badge>
                   </div>
                   {deviceAlert.data && (
                     <div className="space-y-1">
                       <div className="font-medium">Alert Data</div>
-                      <pre className="bg-emergency-100 border border-emergency-200 p-2 rounded-md text-xs overflow-auto max-h-40">
+                      <pre className="bg-orange-100 border border-orange-200 p-2 rounded-md text-xs overflow-auto max-h-40">
                         {JSON.stringify(deviceAlert.data, null, 2)}
                       </pre>
                     </div>

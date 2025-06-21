@@ -1,3 +1,4 @@
+
 import { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
@@ -15,9 +16,13 @@ import './App.css';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 1,
+      retry: 2,
       refetchOnWindowFocus: false,
-      staleTime: 2 * 60 * 1000, // 2 minutes
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes
+    },
+    mutations: {
+      retry: 1,
     },
   },
 });
@@ -56,158 +61,160 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <HelmetProvider>
-        <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light" enableSystem={false}>
-          <AuthProvider>
-            <RBACProvider>
-              <Router>
-                <Suspense fallback={<LoadingState isLoading={true} className="min-h-screen" />}>
-                  <Routes>
-                    <Route path="/auth" element={<Auth />} />
-                    <Route path="/" element={
-                      <RequireAuth>
-                        <AppLayout>
-                          <Dashboard />
-                        </AppLayout>
-                      </RequireAuth>
-                    } />
-                    <Route path="/admin" element={
-                      <RequireAuth>
-                        <AppLayout>
-                          <AdminDashboard />
-                        </AppLayout>
-                      </RequireAuth>
-                    } />
-                    <Route path="/enhanced-dashboard" element={
-                      <RequireAuth>
-                        <AppLayout>
-                          <EnhancedDashboard />
-                        </AppLayout>
-                      </RequireAuth>
-                    } />
-                    <Route path="/advanced-emergency-management" element={
-                      <RequireAuth>
-                        <AppLayout>
-                          <AdvancedEmergencyManagement />
-                        </AppLayout>
-                      </RequireAuth>
-                    } />
-                    <Route path="/enhanced-ux" element={
-                      <RequireAuth>
-                        <AppLayout>
-                          <EnhancedUX />
-                        </AppLayout>
-                      </RequireAuth>
-                    } />
-                    <Route path="/ai-enhanced-operations" element={
-                      <RequireAuth>
-                        <AppLayout>
-                          <AIEnhancedOperations />
-                        </AppLayout>
-                      </RequireAuth>
-                    } />
-                    <Route path="/system-integration" element={
-                      <RequireAuth>
-                        <AppLayout>
-                          <SystemIntegrationPage />
-                        </AppLayout>
-                      </RequireAuth>
-                    } />
-                    <Route path="/emergencies" element={
-                      <RequireAuth>
-                        <AppLayout>
-                          <EmergenciesPage />
-                        </AppLayout>
-                      </RequireAuth>
-                    } />
-                    <Route path="/emergency/create" element={
-                      <RequireAuth>
-                        <AppLayout>
-                          <EmergencyCreate />
-                        </AppLayout>
-                      </RequireAuth>
-                    } />
-                    <Route path="/emergency/:id" element={
-                      <RequireAuth>
-                        <AppLayout>
-                          <EmergencyDetailsPage />
-                        </AppLayout>
-                      </RequireAuth>
-                    } />
-                    <Route path="/responders" element={
-                      <RequireAuth>
-                        <AppLayout>
-                          <Responders />
-                        </AppLayout>
-                      </RequireAuth>
-                    } />
-                    <Route path="/responder-tracking" element={
-                      <RequireAuth>
-                        <AppLayout>
-                          <ResponderTracking />
-                        </AppLayout>
-                      </RequireAuth>
-                    } />
-                    <Route path="/hospitals" element={
-                      <RequireAuth>
-                        <AppLayout>
-                          <HospitalsPage />
-                        </AppLayout>
-                      </RequireAuth>
-                    } />
-                    <Route path="/analytics" element={
-                      <RequireAuth>
-                        <AppLayout>
-                          <Analytics />
-                        </AppLayout>
-                      </RequireAuth>
-                    } />
-                    <Route path="/communications" element={
-                      <RequireAuth>
-                        <AppLayout>
-                          <Communications />
-                        </AppLayout>
-                      </RequireAuth>
-                    } />
-                    <Route path="/iot-devices" element={
-                      <RequireAuth>
-                        <AppLayout>
-                          <IoTDevices />
-                        </AppLayout>
-                      </RequireAuth>
-                    } />
-                    <Route path="/device-registration" element={
-                      <RequireAuth>
-                        <AppLayout>
-                          <DeviceRegistration />
-                        </AppLayout>
-                      </RequireAuth>
-                    } />
-                    <Route path="/profile" element={
-                      <RequireAuth>
-                        <AppLayout>
-                          <ProfilePage />
-                        </AppLayout>
-                      </RequireAuth>
-                    } />
-                    <Route path="/settings" element={
-                      <RequireAuth>
-                        <AppLayout>
-                          <SettingsPage />
-                        </AppLayout>
-                      </RequireAuth>
-                    } />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </Suspense>
-                <Toaster />
-              </Router>
-            </RBACProvider>
-          </AuthProvider>
-        </ThemeProvider>
-      </HelmetProvider>
-    </QueryClientProvider>
+    <ProductionErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <HelmetProvider>
+          <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light" enableSystem={false}>
+            <Router>
+              <AuthProvider>
+                <RBACProvider>
+                  <Suspense fallback={<LoadingState isLoading={true} className="min-h-screen" />}>
+                    <Routes>
+                      <Route path="/auth" element={<Auth />} />
+                      <Route path="/" element={
+                        <RequireAuth>
+                          <AppLayout>
+                            <Dashboard />
+                          </AppLayout>
+                        </RequireAuth>
+                      } />
+                      <Route path="/admin" element={
+                        <RequireAuth>
+                          <AppLayout>
+                            <AdminDashboard />
+                          </AppLayout>
+                        </RequireAuth>
+                      } />
+                      <Route path="/enhanced-dashboard" element={
+                        <RequireAuth>
+                          <AppLayout>
+                            <EnhancedDashboard />
+                          </AppLayout>
+                        </RequireAuth>
+                      } />
+                      <Route path="/advanced-emergency-management" element={
+                        <RequireAuth>
+                          <AppLayout>
+                            <AdvancedEmergencyManagement />
+                          </AppLayout>
+                        </RequireAuth>
+                      } />
+                      <Route path="/enhanced-ux" element={
+                        <RequireAuth>
+                          <AppLayout>
+                            <EnhancedUX />
+                          </AppLayout>
+                        </RequireAuth>
+                      } />
+                      <Route path="/ai-enhanced-operations" element={
+                        <RequireAuth>
+                          <AppLayout>
+                            <AIEnhancedOperations />
+                          </AppLayout>
+                        </RequireAuth>
+                      } />
+                      <Route path="/system-integration" element={
+                        <RequireAuth>
+                          <AppLayout>
+                            <SystemIntegrationPage />
+                          </AppLayout>
+                        </RequireAuth>
+                      } />
+                      <Route path="/emergencies" element={
+                        <RequireAuth>
+                          <AppLayout>
+                            <EmergenciesPage />
+                          </AppLayout>
+                        </RequireAuth>
+                      } />
+                      <Route path="/emergency/create" element={
+                        <RequireAuth>
+                          <AppLayout>
+                            <EmergencyCreate />
+                          </AppLayout>
+                        </RequireAuth>
+                      } />
+                      <Route path="/emergency/:id" element={
+                        <RequireAuth>
+                          <AppLayout>
+                            <EmergencyDetailsPage />
+                          </AppLayout>
+                        </RequireAuth>
+                      } />
+                      <Route path="/responders" element={
+                        <RequireAuth>
+                          <AppLayout>
+                            <Responders />
+                          </AppLayout>
+                        </RequireAuth>
+                      } />
+                      <Route path="/responder-tracking" element={
+                        <RequireAuth>
+                          <AppLayout>
+                            <ResponderTracking />
+                          </AppLayout>
+                        </RequireAuth>
+                      } />
+                      <Route path="/hospitals" element={
+                        <RequireAuth>
+                          <AppLayout>
+                            <HospitalsPage />
+                          </AppLayout>
+                        </RequireAuth>
+                      } />
+                      <Route path="/analytics" element={
+                        <RequireAuth>
+                          <AppLayout>
+                            <Analytics />
+                          </AppLayout>
+                        </RequireAuth>
+                      } />
+                      <Route path="/communications" element={
+                        <RequireAuth>
+                          <AppLayout>
+                            <Communications />
+                          </AppLayout>
+                        </RequireAuth>
+                      } />
+                      <Route path="/iot-devices" element={
+                        <RequireAuth>
+                          <AppLayout>
+                            <IoTDevices />
+                          </AppLayout>
+                        </RequireAuth>
+                      } />
+                      <Route path="/device-registration" element={
+                        <RequireAuth>
+                          <AppLayout>
+                            <DeviceRegistration />
+                          </AppLayout>
+                        </RequireAuth>
+                      } />
+                      <Route path="/profile" element={
+                        <RequireAuth>
+                          <AppLayout>
+                            <ProfilePage />
+                          </AppLayout>
+                        </RequireAuth>
+                      } />
+                      <Route path="/settings" element={
+                        <RequireAuth>
+                          <AppLayout>
+                            <SettingsPage />
+                          </AppLayout>
+                        </RequireAuth>
+                      } />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </Suspense>
+                  <Toaster />
+                </RBACProvider>
+              </AuthProvider>
+            </Router>
+          </ThemeProvider>
+        </HelmetProvider>
+      </QueryClientProvider>
+    </ProductionErrorBoundary>
   );
 }
 

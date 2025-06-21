@@ -19,9 +19,18 @@ export function BackNavigation({
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Handle back navigation
+  // Handle back navigation with error handling
   const handleBack = () => {
-    navigate(-1);
+    try {
+      if (window.history.length > 1) {
+        navigate(-1);
+      } else {
+        navigate('/');
+      }
+    } catch (error) {
+      console.error('Navigation error:', error);
+      navigate('/');
+    }
   };
   
   // Generate breadcrumb path components
