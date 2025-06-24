@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import Header from '@/components/dashboard/Header';
@@ -6,7 +5,7 @@ import Sidebar from '@/components/dashboard/Sidebar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
+import OnboardingWizard from '@/components/onboarding/OnboardingWizard';
 import { AccessibilityPanel } from '@/components/accessibility/AccessibilityPanel';
 import { MobileOptimizer } from '@/components/mobile/MobileOptimizer';
 import { GestureHandler } from '@/components/mobile/GestureHandler';
@@ -269,7 +268,6 @@ const EnhancedUX: React.FC = () => {
         {showOnboarding && (
           <OnboardingWizard
             onComplete={() => setShowOnboarding(false)}
-            onSkip={() => setShowOnboarding(false)}
           />
         )}
       </div>

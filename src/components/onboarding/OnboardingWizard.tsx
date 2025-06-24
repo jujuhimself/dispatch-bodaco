@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,7 +30,7 @@ interface OnboardingData {
 }
 
 const OnboardingWizard = ({ onComplete }: { onComplete: () => void }) => {
-  const { user, updateProfile } = useAuth();
+  const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<OnboardingData>({
@@ -93,15 +92,8 @@ const OnboardingWizard = ({ onComplete }: { onComplete: () => void }) => {
         .update({
           name: data.personalInfo.name,
           phone_number: data.personalInfo.phone,
-          department: data.personalInfo.department,
-          onboarding_completed: true,
-          preferences: {
-            notifications: data.preferences.notifications,
-            email_alerts: data.preferences.emailAlerts,
-            sms_alerts: data.preferences.smsAlerts,
-            two_factor: data.security.twoFactor
-          },
-          emergency_contact: data.security.emergencyContact
+          // Note: department field doesn't exist in profiles table
+          // We could add it or store in a separate table if needed
         })
         .eq('id', user?.id);
 

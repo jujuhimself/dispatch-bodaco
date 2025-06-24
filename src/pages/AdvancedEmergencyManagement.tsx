@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -6,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { EmergencyWorkflowEngine } from '@/components/emergency/EmergencyWorkflowEngine';
 import { PredictiveEmergencyAnalytics } from '@/components/analytics/PredictiveEmergencyAnalytics';
-import { AdvancedReporting } from '@/components/reports/AdvancedReporting';
+import AdvancedReporting from '@/components/reports/AdvancedReporting';
 import { 
   Workflow, 
   Brain, 

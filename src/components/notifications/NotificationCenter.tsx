@@ -18,7 +18,7 @@ interface Notification {
   type: 'info' | 'warning' | 'error' | 'success';
   read: boolean;
   created_at: string;
-  action_url?: string;
+  user_id: string;
 }
 
 const NotificationCenter = () => {
@@ -26,19 +26,29 @@ const NotificationCenter = () => {
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
 
-  // Fetch notifications
+  // Fetch admin notifications and convert them to our notification format
   const { data: notifications, isLoading } = useQuery({
     queryKey: ['notifications', user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('notifications')
+        .from('admin_notifications')
         .select('*')
         .eq('user_id', user?.id)
         .order('created_at', { ascending: false })
         .limit(50);
 
       if (error) throw error;
-      return data as Notification[];
+      
+      // Convert admin_notifications to our Notification interface
+      return data?.map(notification => ({
+        id: notification.id,
+        title: notification.notification_type === 'user_registration' ? 'Registration Update' : 'Notification',
+        message: notification.message,
+        type: 'info' as const,
+        read: notification.read,
+        created_at: notification.created_at,
+        user_id: notification.user_id
+      })) || [];
     },
     enabled: !!user?.id
   });
@@ -47,7 +57,7 @@ const NotificationCenter = () => {
   const markAsReadMutation = useMutation({
     mutationFn: async (notificationId: string) => {
       const { error } = await supabase
-        .from('notifications')
+        .from('admin_notifications')
         .update({ read: true })
         .eq('id', notificationId);
 
@@ -62,7 +72,7 @@ const NotificationCenter = () => {
   const markAllAsReadMutation = useMutation({
     mutationFn: async () => {
       const { error } = await supabase
-        .from('notifications')
+        .from('admin_notifications')
         .update({ read: true })
         .eq('user_id', user?.id)
         .eq('read', false);
@@ -79,7 +89,7 @@ const NotificationCenter = () => {
   const deleteNotificationMutation = useMutation({
     mutationFn: async (notificationId: string) => {
       const { error } = await supabase
-        .from('notifications')
+        .from('admin_notifications')
         .delete()
         .eq('id', notificationId);
 
@@ -90,31 +100,27 @@ const NotificationCenter = () => {
     }
   });
 
-  // Real-time subscription
+  // Real-time subscription for admin_notifications
   useEffect(() => {
     if (!user?.id) return;
 
     const channel = supabase
-      .channel('notifications')
+      .channel('admin_notifications')
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'notifications',
+          table: 'admin_notifications',
           filter: `user_id=eq.${user.id}`
         },
         (payload) => {
           queryClient.invalidateQueries({ queryKey: ['notifications'] });
           
           if (payload.eventType === 'INSERT') {
-            const newNotification = payload.new as Notification;
-            toast(newNotification.title, {
-              description: newNotification.message,
-              action: newNotification.action_url ? {
-                label: 'View',
-                onClick: () => window.location.href = newNotification.action_url!
-              } : undefined
+            const newNotification = payload.new as any;
+            toast(newNotification.notification_type === 'user_registration' ? 'Registration Update' : 'Notification', {
+              description: newNotification.message
             });
           }
         }
@@ -144,10 +150,6 @@ const NotificationCenter = () => {
   const handleNotificationClick = (notification: Notification) => {
     if (!notification.read) {
       markAsReadMutation.mutate(notification.id);
-    }
-    
-    if (notification.action_url) {
-      window.location.href = notification.action_url;
     }
   };
 
