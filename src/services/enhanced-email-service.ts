@@ -30,7 +30,16 @@ class EnhancedEmailService {
       if (error) throw error;
 
       this.templates.clear();
-      data?.forEach(template => {
+      data?.forEach(row => {
+        const template: EmailTemplate = {
+          id: row.id,
+          name: row.name,
+          subject: row.subject,
+          html_content: row.html_content,
+          text_content: row.text_content,
+          variables: (row.variables as Record<string, string>) || {},
+          active: row.active
+        };
         this.templates.set(template.name, template);
       });
     } catch (error) {

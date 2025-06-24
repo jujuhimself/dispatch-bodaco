@@ -76,7 +76,23 @@ class EnhancedAuditService {
       const { data, error } = await query;
 
       if (error) throw error;
-      return data || [];
+      
+      // Transform the data to match our interface
+      const transformedData: AuditLog[] = (data || []).map(row => ({
+        id: row.id,
+        user_id: row.user_id,
+        action: row.action,
+        resource: row.resource,
+        resource_id: row.resource_id,
+        old_values: row.old_values as Record<string, any> | undefined,
+        new_values: row.new_values as Record<string, any> | undefined,
+        ip_address: row.ip_address,
+        user_agent: row.user_agent,
+        metadata: (row.metadata as Record<string, any>) || {},
+        created_at: row.created_at
+      }));
+
+      return transformedData;
     } catch (error) {
       console.error('Failed to get audit logs:', error);
       return [];
