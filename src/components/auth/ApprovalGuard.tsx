@@ -4,15 +4,24 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, Clock, XCircle } from 'lucide-react';
+import { AlertCircle, Clock, XCircle, Mail } from 'lucide-react';
 
 interface ApprovalGuardProps {
   children: React.ReactNode;
 }
 
 const ApprovalGuard: React.FC<ApprovalGuardProps> = ({ children }) => {
-  const { user, approvalStatus, signOut } = useAuth();
+  const { user, approvalStatus, signOut, loading } = useAuth();
   const location = useLocation();
+
+  // Show loading while checking auth status
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+      </div>
+    );
+  }
 
   if (!user) {
     return <Navigate to="/auth" state={{ from: location }} replace />;
@@ -38,6 +47,13 @@ const ApprovalGuard: React.FC<ApprovalGuardProps> = ({ children }) => {
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center space-y-4">
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <Mail className="h-8 w-8 mx-auto mb-2 text-blue-600" />
+              <p className="text-blue-800 font-medium">Check Your Email</p>
+              <p className="text-blue-600 text-sm">
+                Please verify your email address if you haven't already done so.
+              </p>
+            </div>
             <p className="text-slate-600">
               Thank you for registering with Boda & Co Emergency Response Platform. 
               Your account is currently pending approval from our admin team.
@@ -94,7 +110,7 @@ const ApprovalGuard: React.FC<ApprovalGuardProps> = ({ children }) => {
     );
   }
 
-  // Default fallback
+  // Default fallback - redirect to auth if status is unknown
   return <Navigate to="/auth" replace />;
 };
 

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -5,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Ambulance, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Ambulance, CheckCircle2, AlertCircle, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { UserRole } from '@/types/auth-types';
@@ -56,7 +57,7 @@ const Auth = () => {
     
     try {
       await signIn(loginEmail, loginPassword);
-      toast.success('Welcome back to Boda & Co!');
+      // Navigation will be handled by the auth context
     } catch (error: any) {
       toast.error(error.message || 'Error during sign in');
       console.error('Login error:', error);
@@ -122,16 +123,20 @@ const Auth = () => {
               </div>
               <CardTitle className="text-2xl text-slate-800">Registration Successful!</CardTitle>
             </CardHeader>
-            <CardContent className="text-center">
-              <p className="text-slate-600 mb-6">
-                Please check your email inbox for a verification link. You'll need to verify your email before logging in.
-              </p>
+            <CardContent className="text-center space-y-4">
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <Mail className="h-8 w-8 mx-auto mb-2 text-blue-600" />
+                <p className="text-blue-800 font-medium">Check Your Email</p>
+                <p className="text-blue-600 text-sm">
+                  Please verify your email address before logging in.
+                </p>
+              </div>
               
-              <Alert className="bg-blue-50 border-blue-200 text-blue-800 mb-6">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Important</AlertTitle>
+              <Alert className="bg-yellow-50 border-yellow-200 text-yellow-800">
+                <Clock className="h-4 w-4" />
+                <AlertTitle>Pending Approval</AlertTitle>
                 <AlertDescription>
-                  If you don't see the email in a few minutes, check your spam folder.
+                  Your account will need admin approval before you can access the platform.
                 </AlertDescription>
               </Alert>
               
@@ -182,15 +187,50 @@ const Auth = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="register" className="w-full">
+              <Tabs defaultValue="login" className="w-full">
                 <TabsList className="grid w-full grid-cols-2 mb-6 bg-slate-100">
-                  <TabsTrigger value="register" className="data-[state=active]:bg-white">
-                    Register
-                  </TabsTrigger>
                   <TabsTrigger value="login" className="data-[state=active]:bg-white">
                     Sign In
                   </TabsTrigger>
+                  <TabsTrigger value="register" className="data-[state=active]:bg-white">
+                    Register
+                  </TabsTrigger>
                 </TabsList>
+                
+                <TabsContent value="login">
+                  <form onSubmit={handleLogin} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="email" className="text-slate-700">Email Address</Label>
+                      <Input 
+                        id="email" 
+                        type="email" 
+                        value={loginEmail}
+                        onChange={(e) => setLoginEmail(e.target.value)}
+                        placeholder="you@example.com" 
+                        required 
+                        className="border-slate-200 focus:border-red-500"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="password" className="text-slate-700">Password</Label>
+                      <Input 
+                        id="password" 
+                        type="password" 
+                        value={loginPassword}
+                        onChange={(e) => setLoginPassword(e.target.value)}
+                        required 
+                        className="border-slate-200 focus:border-red-500"
+                      />
+                    </div>
+                    <Button 
+                      type="submit" 
+                      className="w-full bg-gradient-to-r from-red-600 to-blue-600 hover:from-red-700 hover:to-blue-700 text-white font-medium py-2.5" 
+                      disabled={isLoading}
+                    >
+                      {isLoading ? 'Signing in...' : 'Sign In'}
+                    </Button>
+                  </form>
+                </TabsContent>
                 
                 <TabsContent value="register">
                   <form onSubmit={handleRegister} className="space-y-4">
@@ -277,46 +317,6 @@ const Auth = () => {
                       disabled={isLoading}
                     >
                       {isLoading ? 'Creating Account...' : 'Create Account'}
-                    </Button>
-                  </form>
-                </TabsContent>
-                
-                <TabsContent value="login">
-                  <form onSubmit={handleLogin} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="email" className="text-slate-700">Email Address</Label>
-                      <Input 
-                        id="email" 
-                        type="email" 
-                        value={loginEmail}
-                        onChange={(e) => setLoginEmail(e.target.value)}
-                        placeholder="you@example.com" 
-                        required 
-                        className="border-slate-200 focus:border-red-500"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="password" className="text-slate-700">Password</Label>
-                      <Input 
-                        id="password" 
-                        type="password" 
-                        value={loginPassword}
-                        onChange={(e) => setLoginPassword(e.target.value)}
-                        required 
-                        className="border-slate-200 focus:border-red-500"
-                      />
-                      <div className="text-right">
-                        <Link to="/reset-password" className="text-sm text-red-600 hover:underline">
-                          Forgot password?
-                        </Link>
-                      </div>
-                    </div>
-                    <Button 
-                      type="submit" 
-                      className="w-full bg-gradient-to-r from-red-600 to-blue-600 hover:from-red-700 hover:to-blue-700 text-white font-medium py-2.5" 
-                      disabled={isLoading}
-                    >
-                      {isLoading ? 'Signing in...' : 'Sign In'}
                     </Button>
                   </form>
                 </TabsContent>

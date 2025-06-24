@@ -2,12 +2,9 @@
 import React, { createContext, useContext } from 'react';
 import useAuthHook from '@/hooks/useAuth';
 import type { UseAuthReturn } from '@/hooks/useAuth';
-import { LoadingState } from '@/components/ui/loading-state';
 
-// Create a context with the same shape as our hook
 export const AuthContext = createContext<UseAuthReturn | null>(null);
 
-// Custom hook to use the AuthContext
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -20,13 +17,12 @@ interface AuthProviderProps {
   children: React.ReactNode;
 }
 
-// Provider component that uses our useAuth hook internally
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   try {
     const auth = useAuthHook();
     
-    // Show loading state while initializing auth
-    if (auth.loading && auth.user === null) {
+    // Show loading state only on initial load
+    if (auth.loading && auth.user === null && auth.approvalStatus === null) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-slate-50">
           <div className="text-center">

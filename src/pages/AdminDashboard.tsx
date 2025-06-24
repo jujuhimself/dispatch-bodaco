@@ -1,24 +1,40 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserApprovalPanel } from '@/components/admin/UserApprovalPanel';
 import { AdminNotifications } from '@/components/admin/AdminNotifications';
 import { UserManagement } from '@/components/admin/UserManagement';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { 
   Users, 
   Bell, 
   Settings, 
   Shield,
-  Activity,
   AlertTriangle,
-  CheckCircle
+  CheckCircle,
+  Clock
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
+
+  // Fetch pending users count for the header
+  const { data: pendingCount = 0 } = useQuery({
+    queryKey: ['pending-users-count'],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .eq('approval_status', 'pending');
+      return count || 0;
+    },
+    enabled: user?.role === 'admin'
+  });
 
   // Only allow admin access
   if (!user || user.role !== 'admin') {
@@ -35,7 +51,16 @@ const AdminDashboard = () => {
               <h1 className="text-3xl font-bold">Admin Dashboard</h1>
               <p className="text-orange-100">System administration and user management</p>
             </div>
-            <div className="hidden md:flex space-x-6">
+            <div className="flex items-center space-x-6">
+              {pendingCount > 0 && (
+                <div className="text-center">
+                  <div className="flex items-center justify-center space-x-2 text-2xl font-bold">
+                    <Clock className="h-6 w-6 text-yellow-300" />
+                    <span>{pendingCount}</span>
+                  </div>
+                  <p className="text-sm text-orange-200">Pending Approvals</p>
+                </div>
+              )}
               <div className="text-center">
                 <div className="flex items-center justify-center space-x-2 text-2xl font-bold">
                   <Shield className="h-6 w-6 text-green-300" />
@@ -48,13 +73,69 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* Main Content */}
-      <main className="p-4 md:p-6">
+      {/* Quick Stats */}
+      <div className="p-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Pending Approvals</p>
+                  <p className="text-2xl font-bold text-yellow-600">{pendingCount}</p>
+                </div>
+                <AlertTriangle className="h-8 w-8 text-yellow-500" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">System Status</p>
+                  <p className="text-sm font-bold text-green-600">Operational</p>
+                </div>
+                <CheckCircle className="h-8 w-8 text-green-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Active Users</p>
+                  <p className="text-2xl font-bold">24/7</p>
+                </div>
+                <Users className="h-8 w-8 text-blue-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Platform</p>
+                  <p className="text-sm font-bold text-blue-600">Boda & Co</p>
+                </div>
+                <Shield className="h-8 w-8 text-blue-500" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Main Content */}
         <Tabs defaultValue="approvals" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-white shadow-sm">
+          <TabsList className="grid w-full grid-cols-3 bg-white shadow-sm">
             <TabsTrigger value="approvals" className="flex items-center gap-2">
               <AlertTriangle className="h-4 w-4" />
               User Approvals
+              {pendingCount > 0 && (
+                <Badge variant="destructive" className="ml-1">
+                  {pendingCount}
+                </Badge>
+              )}
             </TabsTrigger>
             <TabsTrigger value="notifications" className="flex items-center gap-2">
               <Bell className="h-4 w-4" />
@@ -63,10 +144,6 @@ const AdminDashboard = () => {
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               User Management
-            </TabsTrigger>
-            <TabsTrigger value="system" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              System Settings
             </TabsTrigger>
           </TabsList>
 
@@ -81,52 +158,8 @@ const AdminDashboard = () => {
           <TabsContent value="users" className="space-y-6">
             <UserManagement />
           </TabsContent>
-
-          <TabsContent value="system" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Settings className="h-5 w-5" />
-                  System Settings
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">System Status</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex items-center gap-2 text-green-600">
-                        <CheckCircle className="h-5 w-5" />
-                        <span>All systems operational</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Platform Stats</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <span>Active Users:</span>
-                          <span className="font-semibold">24/7</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>System Uptime:</span>
-                          <span className="font-semibold">99.9%</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
         </Tabs>
-      </main>
+      </div>
     </div>
   );
 };
