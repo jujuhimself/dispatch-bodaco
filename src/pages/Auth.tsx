@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -20,6 +21,8 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { validationService } from '@/services/validation-service';
+import { enhancedAuditService } from '@/services/enhanced-audit-service';
 
 const Auth = () => {
   const { user, loading, signIn, signUp } = useAuth();
@@ -42,6 +45,15 @@ const Auth = () => {
   const [name, setName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   
+  // Validation states
+  const [validationErrors, setValidationErrors] = useState<Record<string, string[]>>({});
+  const [isValidating, setIsValidating] = useState(false);
+  
+  // Initialize validation service
+  useEffect(() => {
+    validationService.initialize();
+  }, []);
+  
   // Check if user is already authenticated
   useEffect(() => {
     if (user && !loading) {
@@ -50,14 +62,54 @@ const Auth = () => {
     }
   }, [user, loading, navigate, location]);
   
+  // Real-time field validation
+  const validateField = (fieldName: string, value: any) => {
+    const result = validationService.validateField(fieldName, value);
+    setValidationErrors(prev => ({
+      ...prev,
+      [fieldName]: result.errors
+    }));
+    return result.valid;
+  };
+
+  const handleFieldChange = (fieldName: string, value: any) => {
+    // Clear previous errors for this field
+    setValidationErrors(prev => ({
+      ...prev,
+      [fieldName]: []
+    }));
+    
+    // Validate after a short delay to avoid excessive validation
+    setTimeout(() => validateField(fieldName, value), 300);
+  };
+  
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
     try {
+      // Log login attempt
+      await enhancedAuditService.logSecurityEvent('login_attempt', {
+        email: loginEmail,
+        ip_address: 'client_ip_not_available',
+        user_agent: navigator.userAgent
+      });
+
       await signIn(loginEmail, loginPassword);
+      
+      // Log successful login
+      await enhancedAuditService.logSecurityEvent('login_success', {
+        email: loginEmail
+      });
+      
       // Navigation will be handled by the auth context
     } catch (error: any) {
+      // Log failed login
+      await enhancedAuditService.logSecurityEvent('login_failure', {
+        email: loginEmail,
+        error: error.message
+      });
+      
       toast.error(error.message || 'Error during sign in');
       console.error('Login error:', error);
     } finally {
@@ -79,15 +131,46 @@ const Auth = () => {
     }
     
     setIsLoading(true);
+    setIsValidating(true);
     
     try {
+      // Server-side validation
+      const validationResult = await validationService.validateUserData({
+        email: registerEmail,
+        name: name,
+        phone_number: phoneNumber,
+        role: role
+      });
+      
+      if (!validationResult.valid) {
+        setValidationErrors({
+          general: validationResult.errors
+        });
+        toast.error('Please fix the validation errors and try again');
+        return;
+      }
+      
       const userData = {
         role,
         name,
         phone_number: phoneNumber,
       };
       
+      // Log registration attempt
+      await enhancedAuditService.logSecurityEvent('registration_attempt', {
+        email: registerEmail,
+        role: role,
+        name: name
+      });
+      
       await signUp(registerEmail, registerPassword, userData);
+      
+      // Log successful registration
+      await enhancedAuditService.logUserAction('registration_success', {
+        email: registerEmail,
+        role: role
+      });
+      
       setRegistrationSuccess(true);
       
       // Reset form
@@ -97,11 +180,20 @@ const Auth = () => {
       setRole('dispatcher');
       setName('');
       setPhoneNumber('');
+      setValidationErrors({});
+      
     } catch (error: any) {
+      // Log failed registration
+      await enhancedAuditService.logSecurityEvent('registration_failure', {
+        email: registerEmail,
+        error: error.message
+      });
+      
       toast.error(error.message || 'Error during registration');
       console.error('Registration error:', error);
     } finally {
       setIsLoading(false);
+      setIsValidating(false);
     }
   };
 
@@ -233,46 +325,91 @@ const Auth = () => {
                 
                 <TabsContent value="register">
                   <form onSubmit={handleRegister} className="space-y-4">
+                    {/* General validation errors */}
+                    {validationErrors.general && validationErrors.general.length > 0 && (
+                      <Alert className="bg-red-50 border-red-200">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Validation Errors</AlertTitle>
+                        <AlertDescription>
+                          <ul className="list-disc list-inside space-y-1">
+                            {validationErrors.general.map((error, index) => (
+                              <li key={index} className="text-sm">{error}</li>
+                            ))}
+                          </ul>
+                        </AlertDescription>
+                      </Alert>
+                    )}
+
                     <div className="space-y-2">
                       <Label htmlFor="register-name" className="text-slate-700">Full Name</Label>
                       <Input 
                         id="register-name" 
                         type="text" 
                         value={name}
-                        onChange={(e) => setName(e.target.value)}
+                        onChange={(e) => {
+                          setName(e.target.value);
+                          handleFieldChange('name', e.target.value);
+                        }}
                         placeholder="John Doe" 
                         required 
-                        className="border-slate-200 focus:border-red-500"
+                        className={`border-slate-200 focus:border-red-500 ${
+                          validationErrors.name?.length ? 'border-red-300' : ''
+                        }`}
                       />
+                      {validationErrors.name?.map((error, index) => (
+                        <p key={index} className="text-sm text-red-600">{error}</p>
+                      ))}
                     </div>
+                    
                     <div className="space-y-2">
                       <Label htmlFor="register-email" className="text-slate-700">Email Address</Label>
                       <Input 
                         id="register-email" 
                         type="email" 
                         value={registerEmail}
-                        onChange={(e) => setRegisterEmail(e.target.value)}
+                        onChange={(e) => {
+                          setRegisterEmail(e.target.value);
+                          handleFieldChange('email', e.target.value);
+                        }}
                         placeholder="you@example.com" 
                         required 
-                        className="border-slate-200 focus:border-red-500"
+                        className={`border-slate-200 focus:border-red-500 ${
+                          validationErrors.email?.length ? 'border-red-300' : ''
+                        }`}
                       />
+                      {validationErrors.email?.map((error, index) => (
+                        <p key={index} className="text-sm text-red-600">{error}</p>
+                      ))}
                     </div>
+                    
                     <div className="space-y-2">
                       <Label htmlFor="register-phone" className="text-slate-700">Phone Number</Label>
                       <Input 
                         id="register-phone" 
                         type="tel" 
                         value={phoneNumber}
-                        onChange={(e) => setPhoneNumber(e.target.value)}
+                        onChange={(e) => {
+                          setPhoneNumber(e.target.value);
+                          handleFieldChange('phone_number', e.target.value);
+                        }}
                         placeholder="+1 (555) 123-4567" 
-                        className="border-slate-200 focus:border-red-500"
+                        className={`border-slate-200 focus:border-red-500 ${
+                          validationErrors.phone_number?.length ? 'border-red-300' : ''
+                        }`}
                       />
+                      {validationErrors.phone_number?.map((error, index) => (
+                        <p key={index} className="text-sm text-red-600">{error}</p>
+                      ))}
                     </div>
+                    
                     <div className="space-y-2">
                       <Label htmlFor="role" className="text-slate-700">Select Role</Label>
                       <Select 
                         value={role} 
-                        onValueChange={(value) => setRole(value as UserRole)}
+                        onValueChange={(value) => {
+                          setRole(value as UserRole);
+                          handleFieldChange('role', value);
+                        }}
                       >
                         <SelectTrigger className="border-slate-200 focus:border-red-500">
                           <SelectValue placeholder="Select a role" />
@@ -287,18 +424,31 @@ const Auth = () => {
                           </SelectGroup>
                         </SelectContent>
                       </Select>
+                      {validationErrors.role?.map((error, index) => (
+                        <p key={index} className="text-sm text-red-600">{error}</p>
+                      ))}
                     </div>
+                    
                     <div className="space-y-2">
                       <Label htmlFor="register-password" className="text-slate-700">Password</Label>
                       <Input 
                         id="register-password" 
                         type="password"
                         value={registerPassword}
-                        onChange={(e) => setRegisterPassword(e.target.value)}
+                        onChange={(e) => {
+                          setRegisterPassword(e.target.value);
+                          handleFieldChange('password', e.target.value);
+                        }}
                         required 
-                        className="border-slate-200 focus:border-red-500"
+                        className={`border-slate-200 focus:border-red-500 ${
+                          validationErrors.password?.length ? 'border-red-300' : ''
+                        }`}
                       />
+                      {validationErrors.password?.map((error, index) => (
+                        <p key={index} className="text-sm text-red-600">{error}</p>
+                      ))}
                     </div>
+                    
                     <div className="space-y-2">
                       <Label htmlFor="confirm-password" className="text-slate-700">Confirm Password</Label>
                       <Input 
@@ -313,9 +463,9 @@ const Auth = () => {
                     <Button 
                       type="submit" 
                       className="w-full bg-gradient-to-r from-red-600 to-blue-600 hover:from-red-700 hover:to-blue-700 text-white font-medium py-2.5" 
-                      disabled={isLoading}
+                      disabled={isLoading || isValidating}
                     >
-                      {isLoading ? 'Creating Account...' : 'Create Account'}
+                      {isLoading ? 'Creating Account...' : isValidating ? 'Validating...' : 'Create Account'}
                     </Button>
                   </form>
                 </TabsContent>

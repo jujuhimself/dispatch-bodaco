@@ -390,6 +390,42 @@ export type Database = {
           },
         ]
       }
+      email_templates: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          html_content: string
+          id: string
+          name: string
+          subject: string
+          text_content: string | null
+          updated_at: string | null
+          variables: Json | null
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          html_content: string
+          id?: string
+          name: string
+          subject: string
+          text_content?: string | null
+          updated_at?: string | null
+          variables?: Json | null
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          html_content?: string
+          id?: string
+          name?: string
+          subject?: string
+          text_content?: string | null
+          updated_at?: string | null
+          variables?: Json | null
+        }
+        Relationships: []
+      }
       emergencies: {
         Row: {
           assigned_at: string | null
@@ -549,6 +585,48 @@ export type Database = {
           },
         ]
       }
+      enhanced_audit_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          id: string
+          ip_address: unknown | null
+          metadata: Json | null
+          new_values: Json | null
+          old_values: Json | null
+          resource: string
+          resource_id: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          new_values?: Json | null
+          old_values?: Json | null
+          resource: string
+          resource_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          new_values?: Json | null
+          old_values?: Json | null
+          resource?: string
+          resource_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       hospitals: {
         Row: {
           available_beds: number
@@ -624,6 +702,33 @@ export type Database = {
           type?: string
           updated_at?: string | null
           vehicle_id?: string | null
+        }
+        Relationships: []
+      }
+      permissions: {
+        Row: {
+          action: string
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          resource: string
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          resource: string
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          resource?: string
         }
         Relationships: []
       }
@@ -766,6 +871,38 @@ export type Database = {
           },
         ]
       }
+      role_permissions: {
+        Row: {
+          granted_at: string | null
+          granted_by: string | null
+          id: string
+          permission_id: string | null
+          role: string
+        }
+        Insert: {
+          granted_at?: string | null
+          granted_by?: string | null
+          id?: string
+          permission_id?: string | null
+          role: string
+        }
+        Update: {
+          granted_at?: string | null
+          granted_by?: string | null
+          id?: string
+          permission_id?: string | null
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_permissions_permission_id_fkey"
+            columns: ["permission_id"]
+            isOneToOne: false
+            referencedRelation: "permissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shifts: {
         Row: {
           created_at: string | null
@@ -807,6 +944,36 @@ export type Database = {
           },
         ]
       }
+      validation_rules: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          error_message: string
+          field_name: string
+          id: string
+          rule_type: string
+          rule_value: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          error_message: string
+          field_name: string
+          id?: string
+          rule_type: string
+          rule_value?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          error_message?: string
+          field_name?: string
+          id?: string
+          rule_type?: string
+          rule_value?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -816,9 +983,41 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: boolean
       }
+      approve_user_enhanced: {
+        Args: { user_id_param: string; notes_param?: string }
+        Returns: Json
+      }
+      log_admin_action: {
+        Args: {
+          action_param: string
+          resource_param: string
+          resource_id_param?: string
+          old_values_param?: Json
+          new_values_param?: Json
+          metadata_param?: Json
+        }
+        Returns: string
+      }
       reject_user: {
         Args: { user_id_param: string; reason_param?: string }
         Returns: boolean
+      }
+      reject_user_enhanced: {
+        Args: {
+          user_id_param: string
+          reason_param?: string
+          notes_param?: string
+        }
+        Returns: Json
+      }
+      validate_user_data: {
+        Args: {
+          email_param: string
+          name_param: string
+          phone_param?: string
+          role_param?: string
+        }
+        Returns: Json
       }
     }
     Enums: {
