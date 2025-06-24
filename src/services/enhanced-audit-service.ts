@@ -77,16 +77,16 @@ class EnhancedAuditService {
 
       if (error) throw error;
       
-      // Transform the data to match our interface
+      // Transform the data to match our interface with proper type handling
       const transformedData: AuditLog[] = (data || []).map(row => ({
         id: row.id,
         user_id: row.user_id,
         action: row.action,
         resource: row.resource,
         resource_id: row.resource_id,
-        old_values: row.old_values as Record<string, any> | undefined,
-        new_values: row.new_values as Record<string, any> | undefined,
-        ip_address: row.ip_address as string | undefined,
+        old_values: row.old_values ? row.old_values as Record<string, any> : undefined,
+        new_values: row.new_values ? row.new_values as Record<string, any> : undefined,
+        ip_address: row.ip_address ? String(row.ip_address) : undefined,
         user_agent: row.user_agent,
         metadata: (row.metadata as Record<string, any>) || {},
         created_at: row.created_at
