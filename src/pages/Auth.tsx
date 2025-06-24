@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -6,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Ambulance, CheckCircle2, AlertCircle, Mail, Clock } from 'lucide-react';
+import { Ambulance, CheckCircle2, AlertCircle, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { UserRole } from '@/types/auth-types';
@@ -133,7 +132,7 @@ const Auth = () => {
               </div>
               
               <Alert className="bg-yellow-50 border-yellow-200 text-yellow-800">
-                <Clock className="h-4 w-4" />
+                <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Pending Approval</AlertTitle>
                 <AlertDescription>
                   Your account will need admin approval before you can access the platform.
