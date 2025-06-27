@@ -1,16 +1,14 @@
 
-import { toast as sonnerToast } from "sonner";
+import { toast as sonnerToast } from 'sonner';
 
-export type ToastProps = {
-  title?: string;
-  description?: string;
-  action?: React.ReactNode;
-};
+export const toast = sonnerToast;
 
 export const useToast = () => {
   return {
     toast: sonnerToast,
+    success: sonnerToast.success,
+    error: sonnerToast.error,
+    info: sonnerToast.info,
+    warning: sonnerToast.warning,
   };
 };
-
-export const toast = sonnerToast;

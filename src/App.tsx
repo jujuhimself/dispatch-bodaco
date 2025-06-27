@@ -7,6 +7,9 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import RequireAuth from '@/components/auth/RequireAuth';
 import Auth from '@/pages/Auth';
 import AdminDashboard from '@/pages/AdminDashboard';
+import EmergenciesPage from '@/pages/EmergenciesPage';
+import EmergencyDetail from '@/pages/EmergencyDetail';
+import EmergencyCreate from '@/pages/EmergencyCreate';
 import './App.css';
 
 const queryClient = new QueryClient({
@@ -37,6 +40,34 @@ function App() {
                 element={
                   <RequireAuth>
                     <AdminDashboard />
+                  </RequireAuth>
+                } 
+              />
+              
+              {/* Protected emergency routes */}
+              <Route 
+                path="/emergencies" 
+                element={
+                  <RequireAuth>
+                    <EmergenciesPage />
+                  </RequireAuth>
+                } 
+              />
+              
+              <Route 
+                path="/emergency/create" 
+                element={
+                  <RequireAuth>
+                    <EmergencyCreate />
+                  </RequireAuth>
+                } 
+              />
+              
+              <Route 
+                path="/emergency/:id" 
+                element={
+                  <RequireAuth>
+                    <EmergencyDetail />
                   </RequireAuth>
                 } 
               />
