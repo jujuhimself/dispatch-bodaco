@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 import ResponderAssignmentFlow from '@/components/emergencies/ResponderAssignmentFlow';
 import EmergencyTimeline from '@/components/emergencies/EmergencyTimeline';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import BackNavigation from '@/components/navigation/BackNavigation';
+import { BackNavigation } from '@/components/navigation/BackNavigation';
 
 const EmergencyDetailsPage = () => {
   const { id } = useParams<{ id: string }>();

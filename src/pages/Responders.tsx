@@ -128,7 +128,7 @@ const RespondersPage: React.FC = () => {
 
   return (
     <div className="min-h-screen">
-      <BackNavigation title="Responder Management" />
+      <BackNavigation />
       
       <div className="container mx-auto p-4 space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4">

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,7 +17,7 @@ import {
 import { getEmergencyStatistics, fetchActiveEmergencies } from '@/services/emergency-service';
 import { QuickEmergencyCreate } from '@/components/emergency/QuickEmergencyCreate';
 import { useAuth } from '@/contexts/AuthContext';
-import { ApprovalGuard } from '@/components/auth/ApprovalGuard';
+import ApprovalGuard from '@/components/auth/ApprovalGuard';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
