@@ -86,8 +86,8 @@ class EnhancedAuditService {
         resource_id: row.resource_id,
         old_values: row.old_values ? row.old_values as Record<string, any> : undefined,
         new_values: row.new_values ? row.new_values as Record<string, any> : undefined,
-        ip_address: row.ip_address || undefined,
-        user_agent: row.user_agent || undefined,
+        ip_address: row.ip_address ? String(row.ip_address) : undefined,
+        user_agent: row.user_agent ? String(row.user_agent) : undefined,
         metadata: (row.metadata as Record<string, any>) || {},
         created_at: row.created_at
       }));
