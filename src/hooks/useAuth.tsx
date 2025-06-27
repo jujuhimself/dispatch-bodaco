@@ -18,7 +18,7 @@ export interface UseAuthReturn {
 
 const useAuth = (): UseAuthReturn => {
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false); // Changed to false by default
   const [approvalStatus, setApprovalStatus] = useState<string | null>(null);
 
   const fetchUserProfile = useCallback(async (userId: string) => {
@@ -84,7 +84,7 @@ const useAuth = (): UseAuthReturn => {
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         console.log('Auth state change:', event);
         
         if (event === 'SIGNED_OUT') {
@@ -92,8 +92,6 @@ const useAuth = (): UseAuthReturn => {
           setApprovalStatus(null);
           setLoading(false);
         } else if (session?.user) {
-          setLoading(true);
-          
           // Use setTimeout to prevent recursive calls
           setTimeout(async () => {
             const profile = await fetchUserProfile(session.user.id);
@@ -134,6 +132,8 @@ const useAuth = (): UseAuthReturn => {
       console.error('Error signing in:', error);
       toast.error(error.message || 'Error signing in');
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 

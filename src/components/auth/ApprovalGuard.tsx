@@ -14,17 +14,13 @@ const ApprovalGuard: React.FC<ApprovalGuardProps> = ({ children }) => {
   const { user, approvalStatus, signOut, loading } = useAuth();
   const location = useLocation();
 
-  // Show loading while checking auth status
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
-      </div>
-    );
+  // Don't show loading spinner, just redirect if not authenticated
+  if (!user && !loading) {
+    return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 
-  if (!user) {
-    return <Navigate to="/auth" state={{ from: location }} replace />;
+  if (loading) {
+    return null; // Don't show anything while loading
   }
 
   // If user is approved, render the protected component
