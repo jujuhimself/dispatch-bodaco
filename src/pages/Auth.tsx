@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -22,7 +23,6 @@ import {
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { validationService } from '@/services/validation-service';
 import { enhancedAuditService } from '@/services/enhanced-audit-service';
-import AdminBootstrap from '@/components/admin/AdminBootstrap';
 
 const Auth = () => {
   const { user, loading, signIn, signUp } = useAuth();
@@ -279,15 +279,12 @@ const Auth = () => {
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="login" className="w-full">
-                <TabsList className="grid w-full grid-cols-3 mb-6 bg-slate-100">
+                <TabsList className="grid w-full grid-cols-2 mb-6 bg-slate-100">
                   <TabsTrigger value="login" className="data-[state=active]:bg-white">
                     Sign In
                   </TabsTrigger>
                   <TabsTrigger value="register" className="data-[state=active]:bg-white">
                     Register
-                  </TabsTrigger>
-                  <TabsTrigger value="admin-bootstrap" className="data-[state=active]:bg-white text-xs">
-                    First Admin
                   </TabsTrigger>
                 </TabsList>
                 
@@ -342,137 +339,135 @@ const Auth = () => {
                     </Alert>
                   )}
 
-                  <div className="space-y-2">
-                    <Label htmlFor="register-name" className="text-slate-700">Full Name</Label>
-                    <Input 
-                      id="register-name" 
-                      type="text" 
-                      value={name}
-                      onChange={(e) => {
-                        setName(e.target.value);
-                        handleFieldChange('name', e.target.value);
-                      }}
-                      placeholder="John Doe" 
-                      required 
-                      className={`border-slate-200 focus:border-red-500 ${
-                        validationErrors.name?.length ? 'border-red-300' : ''
-                      }`}
-                    />
-                    {validationErrors.name?.map((error, index) => (
-                      <p key={index} className="text-sm text-red-600">{error}</p>
-                    ))}
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="register-email" className="text-slate-700">Email Address</Label>
-                    <Input 
-                      id="register-email" 
-                      type="email" 
-                      value={registerEmail}
-                      onChange={(e) => {
-                        setRegisterEmail(e.target.value);
-                        handleFieldChange('email', e.target.value);
-                      }}
-                      placeholder="you@example.com" 
-                      required 
-                      className={`border-slate-200 focus:border-red-500 ${
-                        validationErrors.email?.length ? 'border-red-300' : ''
-                      }`}
-                    />
-                    {validationErrors.email?.map((error, index) => (
-                      <p key={index} className="text-sm text-red-600">{error}</p>
-                    ))}
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="register-phone" className="text-slate-700">Phone Number</Label>
-                    <Input 
-                      id="register-phone" 
-                      type="tel" 
-                      value={phoneNumber}
-                      onChange={(e) => {
-                        setPhoneNumber(e.target.value);
-                        handleFieldChange('phone_number', e.target.value);
-                      }}
-                      placeholder="+1 (555) 123-4567" 
-                      className={`border-slate-200 focus:border-red-500 ${
-                        validationErrors.phone_number?.length ? 'border-red-300' : ''
-                      }`}
-                    />
-                    {validationErrors.phone_number?.map((error, index) => (
-                      <p key={index} className="text-sm text-red-600">{error}</p>
-                    ))}
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="role" className="text-slate-700">Select Role</Label>
-                    <Select 
-                      value={role} 
-                      onValueChange={(value) => {
-                        setRole(value as UserRole);
-                        handleFieldChange('role', value);
-                      }}
+                  <form onSubmit={handleRegister} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="register-name" className="text-slate-700">Full Name</Label>
+                      <Input 
+                        id="register-name" 
+                        type="text" 
+                        value={name}
+                        onChange={(e) => {
+                          setName(e.target.value);
+                          handleFieldChange('name', e.target.value);
+                        }}
+                        placeholder="John Doe" 
+                        required 
+                        className={`border-slate-200 focus:border-red-500 ${
+                          validationErrors.name?.length ? 'border-red-300' : ''
+                        }`}
+                      />
+                      {validationErrors.name?.map((error, index) => (
+                        <p key={index} className="text-sm text-red-600">{error}</p>
+                      ))}
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="register-email" className="text-slate-700">Email Address</Label>
+                      <Input 
+                        id="register-email" 
+                        type="email" 
+                        value={registerEmail}
+                        onChange={(e) => {
+                          setRegisterEmail(e.target.value);
+                          handleFieldChange('email', e.target.value);
+                        }}
+                        placeholder="you@example.com" 
+                        required 
+                        className={`border-slate-200 focus:border-red-500 ${
+                          validationErrors.email?.length ? 'border-red-300' : ''
+                        }`}
+                      />
+                      {validationErrors.email?.map((error, index) => (
+                        <p key={index} className="text-sm text-red-600">{error}</p>
+                      ))}
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="register-phone" className="text-slate-700">Phone Number</Label>
+                      <Input 
+                        id="register-phone" 
+                        type="tel" 
+                        value={phoneNumber}
+                        onChange={(e) => {
+                          setPhoneNumber(e.target.value);
+                          handleFieldChange('phone_number', e.target.value);
+                        }}
+                        placeholder="+1 (555) 123-4567" 
+                        className={`border-slate-200 focus:border-red-500 ${
+                          validationErrors.phone_number?.length ? 'border-red-300' : ''
+                        }`}
+                      />
+                      {validationErrors.phone_number?.map((error, index) => (
+                        <p key={index} className="text-sm text-red-600">{error}</p>
+                      ))}
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="role" className="text-slate-700">Select Role</Label>
+                      <Select 
+                        value={role} 
+                        onValueChange={(value) => {
+                          setRole(value as UserRole);
+                          handleFieldChange('role', value);
+                        }}
+                      >
+                        <SelectTrigger className="border-slate-200 focus:border-red-500">
+                          <SelectValue placeholder="Select a role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectLabel>Roles</SelectLabel>
+                            <SelectItem value="dispatcher">Dispatcher</SelectItem>
+                            <SelectItem value="responder">Responder</SelectItem>
+                            <SelectItem value="admin">Administrator</SelectItem>
+                            <SelectItem value="user">Standard User</SelectItem>
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                      {validationErrors.role?.map((error, index) => (
+                        <p key={index} className="text-sm text-red-600">{error}</p>
+                      ))}
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="register-password" className="text-slate-700">Password</Label>
+                      <Input 
+                        id="register-password" 
+                        type="password"
+                        value={registerPassword}
+                        onChange={(e) => {
+                          setRegisterPassword(e.target.value);
+                          handleFieldChange('password', e.target.value);
+                        }}
+                        required 
+                        className={`border-slate-200 focus:border-red-500 ${
+                          validationErrors.password?.length ? 'border-red-300' : ''
+                        }`}
+                      />
+                      {validationErrors.password?.map((error, index) => (
+                        <p key={index} className="text-sm text-red-600">{error}</p>
+                      ))}
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="confirm-password" className="text-slate-700">Confirm Password</Label>
+                      <Input 
+                        id="confirm-password" 
+                        type="password" 
+                        value={registerConfirmPassword}
+                        onChange={(e) => setRegisterConfirmPassword(e.target.value)}
+                        required 
+                        className="border-slate-200 focus:border-red-500"
+                      />
+                    </div>
+                    <Button 
+                      type="submit" 
+                      className="w-full bg-gradient-to-r from-red-600 to-blue-600 hover:from-red-700 hover:to-blue-700 text-white font-medium py-2.5" 
+                      disabled={isLoading || isValidating}
                     >
-                      <SelectTrigger className="border-slate-200 focus:border-red-500">
-                        <SelectValue placeholder="Select a role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          <SelectLabel>Roles</SelectLabel>
-                          <SelectItem value="dispatcher">Dispatcher</SelectItem>
-                          <SelectItem value="responder">Responder</SelectItem>
-                          <SelectItem value="admin">Administrator</SelectItem>
-                          <SelectItem value="user">Standard User</SelectItem>
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                    {validationErrors.role?.map((error, index) => (
-                      <p key={index} className="text-sm text-red-600">{error}</p>
-                    ))}
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="register-password" className="text-slate-700">Password</Label>
-                    <Input 
-                      id="register-password" 
-                      type="password"
-                      value={registerPassword}
-                      onChange={(e) => {
-                        setRegisterPassword(e.target.value);
-                        handleFieldChange('password', e.target.value);
-                      }}
-                      required 
-                      className={`border-slate-200 focus:border-red-500 ${
-                        validationErrors.password?.length ? 'border-red-300' : ''
-                      }`}
-                    />
-                    {validationErrors.password?.map((error, index) => (
-                      <p key={index} className="text-sm text-red-600">{error}</p>
-                    ))}
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="confirm-password" className="text-slate-700">Confirm Password</Label>
-                    <Input 
-                      id="confirm-password" 
-                      type="password" 
-                      value={registerConfirmPassword}
-                      onChange={(e) => setRegisterConfirmPassword(e.target.value)}
-                      required 
-                      className="border-slate-200 focus:border-red-500"
-                    />
-                  </div>
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-gradient-to-r from-red-600 to-blue-600 hover:from-red-700 hover:to-blue-700 text-white font-medium py-2.5" 
-                    disabled={isLoading || isValidating}
-                  >
-                    {isLoading ? 'Creating Account...' : isValidating ? 'Validating...' : 'Create Account'}
-                  </Button>
-                </TabsContent>
-                
-                <TabsContent value="admin-bootstrap">
-                  <AdminBootstrap />
+                      {isLoading ? 'Creating Account...' : isValidating ? 'Validating...' : 'Create Account'}
+                    </Button>
+                  </form>
                 </TabsContent>
               </Tabs>
             </CardContent>
