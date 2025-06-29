@@ -1,20 +1,14 @@
 
 import React from 'react';
-import { Helmet } from 'react-helmet-async';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CommunicationDashboard } from '@/components/communications/CommunicationDashboard';
 
-const CommunicationsPage: React.FC = () => {
+const Communications: React.FC = () => {
   return (
-    <>
-      <Helmet>
-        <title>Communications | Rapid Response Guardian</title>
-      </Helmet>
-      
-      <div className="h-[calc(100vh-4rem)]">
-        <CommunicationDashboard />
-      </div>
-    </>
+    <div className="container mx-auto p-6">
+      <CommunicationDashboard />
+    </div>
   );
 };
 
-export default CommunicationsPage;
+export default Communications;

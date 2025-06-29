@@ -1,15 +1,21 @@
 
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from '@/components/ui/sonner';
+import { Toaster } from 'sonner';
 import { AuthProvider } from '@/contexts/AuthContext';
-import RequireAuth from '@/components/auth/RequireAuth';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import Layout from '@/components/Layout';
 import Auth from '@/pages/Auth';
-import AdminDashboard from '@/pages/AdminDashboard';
+import Dashboard from '@/pages/Dashboard';
 import EmergenciesPage from '@/pages/EmergenciesPage';
+import EmergencyDetailsPage from '@/pages/EmergencyDetailsPage';
 import EmergencyDetail from '@/pages/EmergencyDetail';
-import EmergencyCreate from '@/pages/EmergencyCreate';
+import CreateEmergency from '@/pages/CreateEmergency';
+import AdminPanel from '@/pages/AdminPanel';
+import Communications from '@/pages/Communications';
+import Responders from '@/pages/Responders';
+import Reports from '@/pages/Reports';
+import Settings from '@/pages/Settings';
 import './App.css';
 
 const queryClient = new QueryClient({
@@ -26,58 +32,88 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <Router>
-          <div className="App">
-            <Routes>
-              {/* Default route redirects to auth */}
-              <Route path="/" element={<Navigate to="/auth" replace />} />
-              
-              {/* Auth page for login/signup */}
-              <Route path="/auth" element={<Auth />} />
-              
-              {/* Protected admin dashboard */}
-              <Route 
-                path="/admin" 
-                element={
-                  <RequireAuth>
-                    <AdminDashboard />
-                  </RequireAuth>
-                } 
-              />
-              
-              {/* Protected emergency routes */}
-              <Route 
-                path="/emergencies" 
-                element={
-                  <RequireAuth>
-                    <EmergenciesPage />
-                  </RequireAuth>
-                } 
-              />
-              
-              <Route 
-                path="/emergency/create" 
-                element={
-                  <RequireAuth>
-                    <EmergencyCreate />
-                  </RequireAuth>
-                } 
-              />
-              
-              <Route 
-                path="/emergency/:id" 
-                element={
-                  <RequireAuth>
-                    <EmergencyDetail />
-                  </RequireAuth>
-                } 
-              />
-              
-              {/* Catch all route */}
-              <Route path="*" element={<Navigate to="/auth" replace />} />
-            </Routes>
-            <Toaster />
-          </div>
+          <Routes>
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/" element={
+              <ProtectedRoute>
+                <Layout>
+                  <Dashboard />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <Layout>
+                  <Dashboard />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/emergencies" element={
+              <ProtectedRoute>
+                <Layout>
+                  <EmergenciesPage />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/emergency/create" element={
+              <ProtectedRoute>
+                <Layout>
+                  <CreateEmergency />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/emergency/:id" element={
+              <ProtectedRoute>
+                <Layout>
+                  <EmergencyDetailsPage />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/emergency-detail/:id" element={
+              <ProtectedRoute>
+                <Layout>
+                  <EmergencyDetail />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin" element={
+              <ProtectedRoute requiredRole="admin">
+                <Layout>
+                  <AdminPanel />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/communications" element={
+              <ProtectedRoute>
+                <Layout>
+                  <Communications />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/responders" element={
+              <ProtectedRoute>
+                <Layout>
+                  <Responders />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/reports" element={
+              <ProtectedRoute>
+                <Layout>
+                  <Reports />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/settings" element={
+              <ProtectedRoute>
+                <Layout>
+                  <Settings />
+                </Layout>
+              </ProtectedRoute>
+            } />
+          </Routes>
         </Router>
+        <Toaster richColors position="top-right" />
       </AuthProvider>
     </QueryClientProvider>
   );
