@@ -23,7 +23,7 @@ const Settings: React.FC = () => {
           <CardContent className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1">Name</label>
-              <p className="text-gray-600">{user?.user_metadata?.name || 'Not set'}</p>
+              <p className="text-gray-600">{user?.name || 'Not set'}</p>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Email</label>
@@ -31,7 +31,7 @@ const Settings: React.FC = () => {
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Role</label>
-              <p className="text-gray-600">{user?.user_metadata?.role || 'user'}</p>
+              <p className="text-gray-600">{user?.role || 'user'}</p>
             </div>
             <Button variant="outline" className="w-full">
               Edit Profile

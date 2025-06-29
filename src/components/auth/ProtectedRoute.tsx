@@ -26,7 +26,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
   }
 
   // Check if user has required role
-  if (requiredRole && user.user_metadata?.role !== requiredRole) {
+  if (requiredRole && user.role !== requiredRole) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

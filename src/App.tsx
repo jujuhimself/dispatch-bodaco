@@ -6,7 +6,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import Layout from '@/components/Layout';
 import Auth from '@/pages/Auth';
-import Dashboard from '@/pages/Dashboard';
+import Dashboard from '@/components/dashboard/Dashboard';
 import EmergenciesPage from '@/pages/EmergenciesPage';
 import EmergencyDetailsPage from '@/pages/EmergencyDetailsPage';
 import EmergencyDetail from '@/pages/EmergencyDetail';

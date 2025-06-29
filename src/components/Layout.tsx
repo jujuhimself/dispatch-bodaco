@@ -31,7 +31,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   ];
 
   // Add admin panel for admin users
-  if (user?.user_metadata?.role === 'admin') {
+  if (user?.role === 'admin') {
     navItems.splice(-1, 0, { path: '/admin', label: 'Admin Panel', icon: Shield });
   }
 
@@ -79,7 +79,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               {/* User Info */}
               <div className="flex items-center space-x-2">
                 <span className="text-sm text-gray-600">
-                  {user?.user_metadata?.name || user?.email}
+                  {user?.name || user?.email}
                 </span>
                 <Button
                   variant="ghost"
