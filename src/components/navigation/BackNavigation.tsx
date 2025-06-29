@@ -1,19 +1,19 @@
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface BackNavigationProps {
-  to?: string;
   label?: string;
+  to?: string;
   className?: string;
 }
 
 export const BackNavigation: React.FC<BackNavigationProps> = ({ 
-  to, 
-  label = 'Back',
-  className = ''
+  label = 'Back', 
+  to,
+  className = '' 
 }) => {
   const navigate = useNavigate();
 
@@ -26,13 +26,15 @@ export const BackNavigation: React.FC<BackNavigationProps> = ({
   };
 
   return (
-    <Button
-      variant="ghost"
-      onClick={handleBack}
-      className={`mb-4 ${className}`}
-    >
-      <ArrowLeft className="h-4 w-4 mr-2" />
-      {label}
-    </Button>
+    <div className={`flex items-center space-x-4 ${className}`}>
+      <Button
+        variant="ghost"
+        onClick={handleBack}
+        className="flex items-center space-x-2 text-gray-600 hover:text-gray-900"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        <span>{label}</span>
+      </Button>
+    </div>
   );
 };

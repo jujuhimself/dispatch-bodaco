@@ -1,192 +1,277 @@
 
-import React, { useState, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertCircle, FilePlus, Filter, Loader2, RefreshCw } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { fetchEmergencies } from '@/services/emergency-service';
-import EmergencyList from '@/components/emergencies/EmergencyList';
-import EmergencyFilters from '@/components/emergencies/EmergencyFilters';
-import { BackNavigation } from '@/components/navigation/BackNavigation';
-import { toast } from 'sonner';
-import { Emergency } from '@/types/emergency-types';
+import { Link } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  AlertTriangle, 
+  Plus, 
+  Search, 
+  Filter,
+  MapPin,
+  Clock,
+  User,
+  Eye
+} from 'lucide-react';
+import { fetchAllEmergencies, Emergency } from '@/services/emergency-service';
+import { LoadingState } from '@/components/ui/loading-state';
+import { formatDistanceToNow } from 'date-fns';
 
 const EmergenciesPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('all');
-  const [showFilters, setShowFilters] = useState(false);
-  
-  // Filter states
-  const [searchQuery, setSearchQuery] = useState('');
-  const [typeFilter, setTypeFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
-  
-  const { 
-    data: emergencies,
-    isLoading,
-    error,
-    refetch,
-    isRefetching
-  } = useQuery({
+  const [activeTab, setActiveTab] = useState('all');
+
+  const { data: emergencies, isLoading, error, refetch } = useQuery({
     queryKey: ['emergencies'],
-    queryFn: fetchEmergencies,
-    refetchInterval: 30000 // Auto-refresh every 30 seconds
+    queryFn: fetchAllEmergencies,
+    refetchInterval: 30000, // Refresh every 30 seconds
   });
 
-  const filterEmergencies = useCallback((data: Emergency[] | undefined): Emergency[] => {
+  const getStatusColor = (status: Emergency['status']) => {
+    switch (status) {
+      case 'pending': return 'bg-red-100 text-red-800 border-red-200';
+      case 'assigned': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'in_transit': return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'on_site': return 'bg-green-100 text-green-800 border-green-200';
+      case 'resolved': return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'canceled': return 'bg-gray-100 text-gray-800 border-gray-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getPriorityColor = (priority: number) => {
+    switch (priority) {
+      case 1: return 'bg-red-500 text-white';
+      case 2: return 'bg-orange-500 text-white';
+      case 3: return 'bg-yellow-500 text-white';
+      default: return 'bg-gray-500 text-white';
+    }
+  };
+
+  const getPriorityLabel = (priority: number) => {
+    switch (priority) {
+      case 1: return 'Critical';
+      case 2: return 'High';
+      case 3: return 'Medium';
+      default: return 'Low';
+    }
+  };
+
+  const filterEmergencies = (data: Emergency[]) => {
     if (!data) return [];
     
     return data.filter(emergency => {
-      // First apply active tab filter
-      if (activeTab === 'all') {
-        // Continue with other filters
-      } else if (activeTab === 'active') {
-        if (!['pending', 'assigned', 'in_transit', 'on_site'].includes(emergency.status)) {
-          return false;
-        }
-      } else if (activeTab === 'pending') {
-        if (emergency.status !== 'pending') return false;
-      } else if (activeTab === 'resolved') {
-        if (emergency.status !== 'resolved') return false;
-      }
+      const matchesSearch = emergency.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          emergency.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          emergency.description?.toLowerCase().includes(searchTerm.toLowerCase());
       
-      // Search query filter
-      if (searchQuery && !emergency.type.toLowerCase().includes(searchQuery.toLowerCase()) && 
-          !emergency.location.toLowerCase().includes(searchQuery.toLowerCase()) &&
-          !(emergency.description?.toLowerCase().includes(searchQuery.toLowerCase()))) {
-        return false;
-      }
+      const matchesStatus = statusFilter === 'all' || emergency.status === statusFilter;
+      const matchesPriority = priorityFilter === 'all' || emergency.priority.toString() === priorityFilter;
       
-      // Type filter
-      if (typeFilter !== 'all' && !emergency.type.toLowerCase().includes(typeFilter.toLowerCase())) {
-        return false;
-      }
+      const matchesTab = activeTab === 'all' || 
+                        (activeTab === 'active' && ['pending', 'assigned', 'in_transit', 'on_site'].includes(emergency.status)) ||
+                        (activeTab === 'resolved' && emergency.status === 'resolved');
       
-      // Priority filter
-      if (priorityFilter !== 'all' && emergency.priority !== parseInt(priorityFilter)) {
-        return false;
-      }
-      
-      return true;
+      return matchesSearch && matchesStatus && matchesPriority && matchesTab;
     });
-  }, [activeTab, searchQuery, typeFilter, priorityFilter]);
-  
+  };
+
   const filteredEmergencies = filterEmergencies(emergencies);
-  
-  const handleApplyFilters = () => {
-    toast.success("Filters applied");
-  };
-  
-  const handleResetFilters = () => {
-    setSearchQuery('');
-    setTypeFilter('all');
-    setPriorityFilter('all');
-    toast.success("Filters reset");
-  };
-  
-  const handleRefresh = () => {
-    refetch();
-    toast.success("Emergency list refreshed");
-  };
-  
-  return (
-    <div className="min-h-screen">
-      <div className="container mx-auto p-4 space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-          <h1 className="text-2xl font-bold text-gray-900">Emergency Management</h1>
-          
-          <div className="flex space-x-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setShowFilters(!showFilters)}
-              className="border-orange-200 hover:bg-orange-50"
-            >
-              <Filter className="h-4 w-4 mr-2" />
-              {showFilters ? 'Hide Filters' : 'Show Filters'}
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={handleRefresh}
-              disabled={isRefetching}
-              className="border-orange-200 hover:bg-orange-50"
-            >
-              {isRefetching ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4" />
-              )}
-              <span className="ml-2 hidden sm:inline-block">Refresh</span>
-            </Button>
-            
-            <Link to="/emergency/create">
-              <Button
-                size="sm"
-                className="bg-red-600 hover:bg-red-700 text-white"
-              >
-                <FilePlus className="h-4 w-4 mr-2" />
-                New Emergency
-              </Button>
-            </Link>
-          </div>
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold">Emergency Management</h1>
         </div>
-        
-        {showFilters && (
-          <EmergencyFilters 
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            typeFilter={typeFilter}
-            setTypeFilter={setTypeFilter}
-            priorityFilter={priorityFilter}
-            setPriorityFilter={setPriorityFilter}
-            applyFilters={handleApplyFilters}
-            resetFilters={handleResetFilters}
-          />
-        )}
-        
-        <Card className="border-orange-200 shadow-md">
-          <CardHeader className="pb-2">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid grid-cols-4 bg-orange-100">
-                <TabsTrigger value="all" className="data-[state=active]:bg-orange-600 data-[state=active]:text-white">All</TabsTrigger>
-                <TabsTrigger value="active" className="data-[state=active]:bg-orange-600 data-[state=active]:text-white">Active</TabsTrigger>
-                <TabsTrigger value="pending" className="data-[state=active]:bg-orange-600 data-[state=active]:text-white">Pending</TabsTrigger>
-                <TabsTrigger value="resolved" className="data-[state=active]:bg-orange-600 data-[state=active]:text-white">Resolved</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </CardHeader>
-          <CardContent className="pt-4">
-            {isLoading ? (
-              <div className="flex justify-center items-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
-              </div>
-            ) : error ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <AlertCircle className="h-10 w-10 text-red-500 mb-2" />
-                <h3 className="text-lg font-medium">Error loading emergencies</h3>
-                <p className="text-sm text-gray-500 mb-4">
-                  {error instanceof Error ? error.message : 'An unknown error occurred'}
-                </p>
-                <Button onClick={() => refetch()} className="bg-orange-600 hover:bg-orange-700">Try Again</Button>
-              </div>
-            ) : filteredEmergencies.length === 0 ? (
-              <div className="text-center py-12 text-gray-600">
-                <p className="mb-4">No emergencies found matching your criteria</p>
-                {(searchQuery || typeFilter !== 'all' || priorityFilter !== 'all') && (
-                  <Button variant="outline" onClick={handleResetFilters} className="border-orange-200 hover:bg-orange-50">
-                    Clear Filters
-                  </Button>
-                )}
-              </div>
-            ) : (
-              <EmergencyList emergencies={filteredEmergencies} />
-            )}
-          </CardContent>
-        </Card>
+        <LoadingState isLoading={true} variant="skeleton">
+          <div className="grid grid-cols-1 gap-4">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-32 bg-gray-100 rounded-lg"></div>
+            ))}
+          </div>
+        </LoadingState>
       </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="text-center py-12">
+          <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-red-500" />
+          <h2 className="text-xl font-semibold mb-2">Failed to Load Emergencies</h2>
+          <p className="text-gray-600 mb-4">There was an error loading the emergency data.</p>
+          <Button onClick={() => refetch()}>Try Again</Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Emergency Management</h1>
+          <p className="text-gray-600">Monitor and manage all emergency situations</p>
+        </div>
+        <Link to="/emergency/create">
+          <Button className="bg-red-600 hover:bg-red-700">
+            <Plus className="h-4 w-4 mr-2" />
+            Create Emergency
+          </Button>
+        </Link>
+      </div>
+
+      {/* Filters */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="h-4 w-4 absolute left-3 top-3 text-gray-400" />
+                <Input
+                  placeholder="Search emergencies..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="assigned">Assigned</SelectItem>
+                  <SelectItem value="in_transit">In Transit</SelectItem>
+                  <SelectItem value="on_site">On Site</SelectItem>
+                  <SelectItem value="resolved">Resolved</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Priority</SelectItem>
+                  <SelectItem value="1">Critical</SelectItem>
+                  <SelectItem value="2">High</SelectItem>
+                  <SelectItem value="3">Medium</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="all">All Emergencies</TabsTrigger>
+          <TabsTrigger value="active">Active</TabsTrigger>
+          <TabsTrigger value="resolved">Resolved</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value={activeTab} className="mt-6">
+          {filteredEmergencies.length === 0 ? (
+            <Card>
+              <CardContent className="text-center py-12">
+                <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <h3 className="text-lg font-medium mb-2">No Emergencies Found</h3>
+                <p className="text-gray-600">No emergencies match your current filters.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {filteredEmergencies.map((emergency) => (
+                <Card key={emergency.id} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 space-y-3">
+                        {/* Header */}
+                        <div className="flex items-center space-x-3">
+                          <Badge className={getPriorityColor(emergency.priority)}>
+                            P{emergency.priority} - {getPriorityLabel(emergency.priority)}
+                          </Badge>
+                          <Badge className={getStatusColor(emergency.status)}>
+                            {emergency.status.replace('_', ' ').toUpperCase()}
+                          </Badge>
+                        </div>
+
+                        {/* Emergency Type and Description */}
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                            <AlertTriangle className="h-5 w-5 mr-2 text-red-600" />
+                            {emergency.type}
+                          </h3>
+                          {emergency.description && (
+                            <p className="text-gray-600 mt-1 line-clamp-2">{emergency.description}</p>
+                          )}
+                        </div>
+
+                        {/* Location and Time Info */}
+                        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
+                          <div className="flex items-center">
+                            <MapPin className="h-4 w-4 mr-1" />
+                            {emergency.location}
+                          </div>
+                          <div className="flex items-center">
+                            <Clock className="h-4 w-4 mr-1" />
+                            Reported {formatDistanceToNow(new Date(emergency.reported_at), { addSuffix: true })}
+                          </div>
+                          {emergency.assigned_at && (
+                            <div className="flex items-center">
+                              <User className="h-4 w-4 mr-1" />
+                              Assigned {formatDistanceToNow(new Date(emergency.assigned_at), { addSuffix: true })}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Additional Info */}
+                        <div className="flex items-center space-x-4 text-xs text-gray-400">
+                          <span>ID: {emergency.id.split('-')[1]}</span>
+                          {emergency.coordinates && (
+                            <span>Coordinates: {emergency.coordinates.y.toFixed(4)}, {emergency.coordinates.x.toFixed(4)}</span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex flex-col space-y-2 ml-4">
+                        <Link to={`/emergency/${emergency.id}`}>
+                          <Button variant="outline" size="sm" className="w-full">
+                            <Eye className="h-4 w-4 mr-2" />
+                            View Details
+                          </Button>
+                        </Link>
+                        
+                        {emergency.status === 'pending' && (
+                          <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+                            Assign
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

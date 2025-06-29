@@ -1,132 +1,77 @@
-import React, { useState } from 'react';
+
+import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { SafeEmergencyService } from '@/services/safe-emergency-service';
-import { Loader2, MapPin, ArrowLeft, AlertTriangle, CalendarClock, Ambulance, CheckCircle } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
-import { toast } from 'sonner';
-import ResponderAssignmentFlow from '@/components/emergencies/ResponderAssignmentFlow';
-import EmergencyTimeline from '@/components/emergencies/EmergencyTimeline';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { BackNavigation } from '@/components/navigation/BackNavigation';
+import { 
+  AlertTriangle, 
+  ArrowLeft, 
+  MapPin, 
+  Clock, 
+  User,
+  Phone,
+  MessageSquare,
+  FileText,
+  Navigation
+} from 'lucide-react';
+import { getEmergencyById } from '@/services/emergency-service';
+import { LoadingState } from '@/components/ui/loading-state';
+import { formatDistanceToNow, format } from 'date-fns';
 
-const EmergencyDetailsPage = () => {
+const EmergencyDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [showAssignmentFlow, setShowAssignmentFlow] = useState(false);
-  const [showResolveDialog, setShowResolveDialog] = useState(false);
-  
-  const { 
-    data,
-    isLoading,
-    error,
-    refetch
-  } = useQuery({
+
+  const { data: emergency, isLoading, error } = useQuery({
     queryKey: ['emergency', id],
-    queryFn: () => SafeEmergencyService.fetchEmergencyById(id!),
+    queryFn: () => getEmergencyById(id!),
     enabled: !!id,
-    retry: 2
   });
 
-  const {
-    data: assignmentsData = [],
-    isLoading: assignmentsLoading,
-    refetch: refetchAssignments
-  } = useQuery({
-    queryKey: ['emergency-assignments', id],
-    queryFn: () => SafeEmergencyService.fetchEmergencyAssignments(id!),
-    enabled: !!id,
-    retry: 2
-  });
-  
-  const handleResolveEmergency = async () => {
-    if (!id) return;
-    
-    try {
-      const result = await SafeEmergencyService.updateEmergencyStatus(id, 'resolved');
-      if (result) {
-        toast.success('Emergency has been marked as resolved');
-        setShowResolveDialog(false);
-        refetch();
-      }
-    } catch (error) {
-      console.error('Error resolving emergency:', error);
-      toast.error('Failed to resolve emergency');
-    }
-  };
-  
-  const handleAssignmentComplete = () => {
-    setShowAssignmentFlow(false);
-    refetch();
-    refetchAssignments();
-    toast.success('Responder has been assigned successfully');
-  };
-
-  const formatDate = (dateString?: string | null) => {
-    if (!dateString) return 'N/A';
-    try {
-      return format(parseISO(dateString), 'PPp');
-    } catch (e) {
-      return 'Invalid date';
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending': return 'bg-red-100 text-red-800 border-red-200';
+      case 'assigned': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'in_transit': return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'on_site': return 'bg-green-100 text-green-800 border-green-200';
+      case 'resolved': return 'bg-gray-100 text-gray-800 border-gray-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch(status) {
-      case 'pending':
-        return <Badge className="bg-yellow-600">Pending</Badge>;
-      case 'assigned':
-        return <Badge className="bg-blue-600">Assigned</Badge>;
-      case 'in_transit':
-        return <Badge className="bg-purple-600">In Transit</Badge>;
-      case 'on_site':
-        return <Badge className="bg-green-600">On Site</Badge>;
-      case 'resolved':
-        return <Badge className="bg-gray-600">Resolved</Badge>;
-      case 'canceled':
-        return <Badge variant="outline">Canceled</Badge>;
-      default:
-        return <Badge>{status}</Badge>;
-    }
-  };
-
-  const getPriorityBadge = (priority: number) => {
-    switch(priority) {
-      case 1:
-        return <Badge className="bg-red-600">High Priority</Badge>;
-      case 2:
-        return <Badge className="bg-orange-500">Medium Priority</Badge>;
-      case 3:
-        return <Badge className="bg-blue-500">Low Priority</Badge>;
-      default:
-        return <Badge>Priority {priority}</Badge>;
+  const getPriorityColor = (priority: number) => {
+    switch (priority) {
+      case 1: return 'bg-red-500 text-white';
+      case 2: return 'bg-orange-500 text-white';
+      case 3: return 'bg-yellow-500 text-white';
+      default: return 'bg-gray-500 text-white';
     }
   };
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-4 flex justify-center items-center h-[calc(100vh-8rem)]">
-        <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+      <div className="container mx-auto p-6">
+        <LoadingState isLoading={true} variant="skeleton">
+          <div className="space-y-6">
+            <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+            <div className="h-64 bg-gray-200 rounded"></div>
+            <div className="h-32 bg-gray-200 rounded"></div>
+          </div>
+        </LoadingState>
       </div>
     );
   }
 
-  if (error || !data || !data.emergency) {
+  if (error || !emergency) {
     return (
-      <div className="container mx-auto p-4">
-        <BackNavigation label="Emergency Details" />
-        <div className="text-center">
-          <div className="mb-4">
-            <AlertTriangle className="h-12 w-12 text-red-500 mx-auto" />
-            <h1 className="text-2xl font-bold mt-4">Error Loading Emergency</h1>
-            <p className="text-muted-foreground mt-2">
-              We couldn't load the emergency details. The emergency may have been deleted or you don't have permission to view it.
-            </p>
-          </div>
+      <div className="container mx-auto p-6">
+        <div className="text-center py-12">
+          <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-red-500" />
+          <h2 className="text-xl font-semibold mb-2">Emergency Not Found</h2>
+          <p className="text-gray-600 mb-4">The emergency you're looking for doesn't exist or has been removed.</p>
           <Button onClick={() => navigate('/emergencies')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Emergencies
@@ -136,289 +81,226 @@ const EmergencyDetailsPage = () => {
     );
   }
 
-  const { emergency, deviceAlert } = data;
-  const isActive = ['pending', 'assigned', 'in_transit', 'on_site'].includes(emergency.status);
-
   return (
-    <div className="container mx-auto p-4 space-y-6">
-      <BackNavigation label={`Emergency: ${emergency.type}`} />
-      
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold">{emergency.type}</h1>
-            {getStatusBadge(emergency.status)}
-            {getPriorityBadge(emergency.priority)}
-          </div>
-          <div className="flex items-center text-muted-foreground mt-1">
-            <MapPin className="h-4 w-4 mr-1" /> {emergency.location}
-          </div>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          {isActive && (
-            <>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setShowAssignmentFlow(true)}
-                disabled={emergency.status !== 'pending'}
-              >
-                <Ambulance className="h-4 w-4 mr-2" />
-                {emergency.status === 'pending' ? 'Assign Responder' : 'Add Another Responder'}
-              </Button>
-              
-              <Button 
-                size="sm"
-                onClick={() => setShowResolveDialog(true)}
-                className="bg-green-600 hover:bg-green-700 text-white"
-              >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Mark as Resolved
-              </Button>
-            </>
-          )}
-        </div>
+    <div className="container mx-auto p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center space-x-4">
+        <Button
+          variant="ghost"
+          onClick={() => navigate('/emergencies')}
+          className="flex items-center space-x-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span>Back to Emergencies</span>
+        </Button>
       </div>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
+
+      {/* Emergency Overview */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-start justify-between">
+            <div className="space-y-2">
+              <CardTitle className="flex items-center text-xl">
+                <AlertTriangle className="h-6 w-6 mr-2 text-red-600" />
+                {emergency.type}
+              </CardTitle>
+              <div className="flex items-center space-x-3">
+                <Badge className={getPriorityColor(emergency.priority)}>
+                  Priority {emergency.priority}
+                </Badge>
+                <Badge className={getStatusColor(emergency.status)}>
+                  {emergency.status.replace('_', ' ').toUpperCase()}
+                </Badge>
+              </div>
+            </div>
+            <div className="text-right text-sm text-gray-500">
+              <p>Emergency ID: {emergency.id}</p>
+              <p>Reported: {format(new Date(emergency.reported_at), 'PPp')}</p>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {emergency.description && (
+            <div>
+              <h4 className="font-medium mb-2">Description</h4>
+              <p className="text-gray-700">{emergency.description}</p>
+            </div>
+          )}
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex items-center space-x-2">
+              <MapPin className="h-4 w-4 text-gray-500" />
+              <span className="text-sm">{emergency.location}</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Clock className="h-4 w-4 text-gray-500" />
+              <span className="text-sm">
+                Reported {formatDistanceToNow(new Date(emergency.reported_at), { addSuffix: true })}
+              </span>
+            </div>
+            {emergency.coordinates && (
+              <div className="flex items-center space-x-2">
+                <Navigation className="h-4 w-4 text-gray-500" />
+                <span className="text-sm">
+                  {emergency.coordinates.y.toFixed(4)}, {emergency.coordinates.x.toFixed(4)}
+                </span>
+              </div>
+            )}
+            {emergency.assigned_at && (
+              <div className="flex items-center space-x-2">
+                <User className="h-4 w-4 text-gray-500" />
+                <span className="text-sm">
+                  Assigned {formatDistanceToNow(new Date(emergency.assigned_at), { addSuffix: true })}
+                </span>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Tabs for detailed information */}
+      <Tabs defaultValue="timeline" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="timeline">Timeline</TabsTrigger>
+          <TabsTrigger value="responders">Assigned Responders</TabsTrigger>
+          <TabsTrigger value="communications">Communications</TabsTrigger>
+          <TabsTrigger value="location">Location & Map</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="timeline">
           <Card>
             <CardHeader>
-              <CardTitle>Emergency Details</CardTitle>
-              <CardDescription>
-                Reported at {formatDate(emergency.reported_at)}
-              </CardDescription>
+              <CardTitle>Emergency Timeline</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <h3 className="text-sm font-medium text-muted-foreground">Status</h3>
-                  <div className="flex items-center space-x-2">
-                    {getStatusBadge(emergency.status)}
-                    <span>
-                      {emergency.status === 'resolved' && emergency.resolved_at && `(${formatDate(emergency.resolved_at)})`}
-                      {emergency.status === 'assigned' && emergency.assigned_at && `(${formatDate(emergency.assigned_at)})`}
-                    </span>
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <h3 className="text-sm font-medium text-muted-foreground">Priority</h3>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-start space-x-3">
+                  <div className="w-2 h-2 bg-red-500 rounded-full mt-2"></div>
                   <div>
-                    {getPriorityBadge(emergency.priority)}
-                  </div>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <h3 className="text-sm font-medium text-muted-foreground">Description</h3>
-                <p className="bg-muted/30 p-3 rounded-md">
-                  {emergency.description || 'No description provided'}
-                </p>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <h3 className="text-sm font-medium text-muted-foreground">Reported</h3>
-                  <div className="flex items-center">
-                    <CalendarClock className="h-4 w-4 mr-2 text-muted-foreground" />
-                    {formatDate(emergency.reported_at)}
+                    <p className="font-medium">Emergency Reported</p>
+                    <p className="text-sm text-gray-500">
+                      {format(new Date(emergency.reported_at), 'PPp')}
+                    </p>
+                    <p className="text-sm text-gray-600 mt-1">Initial emergency report received</p>
                   </div>
                 </div>
                 
                 {emergency.assigned_at && (
-                  <div className="space-y-2">
-                    <h3 className="text-sm font-medium text-muted-foreground">Assigned</h3>
-                    <div className="flex items-center">
-                      <Ambulance className="h-4 w-4 mr-2 text-muted-foreground" />
-                      {formatDate(emergency.assigned_at)}
+                  <div className="flex items-start space-x-3">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                    <div>
+                      <p className="font-medium">Responder Assigned</p>
+                      <p className="text-sm text-gray-500">
+                        {format(new Date(emergency.assigned_at), 'PPp')}
+                      </p>
+                      <p className="text-sm text-gray-600 mt-1">Emergency response team assigned</p>
+                    </div>
+                  </div>
+                )}
+                
+                {emergency.resolved_at && (
+                  <div className="flex items-start space-x-3">
+                    <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                    <div>
+                      <p className="font-medium">Emergency Resolved</p>
+                      <p className="text-sm text-gray-500">
+                        {format(new Date(emergency.resolved_at), 'PPp')}
+                      </p>
+                      <p className="text-sm text-gray-600 mt-1">Emergency successfully resolved</p>
                     </div>
                   </div>
                 )}
               </div>
-              
-              {emergency.notes && (
-                <div className="space-y-2">
-                  <h3 className="text-sm font-medium text-muted-foreground">Notes</h3>
-                  <div className="bg-muted/30 p-3 rounded-md">
-                    {emergency.notes}
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
-          
-          <Tabs defaultValue="timeline">
-            <TabsList>
-              <TabsTrigger value="timeline">Timeline</TabsTrigger>
-              <TabsTrigger value="assignments">
-                Responders {assignmentsData.length > 0 && `(${assignmentsData.length})`}
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value="timeline" className="mt-4">
-              <EmergencyTimeline 
-                emergency={emergency}
-                assignments={assignmentsData}
-              />
-            </TabsContent>
-            <TabsContent value="assignments" className="mt-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Assigned Responders</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {assignmentsLoading ? (
-                    <div className="flex justify-center items-center h-32">
-                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                    </div>
-                  ) : assignmentsData.length === 0 ? (
-                    <div className="text-center py-4">
-                      <p className="text-muted-foreground">No responders have been assigned yet</p>
-                      {emergency.status === 'pending' && (
-                        <Button 
-                          onClick={() => setShowAssignmentFlow(true)}
-                          className="mt-4"
-                        >
-                          <Ambulance className="h-4 w-4 mr-2" />
-                          Assign a Responder
-                        </Button>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {assignmentsData.map(assignment => (
-                        <div 
-                          key={assignment.id}
-                          className="border rounded-lg p-4 flex flex-col space-y-3"
-                        >
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h4 className="font-medium">
-                                {assignment.responders?.name || 'Unknown Responder'}
-                              </h4>
-                              <p className="text-sm text-muted-foreground">
-                                Assigned: {formatDate(assignment.assigned_at)}
-                              </p>
-                            </div>
-                            <Badge>
-                              {assignment.responders?.type || 'Unknown Type'}
-                            </Badge>
-                          </div>
-                          
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                            <div>
-                              <span className="font-medium">Current Location: </span>
-                              <span>{assignment.responders?.current_location || 'Unknown'}</span>
-                            </div>
-                            <div>
-                              <span className="font-medium">Estimated ETA: </span>
-                              <span>{assignment.eta || 'Unknown'}</span>
-                            </div>
-                          </div>
-                          
-                          {assignment.notes && (
-                            <div className="bg-muted/30 p-2 rounded-sm text-sm">
-                              {assignment.notes}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </div>
-        
-        <div className="space-y-6">
-          {deviceAlert && (
-            <Card className="bg-orange-50 border-orange-200">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <AlertTriangle className="h-5 w-5 text-orange-600 mr-2" />
-                  Device Alert
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="space-y-1">
-                    <div className="font-medium">Alert Type</div>
-                    <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded text-sm inline-block">
-                      {deviceAlert.alert_type}
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <div className="font-medium">Severity</div>
-                    <Badge variant="outline" className="bg-orange-100 border-orange-200">
-                      Level {deviceAlert.severity}
-                    </Badge>
-                  </div>
-                  {deviceAlert.data && (
-                    <div className="space-y-1">
-                      <div className="font-medium">Alert Data</div>
-                      <pre className="bg-orange-100 border border-orange-200 p-2 rounded-md text-xs overflow-auto max-h-40">
-                        {JSON.stringify(deviceAlert.data, null, 2)}
-                      </pre>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-          
+        </TabsContent>
+
+        <TabsContent value="responders">
           <Card>
             <CardHeader>
-              <CardTitle>Communication</CardTitle>
+              <CardTitle>Assigned Responders</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center p-4">
-                <p className="text-muted-foreground mb-4">
-                  View and send messages related to this emergency
-                </p>
-                <Button 
-                  onClick={() => navigate('/communications')}
-                  className="w-full"
-                >
-                  Open Communications
+              <div className="text-center py-8 text-gray-500">
+                <User className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p>No responders assigned yet</p>
+                <Button className="mt-4" size="sm">
+                  Assign Responder
                 </Button>
               </div>
             </CardContent>
           </Card>
-        </div>
+        </TabsContent>
+
+        <TabsContent value="communications">
+          <Card>
+            <CardHeader>
+              <CardTitle>Communications Log</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8 text-gray-500">
+                <MessageSquare className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p>No communications recorded</p>
+                <Button className="mt-4" size="sm">
+                  Add Communication
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="location">
+          <Card>
+            <CardHeader>
+              <CardTitle>Location & Map</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="bg-gray-100 rounded-lg h-64 flex items-center justify-center">
+                  <div className="text-center">
+                    <MapPin className="h-12 w-12 mx-auto mb-2 text-gray-400" />
+                    <p className="text-gray-600">Interactive Map</p>
+                    <p className="text-sm text-gray-500">{emergency.location}</p>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <h4 className="font-medium mb-2">Address</h4>
+                    <p className="text-gray-600">{emergency.location}</p>
+                  </div>
+                  {emergency.coordinates && (
+                    <div>
+                      <h4 className="font-medium mb-2">Coordinates</h4>
+                      <p className="text-gray-600">
+                        Lat: {emergency.coordinates.y.toFixed(6)}<br />
+                        Lng: {emergency.coordinates.x.toFixed(6)}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Action Buttons */}
+      <div className="flex justify-end space-x-4">
+        {emergency.status === 'pending' && (
+          <Button className="bg-blue-600 hover:bg-blue-700">
+            Assign Responder
+          </Button>
+        )}
+        <Button variant="outline">
+          <Phone className="h-4 w-4 mr-2" />
+          Contact Dispatcher
+        </Button>
+        <Button variant="outline">
+          <FileText className="h-4 w-4 mr-2" />
+          Generate Report
+        </Button>
       </div>
-      
-      <Dialog open={showAssignmentFlow} onOpenChange={setShowAssignmentFlow}>
-        <DialogContent className="sm:max-w-[800px]">
-          <ResponderAssignmentFlow 
-            emergency={emergency}
-            onAssigned={handleAssignmentComplete}
-            onCancel={() => setShowAssignmentFlow(false)}
-          />
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={showResolveDialog} onOpenChange={setShowResolveDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Resolve Emergency</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to mark this emergency as resolved?
-              This action will update the status and notify all assigned responders.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowResolveDialog(false)}>Cancel</Button>
-            <Button 
-              className="bg-green-600 hover:bg-green-700"
-              onClick={handleResolveEmergency}
-            >
-              Confirm Resolution
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

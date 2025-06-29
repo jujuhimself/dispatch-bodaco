@@ -1,463 +1,177 @@
-import { supabase } from '@/integrations/supabase/client';
-import { Emergency, Responder, Hospital, Communication, EmergencyAssignment } from '@/types/emergency-types';
 
-// Helper function to transform coordinates from Postgres point type
-export const transformCoordinates = (coordinates: any): { x: number; y: number } | null => {
-  if (!coordinates) return null;
-  // If we get a string like "(x,y)" from the database
-  if (typeof coordinates === 'string') {
-    const match = coordinates.match(/\((-?\d+\.?\d*),(-?\d+\.?\d*)\)/);
-    if (match) {
-      return {
-        x: parseFloat(match[1]),
-        y: parseFloat(match[2])
-      };
-    }
-  } 
-  // If we get an object with x,y properties
-  else if (typeof coordinates === 'object' && coordinates !== null) {
-    if ('x' in coordinates && 'y' in coordinates) {
-      return {
-        x: parseFloat(coordinates.x),
-        y: parseFloat(coordinates.y)
-      };
-    }
-  }
-  return null;
-};
+// Emergency Service - Mock implementation for development
+// Replace with actual API calls when backend is ready
 
-// Helper function to convert our coordinates for Postgres
-export const formatCoordinatesForPostgres = (coordinates: { x: number; y: number }) => {
-  return `(${coordinates.x},${coordinates.y})`;
-};
-
-export const fetchEmergencies = async (): Promise<Emergency[]> => {
-  const { data, error } = await supabase
-    .from('emergencies')
-    .select('*')
-    .order('priority', { ascending: true })
-    .order('reported_at', { ascending: false });
-
-  if (error) {
-    console.error('Error fetching emergencies:', error);
-    throw new Error('Failed to fetch emergencies');
-  }
-
-  return data.map((item: any) => ({
-    ...item,
-    coordinates: transformCoordinates(item.coordinates)
-  })) as Emergency[];
-};
-
-export const fetchActiveEmergencies = async (): Promise<Emergency[]> => {
-  const { data, error } = await supabase
-    .from('emergencies')
-    .select('*')
-    .in('status', ['pending', 'assigned', 'in_transit', 'on_site'])
-    .order('priority', { ascending: true })
-    .order('reported_at', { ascending: false });
-
-  if (error) {
-    console.error('Error fetching active emergencies:', error);
-    throw new Error('Failed to fetch active emergencies');
-  }
-
-  return data.map((item: any) => ({
-    ...item,
-    coordinates: transformCoordinates(item.coordinates)
-  })) as Emergency[];
-};
-
-export const createEmergency = async (emergencyData: {
+export interface Emergency {
+  id: string;
   type: string;
   description: string;
   location: string;
+  coordinates?: { x: number; y: number };
   priority: number;
-  coordinates: { x: number; y: number };
-}): Promise<Emergency> => {
-  // Convert coordinates to Postgres point format if provided
-  const formattedCoordinates = emergencyData.coordinates 
-    ? formatCoordinatesForPostgres(emergencyData.coordinates) 
-    : null;
-  
-  const { data, error } = await supabase
-    .from('emergencies')
-    .insert({
-      type: emergencyData.type,
-      description: emergencyData.description,
-      location: emergencyData.location,
-      priority: emergencyData.priority,
-      coordinates: formattedCoordinates
-    })
-    .select()
-    .single();
+  status: 'pending' | 'assigned' | 'in_transit' | 'on_site' | 'resolved' | 'canceled';
+  reported_at: string;
+  assigned_at?: string;
+  resolved_at?: string;
+  notes?: string;
+}
 
-  if (error) {
-    console.error('Error creating emergency:', error);
-    throw new Error('Failed to create emergency');
+export interface Responder {
+  id: string;
+  name: string;
+  type: 'ambulance' | 'bajaj' | 'traffic' | 'fire' | 'police';
+  status: 'available' | 'on_call' | 'off_duty';
+  phone?: string;
+  current_location?: string;
+  coordinates?: { x: number; y: number };
+  last_active: string;
+  notes?: string;
+}
+
+export interface EmergencyStatistics {
+  activeEmergencies: number;
+  availableResponders: number;
+  avgResponseTime: string;
+  hospitalCapacity: number;
+  hospitalsAtCapacity?: number;
+}
+
+// Mock data
+const mockEmergencies: Emergency[] = [
+  {
+    id: 'emer-001',
+    type: 'Medical Emergency',
+    description: 'Heart attack patient at office building',
+    location: 'Bole Road, near Commercial Bank',
+    coordinates: { x: 38.7578, y: 9.0192 },
+    priority: 1,
+    status: 'assigned',
+    reported_at: new Date(Date.now() - 600000).toISOString(),
+    assigned_at: new Date(Date.now() - 300000).toISOString(),
+  },
+  {
+    id: 'emer-002',
+    type: 'Vehicle Crash',
+    description: 'Multi-vehicle collision on main road',
+    location: 'Mexico Square intersection',
+    coordinates: { x: 38.7614, y: 9.0084 },
+    priority: 2,
+    status: 'in_transit',
+    reported_at: new Date(Date.now() - 900000).toISOString(),
+    assigned_at: new Date(Date.now() - 600000).toISOString(),
+  },
+  {
+    id: 'emer-003',
+    type: 'Fire Emergency',
+    description: 'Kitchen fire in restaurant',
+    location: 'Piazza area, Italian restaurant',
+    coordinates: { x: 38.7369, y: 9.0437 },
+    priority: 1,
+    status: 'pending',
+    reported_at: new Date(Date.now() - 180000).toISOString(),
   }
+];
 
-  return {
-    ...data,
-    coordinates: transformCoordinates(data.coordinates)
-  } as Emergency;
+const mockResponders: Responder[] = [
+  {
+    id: 'resp-001',
+    name: 'Ambulance Unit 001',
+    type: 'ambulance',
+    status: 'on_call',
+    phone: '+251911123456',
+    current_location: 'En route to Bole Road',
+    last_active: new Date().toISOString(),
+  },
+  {
+    id: 'resp-002',
+    name: 'Traffic Police Unit 12',
+    type: 'traffic',
+    status: 'available',
+    phone: '+251911654321',
+    current_location: 'Meskel Square Station',
+    last_active: new Date(Date.now() - 300000).toISOString(),
+  },
+  {
+    id: 'resp-003',
+    name: 'Fire Brigade Unit A',
+    type: 'fire',
+    status: 'available',
+    phone: '+251911789012',
+    current_location: 'Fire Station - Merkato',
+    last_active: new Date(Date.now() - 120000).toISOString(),
+  },
+  {
+    id: 'resp-004',
+    name: 'Bajaj Emergency Response',
+    type: 'bajaj',
+    status: 'available',
+    phone: '+251911345678',
+    current_location: 'Arat Kilo area',
+    last_active: new Date(Date.now() - 600000).toISOString(),
+  }
+];
+
+// Simulate API delay
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+export const fetchActiveEmergencies = async (): Promise<Emergency[]> => {
+  await delay(800);
+  return mockEmergencies.filter(e => ['pending', 'assigned', 'in_transit', 'on_site'].includes(e.status));
 };
 
-export const fetchResponders = async (): Promise<Responder[]> => {
-  const { data, error } = await supabase
-    .from('responders')
-    .select('*')
-    .order('status', { ascending: true })
-    .order('last_active', { ascending: false });
-
-  if (error) {
-    console.error('Error fetching responders:', error);
-    throw new Error('Failed to fetch responders');
-  }
-
-  return data.map((item: any) => ({
-    ...item,
-    coordinates: transformCoordinates(item.coordinates)
-  })) as Responder[];
+export const fetchAllEmergencies = async (): Promise<Emergency[]> => {
+  await delay(1000);
+  return mockEmergencies;
 };
 
 export const fetchAvailableResponders = async (): Promise<Responder[]> => {
-  const { data, error } = await supabase
-    .from('responders')
-    .select('*')
-    .eq('status', 'available')
-    .order('last_active', { ascending: false });
-
-  if (error) {
-    console.error('Error fetching available responders:', error);
-    throw new Error('Failed to fetch available responders');
-  }
-
-  return data.map((item: any) => ({
-    ...item,
-    coordinates: transformCoordinates(item.coordinates)
-  })) as Responder[];
+  await delay(600);
+  return mockResponders.filter(r => r.status === 'available');
 };
 
-export const getActiveResponders = async () => {
-  try {
-    const { data, error } = await supabase
-      .from('responders')
-      .select('*')
-      .not('status', 'eq', 'off_duty');
-    
-    if (error) throw error;
-    
-    // Transform the data to ensure coordinates are properly formatted
-    return data.map((item: any) => ({
-      ...item,
-      coordinates: transformCoordinates(item.coordinates) || null
-    })) as Responder[];
-  } catch (error) {
-    console.error('Error fetching active responders:', error);
-    return [];
-  }
+export const fetchResponders = async (): Promise<Responder[]> => {
+  await delay(800);
+  return mockResponders;
 };
 
-export const fetchHospitals = async (): Promise<Hospital[]> => {
-  const { data, error } = await supabase
-    .from('hospitals')
-    .select('*')
-    .order('available_beds', { ascending: false });
-
-  if (error) {
-    console.error('Error fetching hospitals:', error);
-    throw new Error('Failed to fetch hospitals');
-  }
-
-  return data.map((item: any) => ({
-    ...item,
-    coordinates: transformCoordinates(item.coordinates)
-  })) as Hospital[];
-};
-
-export const assignResponder = async (emergencyId: string, responderId: string, notes?: string): Promise<EmergencyAssignment> => {
-  const { data, error } = await supabase
-    .from('emergency_assignments')
-    .insert({
-      emergency_id: emergencyId,
-      responder_id: responderId,
-      notes: notes || null,
-      status: 'assigned'
-    })
-    .select()
-    .single();
-
-  if (error) {
-    console.error('Error assigning responder:', error);
-    throw new Error('Failed to assign responder');
-  }
-
-  // Update the emergency status
-  await supabase
-    .from('emergencies')
-    .update({ status: 'assigned', assigned_at: new Date().toISOString() })
-    .eq('id', emergencyId);
-
-  // Update the responder status
-  await supabase
-    .from('responders')
-    .update({ status: 'on_call' })
-    .eq('id', responderId);
-
-  return data as EmergencyAssignment;
-};
-
-export const fetchEmergencyAssignments = async (emergencyId?: string): Promise<EmergencyAssignment[]> => {
-  let query = supabase.from('emergency_assignments').select('*, responders(*)');
+export const getEmergencyStatistics = async (): Promise<EmergencyStatistics> => {
+  await delay(500);
+  const activeCount = mockEmergencies.filter(e => 
+    ['pending', 'assigned', 'in_transit', 'on_site'].includes(e.status)
+  ).length;
   
-  if (emergencyId) {
-    query = query.eq('emergency_id', emergencyId);
-  }
+  const availableCount = mockResponders.filter(r => r.status === 'available').length;
   
-  const { data, error } = await query;
-
-  if (error) {
-    console.error('Error fetching emergency assignments:', error);
-    throw new Error('Failed to fetch emergency assignments');
-  }
-
-  // Transform the returned data to match our EmergencyAssignment type
-  return data.map((item: any) => {
-    // If responders data exists, transform its coordinates
-    const responders = item.responders ? {
-      ...item.responders,
-      coordinates: transformCoordinates(item.responders.coordinates)
-    } : undefined;
-
-    return {
-      id: item.id,
-      emergency_id: item.emergency_id,
-      responder_id: item.responder_id,
-      assigned_at: item.assigned_at,
-      eta: item.eta,
-      status: item.status,
-      notes: item.notes,
-      responders
-    };
-  }) as EmergencyAssignment[];
-};
-
-export const fetchEmergencyWithDeviceAlert = async (emergencyId: string): Promise<{ emergency: Emergency; deviceAlert?: any }> => {
-  const { data, error } = await supabase
-    .from('emergencies')
-    .select(`
-      *,
-      device_alerts(*)
-    `)
-    .eq('id', emergencyId)
-    .single();
-
-  if (error) {
-    console.error('Error fetching emergency with device alert:', error);
-    throw new Error('Failed to fetch emergency with device alert');
-  }
-
-  const emergency = {
-    ...data,
-    coordinates: transformCoordinates(data.coordinates)
-  } as Emergency;
-  
-  const deviceAlert = data.device_alerts ? {
-    ...data.device_alerts,
-    location: transformCoordinates(data.device_alerts.location)
-  } : undefined;
-
-  return { emergency, deviceAlert };
-};
-
-export const autoAssignResponder = async (emergencyId: string): Promise<any> => {
-  const { data, error } = await supabase.functions.invoke('auto-assign-responder', {
-    body: { emergency_id: emergencyId }
-  });
-
-  if (error) {
-    console.error('Error auto-assigning responder:', error);
-    throw new Error('Failed to auto-assign responder');
-  }
-
-  return data;
-};
-
-export const fetchRecentCommunications = async (limit = 5): Promise<Communication[]> => {
-  const { data, error } = await supabase
-    .from('communications')
-    .select('*')
-    .order('sent_at', { ascending: false })
-    .limit(limit);
-
-  if (error) {
-    console.error('Error fetching communications:', error);
-    throw new Error('Failed to fetch communications');
-  }
-
-  return data || [];
-};
-
-export const sendCommunication = async (message: string, sender: string, emergencyId?: string, responderId?: string): Promise<Communication> => {
-  const { data, error } = await supabase
-    .from('communications')
-    .insert({
-      message,
-      sender,
-      type: 'message',
-      emergency_id: emergencyId || null,
-      responder_id: responderId || null
-    })
-    .select()
-    .single();
-
-  if (error) {
-    console.error('Error sending communication:', error);
-    throw new Error('Failed to send communication');
-  }
-
-  return data as Communication;
-};
-
-export const subscribeToMessages = (callback: (payload: any) => void) => {
-  return supabase
-    .channel('public:communications')
-    .on(
-      'postgres_changes', 
-      { 
-        event: 'INSERT', 
-        schema: 'public', 
-        table: 'communications' 
-      }, 
-      (payload) => callback(payload)
-    )
-    .subscribe();
-};
-
-export const updateHospitalCapacity = async (hospitalId: string, availableBeds: number): Promise<void> => {
-  const { error } = await supabase
-    .from('hospitals')
-    .update({ available_beds: availableBeds })
-    .eq('id', hospitalId);
-
-  if (error) {
-    console.error('Error updating hospital capacity:', error);
-    throw new Error('Failed to update hospital capacity');
-  }
-};
-
-export const getEmergencyStatistics = async () => {
-  // Get count of total emergencies
-  const { count: totalCount, error: totalError } = await supabase
-    .from('emergencies')
-    .select('*', { count: 'exact', head: true });
-
-  // Get count of active emergencies
-  const { count: activeCount, error: activeError } = await supabase
-    .from('emergencies')
-    .select('*', { count: 'exact', head: true })
-    .in('status', ['pending', 'assigned', 'in_transit', 'on_site']);
-
-  // Get count of available responders
-  const { count: availableRespondersCount, error: respondersError } = await supabase
-    .from('responders')
-    .select('*', { count: 'exact', head: true })
-    .eq('status', 'available');
-
-  // Get count of alerts from devices
-  const { count: alertsCount, error: alertsError } = await supabase
-    .from('device_alerts')
-    .select('*', { count: 'exact', head: true });
-
-  // Get count of unresolved escalations
-  const { count: escalationsCount, error: escalationsError } = await supabase
-    .from('alert_escalations')
-    .select('*', { count: 'exact', head: true })
-    .eq('resolved', false);
-
-  if (totalError || activeError || respondersError || alertsError || escalationsError) {
-    console.error('Error fetching statistics:', { totalError, activeError, respondersError, alertsError, escalationsError });
-    throw new Error('Failed to fetch emergency statistics');
-  }
-
-  // Calculate average response time (for demo purposes, we'll use a placeholder)
-  const avgResponseTime = "4:32"; // In a real app, this would be calculated from actual data
-
-  // Fetch hospital data for capacity calculations
-  const { data: hospitalData, error: hospitalError } = await supabase
-    .from('hospitals')
-    .select('total_beds, available_beds');
-    
-  if (hospitalError) {
-    console.error('Error fetching hospital data:', hospitalError);
-  }
-  
-  // Calculate hospital capacity
-  const totalBeds = hospitalData?.reduce((sum, hospital) => sum + hospital.total_beds, 0) || 0;
-  const availableBeds = hospitalData?.reduce((sum, hospital) => sum + hospital.available_beds, 0) || 0;
-  const capacityPercentage = totalBeds > 0 ? Math.round((1 - (availableBeds / totalBeds)) * 100) : 0;
-  
-  // Calculate hospitals at capacity
-  const hospitalsAtCapacity = hospitalData?.filter(h => h.available_beds === 0).length || 0;
-
   return {
-    totalEmergencies: totalCount || 0,
-    activeEmergencies: activeCount || 0,
-    availableResponders: availableRespondersCount || 0,
-    avgResponseTime,
-    hospitalCapacity: capacityPercentage,
-    hospitalsAtCapacity,
-    availableBeds,
-    totalBeds,
-    deviceAlerts: alertsCount || 0,
-    pendingEscalations: escalationsCount || 0
+    activeEmergencies: activeCount,
+    availableResponders: availableCount,
+    avgResponseTime: '7:32',
+    hospitalCapacity: 78,
+    hospitalsAtCapacity: 2
   };
 };
 
-export const fetchHospitalData = async (): Promise<any[]> => {
-  const { data, error } = await supabase
-    .from('hospitals')
-    .select('*');
+export const createEmergency = async (emergencyData: Partial<Emergency>): Promise<Emergency> => {
+  await delay(1200);
   
-  if (error) {
-    console.error('Error fetching hospital data:', error);
-    throw error;
-  }
-
-  return data.map(hospital => ({
-    ...hospital,
-    coordinates: hospital.coordinates ? {
-      x: parseFloat(hospital.coordinates.toString().split('(')[1].split(',')[0]),
-      y: parseFloat(hospital.coordinates.toString().split(',')[1].split(')')[0])
-    } : undefined
-  }));
-};
-
-export const updateEmergencyStatus = async (emergencyId: string, status: Emergency['status']): Promise<Emergency> => {
-  const updateData: any = {
-    status
+  const newEmergency: Emergency = {
+    id: `emer-${Date.now()}`,
+    type: emergencyData.type || '',
+    description: emergencyData.description || '',
+    location: emergencyData.location || '',
+    coordinates: emergencyData.coordinates,
+    priority: emergencyData.priority || 3,
+    status: 'pending',
+    reported_at: new Date().toISOString(),
   };
   
-  // If we're resolving the emergency, add the resolved timestamp
-  if (status === 'resolved') {
-    updateData.resolved_at = new Date().toISOString();
-  }
+  // In real implementation, this would make an API call
+  mockEmergencies.unshift(newEmergency);
+  
+  return newEmergency;
+};
 
-  const { data, error } = await supabase
-    .from('emergencies')
-    .update(updateData)
-    .eq('id', emergencyId)
-    .select()
-    .single();
-
-  if (error) {
-    console.error('Error updating emergency status:', error);
-    throw new Error('Failed to update emergency status');
-  }
-
-  return {
-    ...data,
-    coordinates: transformCoordinates(data.coordinates)
-  } as Emergency;
+export const getEmergencyById = async (id: string): Promise<Emergency | null> => {
+  await delay(400);
+  return mockEmergencies.find(e => e.id === id) || null;
 };

@@ -1,122 +1,189 @@
 
-import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Send, Phone, MessageSquare, MessageCircle, Loader2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { fetchRecentCommunications, subscribeToMessages } from '@/services/emergency-service';
-import { Communication } from '@/types/emergency-types';
+import { MessageSquare, Clock, User, AlertTriangle } from 'lucide-react';
+import { LoadingState } from '@/components/ui/loading-state';
+import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 
+// Mock service - replace with actual service
+const fetchRecentCommunications = async () => {
+  await new Promise(resolve => setTimeout(resolve, 800));
+  return [
+    {
+      id: '1',
+      sender: 'Dispatch Center',
+      message: 'Ambulance 001 dispatched to Bole Road accident',
+      type: 'dispatch',
+      emergency_id: 'emer-001',
+      sent_at: new Date(Date.now() - 300000).toISOString(), // 5 minutes ago
+      priority: 'high'
+    },
+    {
+      id: '2',
+      sender: 'Responder Team A',
+      message: 'ETA 8 minutes to medical emergency location',
+      type: 'update',
+      emergency_id: 'emer-002',
+      sent_at: new Date(Date.now() - 480000).toISOString(), // 8 minutes ago
+      priority: 'medium'
+    },
+    {
+      id: '3',
+      sender: 'Hospital Coordinator',
+      message: 'Trauma bay prepared for incoming patient',
+      type: 'coordination',
+      emergency_id: 'emer-001',
+      sent_at: new Date(Date.now() - 600000).toISOString(), // 10 minutes ago
+      priority: 'medium'
+    },
+    {
+      id: '4',
+      sender: 'Fire Department',
+      message: 'Fire at commercial building contained',
+      type: 'status_update',
+      emergency_id: 'emer-003',
+      sent_at: new Date(Date.now() - 900000).toISOString(), // 15 minutes ago
+      priority: 'low'
+    }
+  ];
+};
+
 const RecentCommunications = () => {
-  const [communications, setCommunications] = useState<Communication[]>([]);
-  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const { data: communications, isLoading, error } = useQuery({
+    queryKey: ['recent-communications'],
+    queryFn: fetchRecentCommunications,
+    refetchInterval: 15000, // Refresh every 15 seconds
+  });
 
-  useEffect(() => {
-    const loadCommunications = async () => {
-      try {
-        const data = await fetchRecentCommunications(4);
-        setCommunications(data);
-      } catch (error) {
-        console.error("Error fetching communications:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadCommunications();
-    
-    // Subscribe to new messages
-    const subscription = subscribeToMessages((payload) => {
-      const newMessage = payload.new as Communication;
-      setCommunications((prev) => {
-        // Avoid duplicate messages
-        if (prev.some((msg) => msg.id === newMessage.id)) {
-          return prev;
-        }
-
-        // Add to the beginning and limit to 4 entries
-        return [newMessage, ...prev].slice(0, 4);
-      });
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  const getCommunicationIcon = (type: string) => {
+  const getTypeColor = (type: string) => {
     switch (type) {
-      case 'message':
-        return <MessageSquare className="h-3 w-3" />;
-      case 'voice':
-        return <Phone className="h-3 w-3" />;
-      case 'whatsapp':
-        return <MessageCircle className="h-3 w-3" />;
+      case 'dispatch':
+        return 'bg-red-100 text-red-800';
+      case 'update':
+        return 'bg-blue-100 text-blue-800';
+      case 'coordination':
+        return 'bg-green-100 text-green-800';
+      case 'status_update':
+        return 'bg-yellow-100 text-yellow-800';
       default:
-        return <MessageSquare className="h-3 w-3" />;
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const getCommunicationStyle = (type: string) => {
-    switch (type) {
-      case 'message':
-        return 'bg-gray-100 text-gray-600';
-      case 'voice':
-        return 'bg-blue-100 text-blue-600';
-      case 'whatsapp':
-        return 'bg-green-100 text-green-600';
+  const getPriorityIcon = (priority: string) => {
+    switch (priority) {
+      case 'high':
+        return <AlertTriangle className="h-3 w-3 text-red-600" />;
+      case 'medium':
+        return <Clock className="h-3 w-3 text-orange-600" />;
       default:
-        return 'bg-gray-100 text-gray-600';
+        return <MessageSquare className="h-3 w-3 text-gray-600" />;
     }
   };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <MessageSquare className="h-5 w-5 mr-2 text-green-600" />
+            Recent Communications
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <LoadingState isLoading={true} variant="skeleton">
+            <div></div>
+          </LoadingState>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <MessageSquare className="h-5 w-5 mr-2 text-green-600" />
+            Recent Communications
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center text-red-600 py-4">
+            Failed to load communications. Please try again.
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-lg font-medium">Recent Communications</CardTitle>
-        <Link to="/communications">
-          <Button variant="outline" size="sm">View All</Button>
-        </Link>
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center">
+            <MessageSquare className="h-5 w-5 mr-2 text-green-600" />
+            Recent Communications
+          </div>
+          <Badge variant="secondary">{communications?.length || 0}</Badge>
+        </CardTitle>
       </CardHeader>
       <CardContent>
-        {loading ? (
-          <div className="flex justify-center items-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        {!communications || communications.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <MessageSquare className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+            <p>No recent communications</p>
           </div>
-        ) : communications.length > 0 ? (
-          <div className="space-y-4">
+        ) : (
+          <div className="space-y-3 max-h-80 overflow-y-auto">
             {communications.map((comm) => (
-              <div key={comm.id} className="p-3 rounded-lg border border-gray-100">
-                <div className="flex justify-between items-start mb-1">
-                  <div className="flex items-center">
-                    <span className={`p-1 rounded-full mr-2 ${getCommunicationStyle(comm.type)}`}>
-                      {getCommunicationIcon(comm.type)}
-                    </span>
+              <div
+                key={comm.id}
+                className="border rounded-lg p-3 hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-center space-x-2">
+                    <User className="h-4 w-4 text-gray-500" />
                     <span className="font-medium text-sm">{comm.sender}</span>
+                    {getPriorityIcon(comm.priority)}
                   </div>
-                  <span className="text-xs text-gray-400">
-                    {formatDistanceToNow(new Date(comm.sent_at), { addSuffix: true })}
-                  </span>
+                  <Badge className={getTypeColor(comm.type)}>
+                    {comm.type.replace('_', ' ')}
+                  </Badge>
                 </div>
-                <p className="text-sm text-gray-600 pl-6">{comm.message}</p>
-                <div className="flex justify-end mt-2">
-                  <Link to="/communications">
-                    <Button variant="outline" size="sm" className="text-xs h-7">
-                      <Send className="h-3 w-3 mr-1" /> Reply
-                    </Button>
-                  </Link>
+                
+                <p className="text-sm text-gray-700 mb-2 line-clamp-2">
+                  {comm.message}
+                </p>
+                
+                <div className="flex items-center justify-between text-xs text-gray-500">
+                  <span>
+                    Emergency: {comm.emergency_id?.split('-')[1] || 'N/A'}
+                  </span>
+                  <div className="flex items-center">
+                    <Clock className="h-3 w-3 mr-1" />
+                    {formatDistanceToNow(new Date(comm.sent_at), { addSuffix: true })}
+                  </div>
                 </div>
               </div>
             ))}
           </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-            <MessageSquare className="h-12 w-12 mb-2 opacity-20" />
-            <p>No recent communications</p>
-            <p className="text-sm">Messages will appear here when they are received</p>
-          </div>
         )}
+        
+        <div className="mt-4 pt-4 border-t">
+          <Button 
+            variant="outline" 
+            className="w-full"
+            onClick={() => navigate('/communications')}
+          >
+            View All Communications
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

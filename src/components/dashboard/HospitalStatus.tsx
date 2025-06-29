@@ -1,27 +1,70 @@
+
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Building2, Bed, MapPin, AlertCircle } from 'lucide-react';
-import { fetchHospitals } from '@/services/emergency-service';
+import { Building2, Bed, AlertCircle, Users } from 'lucide-react';
 import { LoadingState } from '@/components/ui/loading-state';
 import { useNavigate } from 'react-router-dom';
+
+// Mock service - replace with actual service
+const fetchHospitalStatus = async () => {
+  // Simulate API call
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  return [
+    {
+      id: '1',
+      name: 'Addis Ababa Medical Center',
+      available_beds: 15,
+      total_beds: 50,
+      specialist_available: true,
+      location: 'Bole, Addis Ababa',
+      distance: '2.3 km'
+    },
+    {
+      id: '2',
+      name: 'St. Paul Hospital',
+      available_beds: 8,
+      total_beds: 40,
+      specialist_available: false,
+      location: 'Gulele, Addis Ababa',
+      distance: '4.1 km'
+    },
+    {
+      id: '3',
+      name: 'Black Lion Hospital',
+      available_beds: 0,
+      total_beds: 60,
+      specialist_available: true,
+      location: 'Lideta, Addis Ababa',
+      distance: '5.7 km'
+    }
+  ];
+};
 
 const HospitalStatus = () => {
   const navigate = useNavigate();
   const { data: hospitals, isLoading, error } = useQuery({
-    queryKey: ['hospitals-status'],
-    queryFn: fetchHospitals,
+    queryKey: ['hospital-status'],
+    queryFn: fetchHospitalStatus,
     refetchInterval: 60000, // Refresh every minute
   });
 
-  const getCapacityStatus = (availableBeds: number, totalBeds: number) => {
-    const percentage = (availableBeds / totalBeds) * 100;
-    if (percentage > 50) return { color: 'text-green-600', status: 'Available' };
-    if (percentage > 20) return { color: 'text-orange-600', status: 'Limited' };
-    return { color: 'text-red-600', status: 'Critical' };
+  const getCapacityColor = (available: number, total: number) => {
+    const percentage = (available / total) * 100;
+    if (percentage === 0) return 'bg-red-100 text-red-800 border-red-200';
+    if (percentage < 25) return 'bg-orange-100 text-orange-800 border-orange-200';
+    if (percentage < 50) return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+    return 'bg-green-100 text-green-800 border-green-200';
+  };
+
+  const getCapacityStatus = (available: number, total: number) => {
+    const percentage = (available / total) * 100;
+    if (percentage === 0) return 'Full';
+    if (percentage < 25) return 'Critical';
+    if (percentage < 50) return 'Limited';
+    return 'Available';
   };
 
   if (isLoading) {
@@ -53,7 +96,7 @@ const HospitalStatus = () => {
         </CardHeader>
         <CardContent>
           <div className="text-center text-red-600 py-4">
-            Failed to load hospital data. Please try again.
+            Failed to load hospital status. Please try again.
           </div>
         </CardContent>
       </Card>
@@ -79,57 +122,41 @@ const HospitalStatus = () => {
           </div>
         ) : (
           <div className="space-y-4 max-h-80 overflow-y-auto">
-            {hospitals.slice(0, 5).map((hospital) => {
-              const capacityStatus = getCapacityStatus(hospital.available_beds, hospital.total_beds);
-              const occupancyPercentage = ((hospital.total_beds - hospital.available_beds) / hospital.total_beds) * 100;
-              
-              return (
-                <div
-                  key={hospital.id}
-                  className="border rounded-lg p-3 hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <h4 className="font-medium text-sm">{hospital.name}</h4>
-                    <div className="flex items-center gap-1">
-                      {hospital.specialist_available && (
-                        <Badge variant="outline" className="text-xs">
-                          Specialist
-                        </Badge>
+            {hospitals.map((hospital) => (
+              <div
+                key={hospital.id}
+                className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <h4 className="font-medium text-sm">{hospital.name}</h4>
+                  <Badge className={getCapacityColor(hospital.available_beds, hospital.total_beds)}>
+                    {getCapacityStatus(hospital.available_beds, hospital.total_beds)}
+                  </Badge>
+                </div>
+                
+                <div className="space-y-2 text-sm text-gray-600">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Bed className="h-4 w-4 mr-1" />
+                      <span>Beds: {hospital.available_beds}/{hospital.total_beds}</span>
+                    </div>
+                    <div className="flex items-center">
+                      {hospital.specialist_available ? (
+                        <Users className="h-4 w-4 mr-1 text-green-600" />
+                      ) : (
+                        <AlertCircle className="h-4 w-4 mr-1 text-red-600" />
                       )}
-                      <Badge className={`text-xs ${capacityStatus.color} bg-transparent border-current`}>
-                        {capacityStatus.status}
-                      </Badge>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="flex items-center text-sm text-gray-600">
-                      <MapPin className="h-3 w-3 mr-1" />
-                      {hospital.location}
-                    </div>
-                    
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center">
-                        <Bed className="h-3 w-3 mr-1" />
-                        <span>{hospital.available_beds}/{hospital.total_beds} beds</span>
-                      </div>
-                      <span className="text-xs text-gray-500">
-                        {Math.round(occupancyPercentage)}% occupied
+                      <span className="text-xs">
+                        {hospital.specialist_available ? 'Specialist Available' : 'No Specialist'}
                       </span>
                     </div>
-                    
-                    <Progress 
-                      value={occupancyPercentage} 
-                      className="h-2"
-                      indicatorClassName={
-                        occupancyPercentage > 80 ? 'bg-red-500' :
-                        occupancyPercentage > 60 ? 'bg-orange-500' : 'bg-green-500'
-                      }
-                    />
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {hospital.location} • {hospital.distance}
                   </div>
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         )}
         
