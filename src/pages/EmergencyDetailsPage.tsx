@@ -118,7 +118,7 @@ const EmergencyDetailsPage = () => {
   if (error || !data || !data.emergency) {
     return (
       <div className="container mx-auto p-4">
-        <BackNavigation title="Emergency Details" />
+        <BackNavigation label="Emergency Details" />
         <div className="text-center">
           <div className="mb-4">
             <AlertTriangle className="h-12 w-12 text-red-500 mx-auto" />
@@ -141,7 +141,7 @@ const EmergencyDetailsPage = () => {
 
   return (
     <div className="container mx-auto p-4 space-y-6">
-      <BackNavigation title={`Emergency: ${emergency.type}`} />
+      <BackNavigation label={`Emergency: ${emergency.type}`} />
       
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
