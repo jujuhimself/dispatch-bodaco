@@ -21,7 +21,7 @@ export const RealTimeChat = () => {
 
   const { data: messages = [], isLoading } = useQuery({
     queryKey: ['recent-communications'],
-    queryFn: () => fetchRecentCommunications(20),
+    queryFn: () => fetchRecentCommunications(),
     refetchInterval: 5000, // Refetch every 5 seconds for real-time feel
   });
 

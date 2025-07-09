@@ -18,7 +18,7 @@ export interface Responder {
   id: string;
   name: string;
   phone: string | null;
-  type: 'ambulance' | 'bajaj' | 'traffic';
+  type: 'ambulance' | 'bajaj' | 'traffic' | 'fire' | 'police';
   status: 'available' | 'on_call' | 'off_duty';
   current_location: string | null;
   coordinates: { x: number; y: number } | null;
