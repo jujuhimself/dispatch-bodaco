@@ -25,13 +25,11 @@ import { validationService } from '@/services/validation-service';
 import { enhancedAuditService } from '@/services/enhanced-audit-service';
 
 const Auth = () => {
-  const { user, loading, signIn, signUp } = useAuth();
+  const { user, loading, signIn, signUp, signOut } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  
-  // Registration success state
-  const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  // Form states and validation
   
   // Login form state
   const [loginEmail, setLoginEmail] = useState('');
@@ -54,11 +52,22 @@ const Auth = () => {
     validationService.initialize();
   }, []);
   
-  // Check if user is already authenticated
+  // Check if user is already authenticated and handle redirects
   useEffect(() => {
     if (user && !loading) {
-      const from = (location.state as any)?.from?.pathname || '/';
-      navigate(from, { replace: true });
+      // Check approval status
+      if (user.approval_status === 'approved') {
+        // Redirect based on role
+        const redirectPath = user.role === 'admin' ? '/admin' : '/dashboard';
+        const from = (location.state as any)?.from?.pathname || redirectPath;
+        navigate(from, { replace: true });
+        toast.success(`Welcome back, ${user.name || user.email}!`);
+      } else if (user.approval_status === 'pending') {
+        toast.warning('Your account is pending admin approval. You will be contacted once approved.');
+        // Keep them on auth page but show a different message
+      } else if (user.approval_status === 'rejected') {
+        toast.error('Your account has been rejected. Please contact support for assistance.');
+      }
     }
   }, [user, loading, navigate, location]);
   
@@ -171,8 +180,7 @@ const Auth = () => {
         role: role
       });
       
-      setRegistrationSuccess(true);
-      
+      // Don't show success screen - let the auth state change handle navigation
       // Reset form
       setRegisterEmail('');
       setRegisterPassword('');
@@ -181,6 +189,13 @@ const Auth = () => {
       setName('');
       setPhoneNumber('');
       setValidationErrors({});
+      
+      // Show appropriate message based on role
+      if (role === 'admin') {
+        toast.success('Admin account created! You can now log in.');
+      } else {
+        toast.success('Registration successful! Your account is pending admin approval.');
+      }
       
     } catch (error: any) {
       // Log failed registration
@@ -197,8 +212,8 @@ const Auth = () => {
     }
   };
 
-  // Show registration success page
-  if (registrationSuccess) {
+  // Show different content for pending users
+  if (user && user.approval_status === 'pending') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
         <motion.div
@@ -209,34 +224,29 @@ const Auth = () => {
         >
           <Card className="shadow-xl border-0">
             <CardHeader className="text-center pb-4">
-              <div className="mx-auto bg-green-100 p-3 rounded-full mb-4">
-                <CheckCircle2 className="h-12 w-12 text-green-600" />
+              <div className="mx-auto bg-yellow-100 p-3 rounded-full mb-4">
+                <AlertCircle className="h-12 w-12 text-yellow-600" />
               </div>
-              <CardTitle className="text-2xl text-slate-800">Registration Successful!</CardTitle>
+              <CardTitle className="text-2xl text-slate-800">Account Pending Approval</CardTitle>
             </CardHeader>
             <CardContent className="text-center space-y-4">
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <Mail className="h-8 w-8 mx-auto mb-2 text-blue-600" />
-                <p className="text-blue-800 font-medium">Check Your Email</p>
-                <p className="text-blue-600 text-sm">
-                  Please verify your email address before logging in.
-                </p>
-              </div>
-              
               <Alert className="bg-yellow-50 border-yellow-200 text-yellow-800">
                 <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Pending Approval</AlertTitle>
+                <AlertTitle>Admin Review Required</AlertTitle>
                 <AlertDescription>
-                  Your account will need admin approval before you can access the platform.
+                  Your account is being reviewed by an administrator. You will receive an email notification once approved.
                 </AlertDescription>
               </Alert>
               
               <div className="flex flex-col gap-3">
                 <Button 
-                  onClick={() => setRegistrationSuccess(false)}
+                  onClick={async () => {
+                    await signOut();
+                    window.location.reload();
+                  }}
                   className="w-full bg-gradient-to-r from-red-600 to-blue-600 hover:from-red-700 hover:to-blue-700"
                 >
-                  Return to Login
+                  Sign Out
                 </Button>
               </div>
             </CardContent>
