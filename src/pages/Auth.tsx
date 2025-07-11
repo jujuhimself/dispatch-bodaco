@@ -1,12 +1,12 @@
 
 import { useState, useEffect, FormEvent } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Ambulance, CheckCircle2, AlertCircle, Mail } from 'lucide-react';
+import { Shield, AlertCircle, Mail, Lock, User, Phone, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { UserRole } from '@/types/auth-types';
@@ -38,14 +38,13 @@ const Auth = () => {
   // Register form state
   const [registerEmail, setRegisterEmail] = useState('');
   const [registerPassword, setRegisterPassword] = useState('');
-  const [registerConfirmPassword, setRegisterConfirmPassword] = useState('');
-  const [role, setRole] = useState<UserRole>('dispatcher');
-  const [name, setName] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [registerName, setRegisterName] = useState('');
+  const [registerPhone, setRegisterPhone] = useState('');
+  const [registerRole, setRegisterRole] = useState<UserRole>('user');
+  const [activeTab, setActiveTab] = useState('login');
   
   // Validation states
-  const [validationErrors, setValidationErrors] = useState<Record<string, string[]>>({});
-  const [isValidating, setIsValidating] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   
   // Initialize validation service
   useEffect(() => {
@@ -71,25 +70,31 @@ const Auth = () => {
     }
   }, [user, loading, navigate, location]);
   
-  // Real-time field validation
-  const validateField = (fieldName: string, value: any) => {
-    const result = validationService.validateField(fieldName, value);
-    setValidationErrors(prev => ({
-      ...prev,
-      [fieldName]: result.errors
-    }));
-    return result.valid;
-  };
-
   const handleFieldChange = (fieldName: string, value: any) => {
-    // Clear previous errors for this field
+    // Update the form field values
+    switch(fieldName) {
+      case 'name':
+        setRegisterName(value);
+        break;
+      case 'email':
+        setRegisterEmail(value);
+        break;
+      case 'phone':
+        setRegisterPhone(value);
+        break;
+      case 'role':
+        setRegisterRole(value);
+        break;
+      case 'password':
+        setRegisterPassword(value);
+        break;
+    }
+    
+    // Clear validation errors for this field
     setValidationErrors(prev => ({
       ...prev,
-      [fieldName]: []
+      [fieldName]: ''
     }));
-    
-    // Validate after a short delay to avoid excessive validation
-    setTimeout(() => validateField(fieldName, value), 300);
   };
   
   const handleLogin = async (e: FormEvent) => {
@@ -129,108 +134,58 @@ const Auth = () => {
   const handleRegister = async (e: FormEvent) => {
     e.preventDefault();
     
-    if (registerPassword !== registerConfirmPassword) {
-      toast.error('Passwords do not match');
-      return;
-    }
-    
     if (registerPassword.length < 6) {
-      toast.error('Password should be at least 6 characters');
+      setValidationErrors({ password: 'Password should be at least 6 characters' });
       return;
     }
     
     setIsLoading(true);
-    setIsValidating(true);
     
     try {
-      // Server-side validation
-      const validationResult = await validationService.validateUserData({
-        email: registerEmail,
-        name: name,
-        phone_number: phoneNumber,
-        role: role
-      });
-      
-      if (!validationResult.valid) {
-        setValidationErrors({
-          general: validationResult.errors
-        });
-        toast.error('Please fix the validation errors and try again');
-        return;
-      }
-      
       const userData = {
-        role,
-        name,
-        phone_number: phoneNumber,
+        role: registerRole,
+        name: registerName,
+        phone_number: registerPhone,
       };
-      
-      // Log registration attempt
-      await enhancedAuditService.logSecurityEvent('registration_attempt', {
-        email: registerEmail,
-        role: role,
-        name: name
-      });
       
       await signUp(registerEmail, registerPassword, userData);
       
-      // Log successful registration
-      await enhancedAuditService.logUserAction('registration_success', {
-        email: registerEmail,
-        role: role
-      });
-      
-      // Don't show success screen - let the auth state change handle navigation
       // Reset form
       setRegisterEmail('');
       setRegisterPassword('');
-      setRegisterConfirmPassword('');
-      setRole('dispatcher');
-      setName('');
-      setPhoneNumber('');
+      setRegisterName('');
+      setRegisterPhone('');
+      setRegisterRole('user');
       setValidationErrors({});
       
-      // Show appropriate message based on role
-      if (role === 'admin') {
-        toast.success('Admin account created! You can now log in.');
-      } else {
-        toast.success('Registration successful! Your account is pending admin approval.');
-      }
+      toast.success('Registration successful! Please check your email to verify your account.');
       
     } catch (error: any) {
-      // Log failed registration
-      await enhancedAuditService.logSecurityEvent('registration_failure', {
-        email: registerEmail,
-        error: error.message
-      });
-      
-      toast.error(error.message || 'Error during registration');
-      console.error('Registration error:', error);
+      setValidationErrors({ register: error.message || 'Error during registration' });
     } finally {
       setIsLoading(false);
-      setIsValidating(false);
     }
   };
 
   // Show different content for pending users
   if (user && user.approval_status === 'pending') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+      <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.3 }}
           className="max-w-md w-full"
         >
-          <Card className="shadow-xl border-0">
+          <Card className="bg-card/80 backdrop-blur-md border-border/50 shadow-xl">
             <CardHeader className="text-center pb-4">
-              <div className="mx-auto bg-yellow-100 p-3 rounded-full mb-4">
-                <AlertCircle className="h-12 w-12 text-yellow-600" />
+              <div className="mx-auto bg-warning/20 p-3 rounded-full mb-4">
+                <AlertCircle className="h-12 w-12 text-warning" />
               </div>
-              <CardTitle className="text-2xl text-slate-800">Account Pending Approval</CardTitle>
+              <CardTitle className="text-2xl">Account Pending Approval</CardTitle>
             </CardHeader>
             <CardContent className="text-center space-y-4">
-              <Alert className="bg-yellow-50 border-yellow-200 text-yellow-800">
+              <Alert className="bg-warning/10 border-warning/20">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Admin Review Required</AlertTitle>
                 <AlertDescription>
@@ -238,17 +193,15 @@ const Auth = () => {
                 </AlertDescription>
               </Alert>
               
-              <div className="flex flex-col gap-3">
-                <Button 
-                  onClick={async () => {
-                    await signOut();
-                    window.location.reload();
-                  }}
-                  className="w-full bg-gradient-to-r from-red-600 to-blue-600 hover:from-red-700 hover:to-blue-700"
-                >
-                  Sign Out
-                </Button>
-              </div>
+              <Button 
+                onClick={async () => {
+                  await signOut();
+                  window.location.reload();
+                }}
+                className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90"
+              >
+                Sign Out
+              </Button>
             </CardContent>
           </Card>
         </motion.div>
@@ -257,245 +210,223 @@ const Auth = () => {
   }
   
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
-      <div className="w-full max-w-md">
-        <motion.div 
-          className="mb-8 flex justify-center"
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.3 }}
-        >
-          <div className="flex items-center space-x-3">
-            <Ambulance className="h-10 w-10 text-red-600" />
-            <h1 className="text-3xl font-bold text-slate-800">
-              Boda & Co
-            </h1>
-          </div>
-        </motion.div>
-        
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
-        >
-          <Card className="shadow-xl border-0">
-            <CardHeader className="text-center pb-4">
-              <CardTitle className="text-2xl text-slate-800">
-                Emergency Response System
-              </CardTitle>
-              <CardDescription className="text-slate-600">
-                Sign in to your account or create a new one
-              </CardDescription>
-              
-              {/* Test Accounts Info */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
-                <h4 className="font-medium text-blue-900 mb-2">Test Accounts:</h4>
-                <div className="space-y-1 text-sm text-blue-800">
-                  <p><strong>Admin:</strong> ivogerald@bodaco.org</p>
-                  <p><strong>Dispatcher:</strong> dispatcher@test.com</p>
-                  <p><strong>Responder:</strong> responder@test.com</p>
-                  <p className="text-blue-600 mt-2 text-xs">Create these accounts to test different roles</p>
-                </div>
+    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center p-4">
+      <div className="w-full max-w-lg space-y-8">
+        <div className="text-center space-y-4">
+          <div className="flex justify-center">
+            <div className="relative">
+              <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl" />
+              <div className="relative bg-gradient-to-r from-primary to-secondary p-3 rounded-full">
+                <Shield className="h-8 w-8 text-primary-foreground" />
               </div>
-            </CardHeader>
-            <CardContent>
-              <Tabs defaultValue="login" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-6 bg-slate-100">
-                  <TabsTrigger value="login" className="data-[state=active]:bg-white">
-                    Sign In
-                  </TabsTrigger>
-                  <TabsTrigger value="register" className="data-[state=active]:bg-white">
-                    Register
-                  </TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="login">
-                  <form onSubmit={handleLogin} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="email" className="text-slate-700">Email Address</Label>
-                      <Input 
-                        id="email" 
-                        type="email" 
+            </div>
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              Emergency Response
+            </h1>
+            <p className="text-muted-foreground">
+              Secure access to emergency management system
+            </p>
+          </div>
+        </div>
+
+        <Card className="bg-card/80 backdrop-blur-md border-border/50 shadow-xl">
+          <CardContent className="p-8">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-2 bg-muted/50">
+                <TabsTrigger value="login" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                  Sign In
+                </TabsTrigger>
+                <TabsTrigger value="register" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                  Register
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="login" className="space-y-6 mt-8">
+                <form onSubmit={handleLogin} className="space-y-5">
+                  <div className="space-y-2">
+                    <Label htmlFor="loginEmail" className="text-sm font-medium">Email Address</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="loginEmail"
+                        type="email"
+                        placeholder="Enter your email"
                         value={loginEmail}
                         onChange={(e) => setLoginEmail(e.target.value)}
-                        placeholder="you@example.com" 
-                        required 
-                        className="border-slate-200 focus:border-red-500"
+                        className="pl-10 h-11 bg-background/50 border-border/50 focus:border-primary/50 focus:ring-primary/20"
+                        required
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="password" className="text-slate-700">Password</Label>
-                      <Input 
-                        id="password" 
-                        type="password" 
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="loginPassword" className="text-sm font-medium">Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="loginPassword"
+                        type="password"
+                        placeholder="Enter your password"
                         value={loginPassword}
                         onChange={(e) => setLoginPassword(e.target.value)}
-                        required 
-                        className="border-slate-200 focus:border-red-500"
+                        className="pl-10 h-11 bg-background/50 border-border/50 focus:border-primary/50 focus:ring-primary/20"
+                        required
                       />
                     </div>
-                    <Button 
-                      type="submit" 
-                      className="w-full bg-gradient-to-r from-red-600 to-blue-600 hover:from-red-700 hover:to-blue-700 text-white font-medium py-2.5" 
-                      disabled={isLoading}
-                    >
-                      {isLoading ? 'Signing in...' : 'Sign In'}
-                    </Button>
-                  </form>
-                </TabsContent>
-                
-                <TabsContent value="register">
-                  {/* General validation errors */}
-                  {validationErrors.general && validationErrors.general.length > 0 && (
-                    <Alert className="bg-red-50 border-red-200">
+                  </div>
+
+                  {validationErrors.login && (
+                    <Alert variant="destructive" className="border-destructive/50 bg-destructive/5">
                       <AlertCircle className="h-4 w-4" />
-                      <AlertTitle>Validation Errors</AlertTitle>
-                      <AlertDescription>
-                        <ul className="list-disc list-inside space-y-1">
-                          {validationErrors.general.map((error, index) => (
-                            <li key={index} className="text-sm">{error}</li>
-                          ))}
-                        </ul>
-                      </AlertDescription>
+                      <AlertDescription className="text-sm">{validationErrors.login}</AlertDescription>
                     </Alert>
                   )}
 
-                  <form onSubmit={handleRegister} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="register-name" className="text-slate-700">Full Name</Label>
-                      <Input 
-                        id="register-name" 
-                        type="text" 
-                        value={name}
-                        onChange={(e) => {
-                          setName(e.target.value);
-                          handleFieldChange('name', e.target.value);
-                        }}
-                        placeholder="John Doe" 
-                        required 
-                        className={`border-slate-200 focus:border-red-500 ${
-                          validationErrors.name?.length ? 'border-red-300' : ''
-                        }`}
+                  <Button 
+                    type="submit" 
+                    className="w-full h-11 bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-primary-foreground font-medium shadow-lg hover:shadow-xl transition-all duration-200" 
+                    disabled={loading || isLoading}
+                  >
+                    {loading || isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Signing in...
+                      </>
+                    ) : (
+                      'Sign In'
+                    )}
+                  </Button>
+                </form>
+              </TabsContent>
+
+              <TabsContent value="register" className="space-y-6 mt-8">
+                <form onSubmit={handleRegister} className="space-y-5">
+                  <div className="space-y-2">
+                    <Label htmlFor="registerName" className="text-sm font-medium">Full Name</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="registerName"
+                        type="text"
+                        placeholder="Enter your full name"
+                        value={registerName}
+                        onChange={(e) => handleFieldChange('name', e.target.value)}
+                        className="pl-10 h-11 bg-background/50 border-border/50 focus:border-primary/50 focus:ring-primary/20"
+                        required
                       />
-                      {validationErrors.name?.map((error, index) => (
-                        <p key={index} className="text-sm text-red-600">{error}</p>
-                      ))}
                     </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="register-email" className="text-slate-700">Email Address</Label>
-                      <Input 
-                        id="register-email" 
-                        type="email" 
+                    {validationErrors.name && (
+                      <p className="text-xs text-destructive">{validationErrors.name}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="registerEmail" className="text-sm font-medium">Email Address</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="registerEmail"
+                        type="email"
+                        placeholder="Enter your email"
                         value={registerEmail}
-                        onChange={(e) => {
-                          setRegisterEmail(e.target.value);
-                          handleFieldChange('email', e.target.value);
-                        }}
-                        placeholder="you@example.com" 
-                        required 
-                        className={`border-slate-200 focus:border-red-500 ${
-                          validationErrors.email?.length ? 'border-red-300' : ''
-                        }`}
+                        onChange={(e) => handleFieldChange('email', e.target.value)}
+                        className="pl-10 h-11 bg-background/50 border-border/50 focus:border-primary/50 focus:ring-primary/20"
+                        required
                       />
-                      {validationErrors.email?.map((error, index) => (
-                        <p key={index} className="text-sm text-red-600">{error}</p>
-                      ))}
                     </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="register-phone" className="text-slate-700">Phone Number</Label>
-                      <Input 
-                        id="register-phone" 
-                        type="tel" 
-                        value={phoneNumber}
-                        onChange={(e) => {
-                          setPhoneNumber(e.target.value);
-                          handleFieldChange('phone_number', e.target.value);
-                        }}
-                        placeholder="+1 (555) 123-4567" 
-                        className={`border-slate-200 focus:border-red-500 ${
-                          validationErrors.phone_number?.length ? 'border-red-300' : ''
-                        }`}
+                    {validationErrors.email && (
+                      <p className="text-xs text-destructive">{validationErrors.email}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="registerPhone" className="text-sm font-medium">Phone Number (Optional)</Label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="registerPhone"
+                        type="tel"
+                        placeholder="Enter your phone number"
+                        value={registerPhone}
+                        onChange={(e) => handleFieldChange('phone', e.target.value)}
+                        className="pl-10 h-11 bg-background/50 border-border/50 focus:border-primary/50 focus:ring-primary/20"
                       />
-                      {validationErrors.phone_number?.map((error, index) => (
-                        <p key={index} className="text-sm text-red-600">{error}</p>
-                      ))}
                     </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="role" className="text-slate-700">Select Role</Label>
-                      <Select 
-                        value={role} 
-                        onValueChange={(value) => {
-                          setRole(value as UserRole);
-                          handleFieldChange('role', value);
-                        }}
-                      >
-                        <SelectTrigger className="border-slate-200 focus:border-red-500">
-                          <SelectValue placeholder="Select a role" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectGroup>
-                            <SelectLabel>Roles</SelectLabel>
-                            <SelectItem value="dispatcher">Dispatcher</SelectItem>
-                            <SelectItem value="responder">Responder</SelectItem>
-                            <SelectItem value="user">Standard User</SelectItem>
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
-                      {validationErrors.role?.map((error, index) => (
-                        <p key={index} className="text-sm text-red-600">{error}</p>
-                      ))}
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="register-password" className="text-slate-700">Password</Label>
-                      <Input 
-                        id="register-password" 
+                    {validationErrors.phone && (
+                      <p className="text-xs text-destructive">{validationErrors.phone}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="registerRole" className="text-sm font-medium">Role</Label>
+                    <Select value={registerRole} onValueChange={(value) => handleFieldChange('role', value)}>
+                      <SelectTrigger className="h-11 bg-background/50 border-border/50 focus:border-primary/50 focus:ring-primary/20">
+                        <SelectValue placeholder="Select your role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="user">User</SelectItem>
+                        <SelectItem value="responder">Responder</SelectItem>
+                        <SelectItem value="dispatcher">Dispatcher</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {validationErrors.role && (
+                      <p className="text-xs text-destructive">{validationErrors.role}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="registerPassword" className="text-sm font-medium">Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="registerPassword"
                         type="password"
+                        placeholder="Create a password (min 6 characters)"
                         value={registerPassword}
-                        onChange={(e) => {
-                          setRegisterPassword(e.target.value);
-                          handleFieldChange('password', e.target.value);
-                        }}
-                        required 
-                        className={`border-slate-200 focus:border-red-500 ${
-                          validationErrors.password?.length ? 'border-red-300' : ''
-                        }`}
-                      />
-                      {validationErrors.password?.map((error, index) => (
-                        <p key={index} className="text-sm text-red-600">{error}</p>
-                      ))}
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="confirm-password" className="text-slate-700">Confirm Password</Label>
-                      <Input 
-                        id="confirm-password" 
-                        type="password" 
-                        value={registerConfirmPassword}
-                        onChange={(e) => setRegisterConfirmPassword(e.target.value)}
-                        required 
-                        className="border-slate-200 focus:border-red-500"
+                        onChange={(e) => handleFieldChange('password', e.target.value)}
+                        className="pl-10 h-11 bg-background/50 border-border/50 focus:border-primary/50 focus:ring-primary/20"
+                        required
                       />
                     </div>
-                    <Button 
-                      type="submit" 
-                      className="w-full bg-gradient-to-r from-red-600 to-blue-600 hover:from-red-700 hover:to-blue-700 text-white font-medium py-2.5" 
-                      disabled={isLoading || isValidating}
-                    >
-                      {isLoading ? 'Creating Account...' : isValidating ? 'Validating...' : 'Create Account'}
-                    </Button>
-                  </form>
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-            <CardFooter className="justify-center text-sm text-slate-500 pt-2">
-              <p>Boda & Co Emergency Response Platform</p>
-            </CardFooter>
-          </Card>
-        </motion.div>
+                    {validationErrors.password && (
+                      <p className="text-xs text-destructive">{validationErrors.password}</p>
+                    )}
+                  </div>
+
+                  {validationErrors.register && (
+                    <Alert variant="destructive" className="border-destructive/50 bg-destructive/5">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription className="text-sm">{validationErrors.register}</AlertDescription>
+                    </Alert>
+                  )}
+
+                  <Button 
+                    type="submit" 
+                    className="w-full h-11 bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-primary-foreground font-medium shadow-lg hover:shadow-xl transition-all duration-200" 
+                    disabled={loading || isLoading}
+                  >
+                    {loading || isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Creating account...
+                      </>
+                    ) : (
+                      'Create Account'
+                    )}
+                  </Button>
+                </form>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+
+        <div className="text-center">
+          <p className="text-xs text-muted-foreground">
+            By signing in, you agree to our terms of service and privacy policy
+          </p>
+        </div>
       </div>
     </div>
   );
