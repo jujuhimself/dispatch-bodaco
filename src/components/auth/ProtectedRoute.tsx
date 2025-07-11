@@ -1,16 +1,16 @@
 
-import React from 'react';
+import { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface ProtectedRouteProps {
-  children: React.ReactNode;
+  children: ReactNode;
   requiredRole?: string;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole }) => {
+const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
   const { user, loading } = useAuth();
   const location = useLocation();
 

@@ -1,5 +1,5 @@
 
-import React from 'react';
+
 import EmergencyStats from './EmergencyStats';
 import ActiveEmergencies from './ActiveEmergencies';
 import AvailableResponders from './AvailableResponders';

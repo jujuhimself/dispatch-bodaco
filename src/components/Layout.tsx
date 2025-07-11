@@ -1,5 +1,5 @@
 
-import React from 'react';
+import { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,7 @@ import {
   Plus
 } from 'lucide-react';
 
-const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const Layout = ({ children }: { children: ReactNode }) => {
   const { user, signOut } = useAuth();
   const location = useLocation();
 
