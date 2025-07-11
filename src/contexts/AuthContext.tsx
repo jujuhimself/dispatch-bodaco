@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, ReactNode } from 'react';
+import { createContext, useContext, ReactNode } from 'react';
 import useAuthHook, { UseAuthReturn } from '@/hooks/useAuth';
 
 const AuthContext = createContext<UseAuthReturn | undefined>(undefined);
