@@ -286,6 +286,17 @@ const Auth = () => {
               <CardDescription className="text-slate-600">
                 Sign in to your account or create a new one
               </CardDescription>
+              
+              {/* Test Accounts Info */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
+                <h4 className="font-medium text-blue-900 mb-2">Test Accounts:</h4>
+                <div className="space-y-1 text-sm text-blue-800">
+                  <p><strong>Admin:</strong> ivogerald@bodaco.org</p>
+                  <p><strong>Dispatcher:</strong> dispatcher@test.com</p>
+                  <p><strong>Responder:</strong> responder@test.com</p>
+                  <p className="text-blue-600 mt-2 text-xs">Create these accounts to test different roles</p>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="login" className="w-full">
@@ -429,7 +440,6 @@ const Auth = () => {
                             <SelectLabel>Roles</SelectLabel>
                             <SelectItem value="dispatcher">Dispatcher</SelectItem>
                             <SelectItem value="responder">Responder</SelectItem>
-                            <SelectItem value="admin">Administrator</SelectItem>
                             <SelectItem value="user">Standard User</SelectItem>
                           </SelectGroup>
                         </SelectContent>
