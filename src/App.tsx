@@ -7,6 +7,9 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import Layout from '@/components/Layout';
 import Auth from '@/pages/Auth';
 import Dashboard from '@/components/dashboard/Dashboard';
+import UserDashboard from '@/pages/UserDashboard';
+import DispatcherDashboard from '@/pages/DispatcherDashboard';
+import ResponderDashboard from '@/pages/ResponderDashboard';
 import EmergenciesPage from '@/pages/EmergenciesPage';
 import EmergencyDetailsPage from '@/pages/EmergencyDetailsPage';
 import EmergencyDetail from '@/pages/EmergencyDetail';
@@ -45,6 +48,27 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <Dashboard />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/user" element={
+              <ProtectedRoute requiredRole="user">
+                <Layout>
+                  <UserDashboard />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/dispatcher" element={
+              <ProtectedRoute requiredRole="dispatcher">
+                <Layout>
+                  <DispatcherDashboard />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/responder" element={
+              <ProtectedRoute requiredRole="responder">
+                <Layout>
+                  <ResponderDashboard />
                 </Layout>
               </ProtectedRoute>
             } />

@@ -43,7 +43,12 @@ const Auth = () => {
   useEffect(() => {
     if (user && !loading) {
       if (user.approval_status === 'approved') {
-        const redirectPath = user.role === 'admin' ? '/admin' : '/dashboard';
+        let redirectPath = '/dashboard';
+        if (user.role === 'admin') redirectPath = '/admin';
+        else if (user.role === 'dispatcher') redirectPath = '/dashboard/dispatcher';
+        else if (user.role === 'responder') redirectPath = '/dashboard/responder';
+        else if (user.role === 'user') redirectPath = '/dashboard/user';
+        
         const from = (location.state as any)?.from?.pathname || redirectPath;
         navigate(from, { replace: true });
         toast.success(`Welcome back, ${user.name || user.email}!`);
