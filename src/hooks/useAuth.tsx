@@ -1,5 +1,4 @@
-
-import { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { UserProfile, UserRole } from '@/types/auth-types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -17,11 +16,11 @@ export interface UseAuthReturn {
 }
 
 const useAuth = (): UseAuthReturn => {
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState<boolean>(false); // Changed to false by default
-  const [approvalStatus, setApprovalStatus] = useState<string | null>(null);
+  const [user, setUser] = React.useState<UserProfile | null>(null);
+  const [loading, setLoading] = React.useState<boolean>(false);
+  const [approvalStatus, setApprovalStatus] = React.useState<string | null>(null);
 
-  const fetchUserProfile = useCallback(async (userId: string) => {
+  const fetchUserProfile = React.useCallback(async (userId: string) => {
     try {
       const { data: profile, error } = await supabase
         .from('profiles')
@@ -41,7 +40,7 @@ const useAuth = (): UseAuthReturn => {
     }
   }, []);
 
-  const checkSession = useCallback(async () => {
+  const checkSession = React.useCallback(async () => {
     try {
       setLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
@@ -78,7 +77,7 @@ const useAuth = (): UseAuthReturn => {
     }
   }, [fetchUserProfile]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     // Initial session check
     checkSession();
 
