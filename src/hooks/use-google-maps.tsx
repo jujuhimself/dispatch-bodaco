@@ -44,7 +44,7 @@ export function useGoogleMaps(): UseGoogleMapsResult {
       // Script doesn't exist yet, let's create it
       const googleScript = document.createElement('script');
       googleScript.id = 'google-maps-script';
-      googleScript.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyDN8Pf0Gn5Z-hKAn-STdYCxrmIU2ECmcf0&libraries=places`;
+      googleScript.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyDN8Pf0Gn5Z-hKAn-STdYCxrmIU2ECmcf0&libraries=places&loading=async`;
       googleScript.async = true;
       googleScript.defer = true;
       
