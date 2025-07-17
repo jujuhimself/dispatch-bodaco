@@ -22,6 +22,7 @@ const useAuth = (): UseAuthReturn => {
 
   const fetchUserProfile = React.useCallback(async (userId: string) => {
     try {
+      console.log('Fetching profile for user:', userId);
       const { data: profile, error } = await supabase
         .from('profiles')
         .select('*')
@@ -33,6 +34,7 @@ const useAuth = (): UseAuthReturn => {
         return null;
       }
 
+      console.log('Profile found:', profile);
       return profile;
     } catch (error) {
       console.error('Error in fetchUserProfile:', error);
