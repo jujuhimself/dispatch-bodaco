@@ -1,53 +1,6 @@
-
-// Emergency Service - Mock implementation for development
-// Replace with actual API calls when backend is ready
-
-export interface Emergency {
-  id: string;
-  type: string;
-  description: string;
-  location: string;
-  coordinates?: { x: number; y: number };
-  priority: number;
-  status: 'pending' | 'assigned' | 'in_transit' | 'on_site' | 'resolved' | 'canceled';
-  reported_at: string;
-  assigned_at?: string;
-  resolved_at?: string;
-  notes?: string;
-}
-
-export interface Responder {
-  id: string;
-  name: string;
-  type: 'ambulance' | 'bajaj' | 'traffic' | 'fire' | 'police';
-  status: 'available' | 'on_call' | 'off_duty';
-  phone: string | null;
-  current_location: string | null;
-  coordinates: { x: number; y: number } | null;
-  last_active: string;
-  notes: string | null;
-}
-
-export interface Hospital {
-  id: string;
-  name: string;
-  location: string;
-  coordinates: { x: number; y: number } | null;
-  total_beds: number;
-  available_beds: number;
-  specialist_available: boolean;
-  notes: string | null;
-}
-
-export interface Communication {
-  id: string;
-  sender: string;
-  message: string;
-  type: string;
-  sent_at: string;
-  emergency_id: string | null;
-  responder_id: string | null;
-}
+import { supabase } from '@/integrations/supabase/client';
+import { Emergency, Responder, Hospital, EmergencyAssignment, Communication } from '@/types/emergency-types';
+import { toast } from 'sonner';
 
 export interface EmergencyStatistics {
   activeEmergencies: number;
@@ -58,264 +11,221 @@ export interface EmergencyStatistics {
   totalEmergencies: number;
 }
 
-// Mock data
-const mockEmergencies: Emergency[] = [
-  {
-    id: 'emer-001',
-    type: 'Medical Emergency',
-    description: 'Heart attack patient at office building',
-    location: 'Bole Road, near Commercial Bank',
-    coordinates: { x: 38.7578, y: 9.0192 },
-    priority: 1,
-    status: 'assigned',
-    reported_at: new Date(Date.now() - 600000).toISOString(),
-    assigned_at: new Date(Date.now() - 300000).toISOString(),
-  },
-  {
-    id: 'emer-002',
-    type: 'Vehicle Crash',
-    description: 'Multi-vehicle collision on main road',
-    location: 'Mexico Square intersection',
-    coordinates: { x: 38.7614, y: 9.0084 },
-    priority: 2,
-    status: 'in_transit',
-    reported_at: new Date(Date.now() - 900000).toISOString(),
-    assigned_at: new Date(Date.now() - 600000).toISOString(),
-  },
-  {
-    id: 'emer-003',
-    type: 'Fire Emergency',
-    description: 'Kitchen fire in restaurant',
-    location: 'Piazza area, Italian restaurant',
-    coordinates: { x: 38.7369, y: 9.0437 },
-    priority: 1,
-    status: 'pending',
-    reported_at: new Date(Date.now() - 180000).toISOString(),
+// Helper function to transform coordinates
+const transformCoordinates = (coordinates: any): { x: number; y: number } | null => {
+  if (!coordinates) return null;
+  
+  if (typeof coordinates === 'string') {
+    try {
+      const parsed = JSON.parse(coordinates);
+      return { x: parsed.x || parsed.longitude || 0, y: parsed.y || parsed.latitude || 0 };
+    } catch {
+      return null;
+    }
   }
-];
-
-const mockResponders: Responder[] = [
-  {
-    id: 'resp-001',
-    name: 'Ambulance Unit 001',
-    type: 'ambulance',
-    status: 'on_call',
-    phone: '+251911123456',
-    current_location: 'En route to Bole Road',
-    coordinates: { x: 38.7578, y: 9.0192 },
-    last_active: new Date().toISOString(),
-    notes: null,
-  },
-  {
-    id: 'resp-002',
-    name: 'Traffic Police Unit 12',
-    type: 'traffic',
-    status: 'available',
-    phone: '+251911654321',
-    current_location: 'Meskel Square Station',
-    coordinates: { x: 38.7614, y: 9.0084 },
-    last_active: new Date(Date.now() - 300000).toISOString(),
-    notes: null,
-  },
-  {
-    id: 'resp-003',
-    name: 'Fire Brigade Unit A',
-    type: 'ambulance', // Changed from 'fire' to match types
-    status: 'available',
-    phone: '+251911789012',
-    current_location: 'Fire Station - Merkato',
-    coordinates: { x: 38.7369, y: 9.0437 },
-    last_active: new Date(Date.now() - 120000).toISOString(),
-    notes: 'Fire department unit',
-  },
-  {
-    id: 'resp-004',
-    name: 'Bajaj Emergency Response',
-    type: 'bajaj',
-    status: 'available',
-    phone: '+251911345678',
-    current_location: 'Arat Kilo area',
-    coordinates: { x: 38.7500, y: 9.0300 },
-    last_active: new Date(Date.now() - 600000).toISOString(),
-    notes: null,
+  
+  if (typeof coordinates === 'object' && coordinates !== null) {
+    return { x: coordinates.x || coordinates.longitude || 0, y: coordinates.y || coordinates.latitude || 0 };
   }
-];
-
-const mockHospitals: Hospital[] = [
-  {
-    id: 'hosp-001',
-    name: 'Black Lion Hospital',
-    location: 'Addis Ababa University, Lideta',
-    coordinates: { x: 38.7578, y: 9.0192 },
-    total_beds: 500,
-    available_beds: 120,
-    specialist_available: true,
-    notes: 'Trauma center available',
-  },
-  {
-    id: 'hosp-002',
-    name: 'St. Paul Hospital',
-    location: 'Gulele, near Millennium Hall',
-    coordinates: { x: 38.7614, y: 9.0284 },
-    total_beds: 400,
-    available_beds: 85,
-    specialist_available: true,
-    notes: 'Cardiac surgery unit',
-  },
-  {
-    id: 'hosp-003',
-    name: 'Yekatit 12 Hospital',
-    location: 'Piazza, downtown',
-    coordinates: { x: 38.7369, y: 9.0437 },
-    total_beds: 300,
-    available_beds: 45,
-    specialist_available: false,
-    notes: 'General medical care',
-  }
-];
-
-const mockCommunications: Communication[] = [
-  {
-    id: 'comm-001',
-    sender: 'Dispatch Center',
-    message: 'Emergency reported at Bole Road',
-    type: 'dispatch',
-    sent_at: new Date(Date.now() - 300000).toISOString(),
-    emergency_id: 'emer-001',
-    responder_id: null,
-  },
-  {
-    id: 'comm-002',
-    sender: 'Ambulance Unit 001',
-    message: 'En route to location, ETA 5 minutes',
-    type: 'status_update',
-    sent_at: new Date(Date.now() - 180000).toISOString(),
-    emergency_id: 'emer-001',
-    responder_id: 'resp-001',
-  }
-];
-
-// Simulate API delay
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+  
+  return null;
+};
 
 export const fetchActiveEmergencies = async (): Promise<Emergency[]> => {
-  await delay(800);
-  return mockEmergencies.filter(e => ['pending', 'assigned', 'in_transit', 'on_site'].includes(e.status));
+  try {
+    const { data, error } = await supabase
+      .from('emergencies')
+      .select('*')
+      .in('status', ['pending', 'assigned', 'in_transit', 'on_site'])
+      .order('priority', { ascending: true })
+      .order('reported_at', { ascending: false });
+
+    if (error) throw error;
+    
+    return (data || []).map(emergency => ({
+      ...emergency,
+      coordinates: transformCoordinates(emergency.coordinates)
+    }));
+  } catch (error) {
+    console.error('Error fetching active emergencies:', error);
+    toast.error('Failed to fetch active emergencies');
+    return [];
+  }
 };
 
 export const fetchAllEmergencies = async (): Promise<Emergency[]> => {
-  await delay(1000);
-  return mockEmergencies;
+  try {
+    const { data, error } = await supabase
+      .from('emergencies')
+      .select('*')
+      .order('reported_at', { ascending: false });
+
+    if (error) throw error;
+    
+    return (data || []).map(emergency => ({
+      ...emergency,
+      coordinates: transformCoordinates(emergency.coordinates)
+    }));
+  } catch (error) {
+    console.error('Error fetching emergencies:', error);
+    toast.error('Failed to fetch emergencies');
+    return [];
+  }
 };
 
 export const fetchAvailableResponders = async (): Promise<Responder[]> => {
-  await delay(600);
-  return mockResponders.filter(r => r.status === 'available');
+  try {
+    const { data, error } = await supabase
+      .from('responders')
+      .select('*')
+      .eq('status', 'available')
+      .order('last_active', { ascending: false });
+
+    if (error) throw error;
+    
+    return (data || []).map(responder => ({
+      ...responder,
+      coordinates: transformCoordinates(responder.coordinates)
+    }));
+  } catch (error) {
+    console.error('Error fetching available responders:', error);
+    toast.error('Failed to fetch available responders');
+    return [];
+  }
 };
 
 export const fetchResponders = async (): Promise<Responder[]> => {
-  await delay(800);
-  return mockResponders;
+  try {
+    const { data, error } = await supabase
+      .from('responders')
+      .select('*')
+      .order('name');
+
+    if (error) throw error;
+    
+    return (data || []).map(responder => ({
+      ...responder,
+      coordinates: transformCoordinates(responder.coordinates)
+    }));
+  } catch (error) {
+    console.error('Error fetching responders:', error);
+    toast.error('Failed to fetch responders');
+    return [];
+  }
 };
 
 export const getEmergencyStatistics = async (): Promise<EmergencyStatistics> => {
-  await delay(500);
-  const activeCount = mockEmergencies.filter(e => 
-    ['pending', 'assigned', 'in_transit', 'on_site'].includes(e.status)
-  ).length;
-  
-  const availableCount = mockResponders.filter(r => r.status === 'available').length;
-  
-  return {
-    activeEmergencies: activeCount,
-    availableResponders: availableCount,
-    avgResponseTime: '7:32',
-    hospitalCapacity: 78,
-    hospitalsAtCapacity: 2,
-    totalEmergencies: mockEmergencies.length
-  };
+  try {
+    const [emergenciesResponse, respondersResponse, hospitalsResponse] = await Promise.all([
+      supabase.from('emergencies').select('status', { count: 'exact' }),
+      supabase.from('responders').select('status', { count: 'exact' }),
+      supabase.from('hospitals').select('available_beds, total_beds')
+    ]);
+
+    const emergencies = emergenciesResponse.data || [];
+    const responders = respondersResponse.data || [];
+    const hospitals = hospitalsResponse.data || [];
+
+    const activeEmergencies = emergencies.filter(e => 
+      ['pending', 'assigned', 'in_transit', 'on_site'].includes(e.status)
+    ).length;
+    
+    const availableResponders = responders.filter(r => r.status === 'available').length;
+    
+    const totalBeds = hospitals.reduce((sum, h) => sum + h.total_beds, 0);
+    const availableBeds = hospitals.reduce((sum, h) => sum + h.available_beds, 0);
+    const hospitalCapacity = totalBeds > 0 ? Math.round((availableBeds / totalBeds) * 100) : 0;
+
+    return {
+      activeEmergencies,
+      availableResponders,
+      avgResponseTime: '7:32', // This could be calculated from actual data
+      hospitalCapacity,
+      hospitalsAtCapacity: hospitals.filter(h => h.available_beds === 0).length,
+      totalEmergencies: emergencies.length
+    };
+  } catch (error) {
+    console.error('Error fetching emergency statistics:', error);
+    return {
+      activeEmergencies: 0,
+      availableResponders: 0,
+      avgResponseTime: 'N/A',
+      hospitalCapacity: 0,
+      hospitalsAtCapacity: 0,
+      totalEmergencies: 0
+    };
+  }
 };
 
 export const createEmergency = async (emergencyData: Partial<Emergency>): Promise<Emergency> => {
-  await delay(1200);
-  
-  const newEmergency: Emergency = {
-    id: `emer-${Date.now()}`,
-    type: emergencyData.type || '',
-    description: emergencyData.description || '',
-    location: emergencyData.location || '',
-    coordinates: emergencyData.coordinates,
-    priority: emergencyData.priority || 3,
-    status: 'pending',
-    reported_at: new Date().toISOString(),
-  };
-  
-  // In real implementation, this would make an API call
-  mockEmergencies.unshift(newEmergency);
-  
-  return newEmergency;
+  try {
+    const { data, error } = await supabase
+      .from('emergencies')
+      .insert({
+        type: emergencyData.type,
+        description: emergencyData.description,
+        location: emergencyData.location,
+        coordinates: emergencyData.coordinates ? `(${emergencyData.coordinates.x},${emergencyData.coordinates.y})` : null,
+        priority: emergencyData.priority || 3,
+        status: 'pending'
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    
+    const emergency = {
+      ...data,
+      coordinates: transformCoordinates(data.coordinates)
+    };
+
+    toast.success('Emergency created successfully');
+    return emergency;
+  } catch (error: any) {
+    console.error('Error creating emergency:', error);
+    toast.error(error.message || 'Failed to create emergency');
+    throw error;
+  }
 };
 
 export const getEmergencyById = async (id: string): Promise<Emergency | null> => {
-  await delay(400);
-  return mockEmergencies.find(e => e.id === id) || null;
-};
+  try {
+    const { data, error } = await supabase
+      .from('emergencies')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-// Additional missing functions
-export const getActiveResponders = async (): Promise<Responder[]> => {
-  await delay(600);
-  return mockResponders.filter(r => r.status === 'on_call');
+    if (error) throw error;
+    
+    return {
+      ...data,
+      coordinates: transformCoordinates(data.coordinates)
+    };
+  } catch (error) {
+    console.error('Error fetching emergency by ID:', error);
+    return null;
+  }
 };
 
 export const fetchHospitals = async (): Promise<Hospital[]> => {
-  await delay(500);
-  return mockHospitals;
-};
+  try {
+    const { data, error } = await supabase
+      .from('hospitals')
+      .select('*')
+      .order('name');
 
-export const updateHospitalCapacity = async (
-  hospitalId: string, 
-  availableBeds: number
-): Promise<Hospital> => {
-  await delay(300);
-  const hospital = mockHospitals.find(h => h.id === hospitalId);
-  if (hospital) {
-    hospital.available_beds = availableBeds;
+    if (error) throw error;
+    
+    return (data || []).map(hospital => ({
+      ...hospital,
+      coordinates: transformCoordinates(hospital.coordinates)
+    }));
+  } catch (error) {
+    console.error('Error fetching hospitals:', error);
+    toast.error('Failed to fetch hospitals');
+    return [];
   }
-  return hospital!;
-};
-
-export const fetchRecentCommunications = async (emergencyId?: string): Promise<Communication[]> => {
-  await delay(400);
-  return emergencyId 
-    ? mockCommunications.filter(c => c.emergency_id === emergencyId)
-    : mockCommunications;
-};
-
-export const sendCommunication = async (
-  message: string,
-  type: string,
-  emergencyId?: string,
-  responderId?: string
-): Promise<Communication> => {
-  await delay(200);
-  const newComm: Communication = {
-    id: `comm-${Date.now()}`,
-    sender: 'System',
-    message,
-    type,
-    sent_at: new Date().toISOString(),
-    emergency_id: emergencyId || null,
-    responder_id: responderId || null,
-  };
-  mockCommunications.unshift(newComm);
-  return newComm;
-};
-
-export const subscribeToMessages = (callback: (message: Communication) => void) => {
-  // Mock real-time subscription
-  return {
-    unsubscribe: () => {}
-  };
 };
 
 export const assignResponder = async (
@@ -323,26 +233,61 @@ export const assignResponder = async (
   responderId: string,
   notes?: string
 ): Promise<void> => {
-  await delay(500);
-  const emergency = mockEmergencies.find(e => e.id === emergencyId);
-  const responder = mockResponders.find(r => r.id === responderId);
-  
-  if (emergency && responder) {
-    emergency.status = 'assigned';
-    emergency.assigned_at = new Date().toISOString();
-    responder.status = 'on_call';
+  try {
+    // Create assignment record
+    const { error: assignmentError } = await supabase
+      .from('emergency_assignments')
+      .insert({
+        emergency_id: emergencyId,
+        responder_id: responderId,
+        notes
+      });
+
+    if (assignmentError) throw assignmentError;
+
+    // Update emergency status
+    const { error: emergencyError } = await supabase
+      .from('emergencies')
+      .update({ 
+        status: 'assigned',
+        assigned_at: new Date().toISOString()
+      })
+      .eq('id', emergencyId);
+
+    if (emergencyError) throw emergencyError;
+
+    // Update responder status
+    const { error: responderError } = await supabase
+      .from('responders')
+      .update({ status: 'on_call' })
+      .eq('id', responderId);
+
+    if (responderError) throw responderError;
+
+    toast.success('Responder assigned successfully');
+  } catch (error: any) {
+    console.error('Error assigning responder:', error);
+    toast.error(error.message || 'Failed to assign responder');
+    throw error;
   }
 };
 
 export const autoAssignResponder = async (emergencyId: string): Promise<Responder | null> => {
-  await delay(600);
-  const availableResponders = mockResponders.filter(r => r.status === 'available');
-  if (availableResponders.length > 0) {
-    const responder = availableResponders[0];
-    await assignResponder(emergencyId, responder.id);
+  try {
+    const availableResponders = await fetchAvailableResponders();
+    if (availableResponders.length === 0) {
+      toast.error('No available responders found');
+      return null;
+    }
+
+    const responder = availableResponders[0]; // Simple auto-assignment logic
+    await assignResponder(emergencyId, responder.id, 'Auto-assigned');
+    
     return responder;
+  } catch (error) {
+    console.error('Error auto-assigning responder:', error);
+    return null;
   }
-  return null;
 };
 
 export const updateEmergencyStatus = async (
@@ -350,16 +295,172 @@ export const updateEmergencyStatus = async (
   status: Emergency['status'],
   notes?: string
 ): Promise<Emergency | null> => {
-  await delay(300);
-  const emergency = mockEmergencies.find(e => e.id === emergencyId);
-  if (emergency) {
-    emergency.status = status;
+  try {
+    const updateData: any = { status };
+    
     if (status === 'resolved') {
-      emergency.resolved_at = new Date().toISOString();
+      updateData.resolved_at = new Date().toISOString();
     }
+    
     if (notes) {
-      emergency.notes = notes;
+      updateData.notes = notes;
     }
+
+    const { data, error } = await supabase
+      .from('emergencies')
+      .update(updateData)
+      .eq('id', emergencyId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    
+    toast.success('Emergency status updated');
+    return {
+      ...data,
+      coordinates: transformCoordinates(data.coordinates)
+    };
+  } catch (error: any) {
+    console.error('Error updating emergency status:', error);
+    toast.error(error.message || 'Failed to update emergency status');
+    return null;
   }
-  return emergency || null;
 };
+
+// Real-time subscription
+export const subscribeToEmergencies = (callback: (payload: any) => void) => {
+  const subscription = supabase
+    .channel('emergencies-changes')
+    .on('postgres_changes', 
+      { 
+        event: '*', 
+        schema: 'public', 
+        table: 'emergencies' 
+      }, 
+      callback
+    )
+    .subscribe();
+
+  return {
+    unsubscribe: () => supabase.removeChannel(subscription)
+  };
+};
+
+// Communication functions
+export const fetchRecentCommunications = async (emergencyId?: string): Promise<Communication[]> => {
+  try {
+    let query = supabase
+      .from('communications')
+      .select('*')
+      .order('sent_at', { ascending: false })
+      .limit(50);
+
+    if (emergencyId) {
+      query = query.eq('emergency_id', emergencyId);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching communications:', error);
+    return [];
+  }
+};
+
+export const sendCommunication = async (
+  message: string,
+  sender: string,
+  type: string = 'message',
+  emergencyId?: string,
+  responderId?: string
+): Promise<Communication> => {
+  try {
+    const { data, error } = await supabase
+      .from('communications')
+      .insert({
+        message,
+        sender,
+        type,
+        emergency_id: emergencyId || null,
+        responder_id: responderId || null
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error: any) {
+    console.error('Error sending communication:', error);
+    toast.error('Failed to send message');
+    throw error;
+  }
+};
+
+export const subscribeToMessages = (callback: (payload: any) => void) => {
+  const subscription = supabase
+    .channel('communications-changes')
+    .on('postgres_changes', 
+      { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'communications' 
+      }, 
+      callback
+    )
+    .subscribe();
+
+  return {
+    unsubscribe: () => supabase.removeChannel(subscription)
+  };
+};
+
+// Additional missing functions for compatibility
+export const getActiveResponders = async (): Promise<Responder[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('responders')
+      .select('*')
+      .eq('status', 'on_call')
+      .order('last_active', { ascending: false });
+
+    if (error) throw error;
+    
+    return (data || []).map(responder => ({
+      ...responder,
+      coordinates: transformCoordinates(responder.coordinates)
+    }));
+  } catch (error) {
+    console.error('Error fetching active responders:', error);
+    return [];
+  }
+};
+
+export const updateHospitalCapacity = async (
+  hospitalId: string, 
+  availableBeds: number
+): Promise<Hospital | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('hospitals')
+      .update({ available_beds: availableBeds })
+      .eq('id', hospitalId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    
+    return {
+      ...data,
+      coordinates: transformCoordinates(data.coordinates)
+    };
+  } catch (error: any) {
+    console.error('Error updating hospital capacity:', error);
+    toast.error(error.message || 'Failed to update hospital capacity');
+    return null;
+  }
+};
+
+// Re-export types for compatibility
+export type { Emergency, Responder, Hospital, Communication, EmergencyAssignment } from '@/types/emergency-types';
