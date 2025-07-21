@@ -166,7 +166,12 @@ export const CommunicationDashboard: React.FC = () => {
                     onClose={handleCloseThread}
                   />
                 ) : (
-                  <ChatInterface />
+                  <div className="bg-card rounded-lg border p-6">
+                    <h3 className="text-lg font-semibold mb-4">Real-Time Communications</h3>
+                    <div className="text-muted-foreground">
+                      Select an emergency channel or create a new one to start communicating.
+                    </div>
+                  </div>
                 )}
               </div>
             </div>

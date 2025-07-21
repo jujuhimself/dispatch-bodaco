@@ -19,6 +19,7 @@ import Communications from '@/pages/Communications';
 import Responders from '@/pages/Responders';
 import Reports from '@/pages/Reports';
 import Settings from '@/pages/Settings';
+import { EmergencyOperationsCenter } from '@/components/emergency/EmergencyOperationsCenter';
 import './App.css';
 
 const queryClient = new QueryClient({
@@ -125,6 +126,13 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <Reports />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/operations" element={
+              <ProtectedRoute>
+                <Layout>
+                  <EmergencyOperationsCenter />
                 </Layout>
               </ProtectedRoute>
             } />
