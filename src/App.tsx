@@ -22,11 +22,16 @@ import Settings from '@/pages/Settings';
 import { EmergencyOperationsCenter } from '@/components/emergency/EmergencyOperationsCenter';
 import './App.css';
 
+// Create QueryClient outside component to prevent re-creation
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+    mutations: {
+      retry: 1,
     },
   },
 });
