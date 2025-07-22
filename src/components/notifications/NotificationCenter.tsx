@@ -1,260 +1,274 @@
-
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Bell, Settings, X, Check, TestTube } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Bell, CheckCircle, AlertTriangle, Info, X, Settings } from 'lucide-react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { formatDistanceToNow } from 'date-fns';
-import { toast } from 'sonner';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { notificationService, NotificationSettings } from '@/services/notification-service';
+import { useToast } from '@/hooks/use-toast';
 
-interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  type: 'info' | 'warning' | 'error' | 'success';
-  read: boolean;
-  created_at: string;
-  user_id: string;
+interface NotificationCenterProps {
+  className?: string;
 }
 
-const NotificationCenter = () => {
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
+export const NotificationCenter: React.FC<NotificationCenterProps> = ({ className }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [permission, setPermission] = useState<NotificationPermission>('default');
+  const [settings, setSettings] = useState<NotificationSettings>(notificationService.getSettings());
+  const [unreadCount] = useState(0); // TODO: Implement unread count from actual notifications
+  const { toast } = useToast();
 
-  // Fetch admin notifications and convert them to our notification format
-  const { data: notifications, isLoading } = useQuery({
-    queryKey: ['notifications', user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('admin_notifications')
-        .select('*')
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false })
-        .limit(50);
-
-      if (error) throw error;
-      
-      // Convert admin_notifications to our Notification interface
-      return data?.map(notification => ({
-        id: notification.id,
-        title: notification.notification_type === 'user_registration' ? 'Registration Update' : 'Notification',
-        message: notification.message,
-        type: 'info' as const,
-        read: notification.read,
-        created_at: notification.created_at,
-        user_id: notification.user_id
-      })) || [];
-    },
-    enabled: !!user?.id
-  });
-
-  // Mark as read mutation
-  const markAsReadMutation = useMutation({
-    mutationFn: async (notificationId: string) => {
-      const { error } = await supabase
-        .from('admin_notifications')
-        .update({ read: true })
-        .eq('id', notificationId);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-    }
-  });
-
-  // Mark all as read mutation
-  const markAllAsReadMutation = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase
-        .from('admin_notifications')
-        .update({ read: true })
-        .eq('user_id', user?.id)
-        .eq('read', false);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      toast.success('All notifications marked as read');
-    }
-  });
-
-  // Delete notification mutation
-  const deleteNotificationMutation = useMutation({
-    mutationFn: async (notificationId: string) => {
-      const { error } = await supabase
-        .from('admin_notifications')
-        .delete()
-        .eq('id', notificationId);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-    }
-  });
-
-  // Real-time subscription for admin_notifications
   useEffect(() => {
-    if (!user?.id) return;
-
-    const channel = supabase
-      .channel('admin_notifications')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'admin_notifications',
-          filter: `user_id=eq.${user.id}`
-        },
-        (payload) => {
-          queryClient.invalidateQueries({ queryKey: ['notifications'] });
-          
-          if (payload.eventType === 'INSERT') {
-            const newNotification = payload.new as any;
-            toast(newNotification.notification_type === 'user_registration' ? 'Registration Update' : 'Notification', {
-              description: newNotification.message
-            });
-          }
-        }
-      )
-      .subscribe();
+    setPermission(notificationService.getPermissionStatus());
+    
+    // Setup real-time notifications when component mounts
+    notificationService.setupRealTimeNotifications();
 
     return () => {
-      supabase.removeChannel(channel);
+      notificationService.cleanup();
     };
-  }, [user?.id, queryClient]);
+  }, []);
 
-  const unreadCount = notifications?.filter(n => !n.read).length || 0;
+  const handleRequestPermission = async () => {
+    try {
+      const newPermission = await notificationService.requestPermission();
+      setPermission(newPermission);
+      
+      if (newPermission === 'granted') {
+        toast.success("Notifications Enabled", {
+          description: "You'll now receive push notifications for emergency alerts."
+        });
+      } else {
+        toast.error("Notifications Blocked", {
+          description: "Please enable notifications in your browser settings."
+        });
+      }
+    } catch (error) {
+      toast.error("Error", {
+        description: "Failed to enable notifications."
+      });
+    }
+  };
 
-  const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case 'success':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'warning':
-        return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
-      case 'error':
-        return <X className="h-4 w-4 text-red-500" />;
+  const handleSettingChange = (key: keyof NotificationSettings, value: boolean) => {
+    const newSettings = { ...settings, [key]: value };
+    setSettings(newSettings);
+    notificationService.updateSettings(newSettings);
+    
+    toast.success("Settings Updated", {
+      description: `${key.replace(/([A-Z])/g, ' $1').toLowerCase()} ${value ? 'enabled' : 'disabled'}.`
+    });
+  };
+
+  const handleTestNotification = async () => {
+    try {
+      await notificationService.testNotification();
+      toast.success("Test Sent", {
+        description: "Check for the test notification!"
+      });
+    } catch (error) {
+      toast.error("Test Failed", {
+        description: "Unable to send test notification."
+      });
+    }
+  };
+
+  const getPermissionStatus = () => {
+    switch (permission) {
+      case 'granted':
+        return { text: 'Enabled', color: 'bg-green-500' };
+      case 'denied':
+        return { text: 'Blocked', color: 'bg-red-500' };
       default:
-        return <Info className="h-4 w-4 text-blue-500" />;
+        return { text: 'Not Set', color: 'bg-yellow-500' };
     }
   };
 
-  const handleNotificationClick = (notification: Notification) => {
-    if (!notification.read) {
-      markAsReadMutation.mutate(notification.id);
-    }
-  };
+  const permissionStatus = getPermissionStatus();
 
   return (
-    <div className="relative">
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => setIsOpen(!isOpen)}
-        className="relative"
-      >
-        <Bell className="h-5 w-5" />
-        {unreadCount > 0 && (
-          <Badge 
-            variant="destructive" 
-            className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
-          >
-            {unreadCount > 99 ? '99+' : unreadCount}
-          </Badge>
-        )}
-      </Button>
-
-      {isOpen && (
-        <Card className="absolute right-0 top-12 w-96 z-50 shadow-lg">
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <PopoverTrigger asChild>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className={`relative ${className}`}
+          aria-label="Notification center"
+        >
+          <Bell className="h-5 w-5" />
+          {unreadCount > 0 && (
+            <Badge 
+              variant="destructive" 
+              className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs"
+            >
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </Badge>
+          )}
+          <span className={`absolute bottom-0 right-0 h-2 w-2 rounded-full ${permissionStatus.color}`} />
+        </Button>
+      </PopoverTrigger>
+      
+      <PopoverContent className="w-80 p-0" align="end">
+        <Card className="border-0 shadow-lg">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg">Notifications</CardTitle>
-              <div className="flex items-center space-x-2">
-                {unreadCount > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => markAllAsReadMutation.mutate()}
-                    disabled={markAllAsReadMutation.isPending}
-                  >
-                    Mark all read
-                  </Button>
-                )}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowSettings(!showSettings)}
+                  className="h-8 w-8"
+                >
+                  <Settings className="h-4 w-4" />
+                </Button>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setIsOpen(false)}
+                  className="h-8 w-8"
                 >
                   <X className="h-4 w-4" />
                 </Button>
               </div>
             </div>
+            
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Status: {permissionStatus.text}</span>
+              <div className={`h-2 w-2 rounded-full ${permissionStatus.color}`} />
+            </div>
           </CardHeader>
-          <CardContent className="p-0">
-            <ScrollArea className="h-96">
-              {isLoading ? (
-                <div className="p-4 text-center text-gray-500">
-                  Loading notifications...
+
+          <CardContent className="space-y-4">
+            {permission !== 'granted' && (
+              <div className="space-y-3">
+                <div className="text-sm text-muted-foreground">
+                  Enable push notifications to receive real-time emergency alerts, assignment updates, and communication messages.
                 </div>
-              ) : !notifications || notifications.length === 0 ? (
-                <div className="p-4 text-center text-gray-500">
-                  No notifications yet
+                <Button onClick={handleRequestPermission} className="w-full">
+                  <Bell className="h-4 w-4 mr-2" />
+                  Enable Notifications
+                </Button>
+              </div>
+            )}
+
+            {permission === 'granted' && (
+              <>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-green-600 flex items-center">
+                    <Check className="h-4 w-4 mr-1" />
+                    Notifications Active
+                  </span>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleTestNotification}
+                  >
+                    <TestTube className="h-4 w-4 mr-1" />
+                    Test
+                  </Button>
                 </div>
-              ) : (
-                <div className="space-y-1">
-                  {notifications.map((notification) => (
-                    <div
-                      key={notification.id}
-                      className={`p-3 border-b cursor-pointer hover:bg-gray-50 transition-colors ${
-                        !notification.read ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
-                      }`}
-                      onClick={() => handleNotificationClick(notification)}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start space-x-3 flex-1">
-                          {getNotificationIcon(notification.type)}
-                          <div className="flex-1 min-w-0">
-                            <p className={`text-sm font-medium ${!notification.read ? 'text-gray-900' : 'text-gray-700'}`}>
-                              {notification.title}
-                            </p>
-                            <p className="text-sm text-gray-600 mt-1">
-                              {notification.message}
-                            </p>
-                            <p className="text-xs text-gray-400 mt-2">
-                              {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
-                            </p>
-                          </div>
+
+                {showSettings && (
+                  <>
+                    <Separator />
+                    <div className="space-y-4">
+                      <h4 className="font-medium text-sm">Notification Settings</h4>
+                      
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="emergency-alerts" className="text-sm">
+                            Emergency Alerts
+                          </Label>
+                          <Switch
+                            id="emergency-alerts"
+                            checked={settings.emergencyAlerts}
+                            onCheckedChange={(checked) => handleSettingChange('emergencyAlerts', checked)}
+                          />
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteNotificationMutation.mutate(notification.id);
-                          }}
-                          className="opacity-0 group-hover:opacity-100"
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
+
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="assignment-notifications" className="text-sm">
+                            Assignment Updates
+                          </Label>
+                          <Switch
+                            id="assignment-notifications"
+                            checked={settings.assignmentNotifications}
+                            onCheckedChange={(checked) => handleSettingChange('assignmentNotifications', checked)}
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="communication-updates" className="text-sm">
+                            Messages
+                          </Label>
+                          <Switch
+                            id="communication-updates"
+                            checked={settings.communicationUpdates}
+                            onCheckedChange={(checked) => handleSettingChange('communicationUpdates', checked)}
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="system-updates" className="text-sm">
+                            System Updates
+                          </Label>
+                          <Switch
+                            id="system-updates"
+                            checked={settings.systemUpdates}
+                            onCheckedChange={(checked) => handleSettingChange('systemUpdates', checked)}
+                          />
+                        </div>
+
+                        <Separator />
+
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="sound" className="text-sm">
+                            Sound
+                          </Label>
+                          <Switch
+                            id="sound"
+                            checked={settings.sound}
+                            onCheckedChange={(checked) => handleSettingChange('sound', checked)}
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="vibration" className="text-sm">
+                            Vibration
+                          </Label>
+                          <Switch
+                            id="vibration"
+                            checked={settings.vibration}
+                            onCheckedChange={(checked) => handleSettingChange('vibration', checked)}
+                          />
+                        </div>
                       </div>
                     </div>
-                  ))}
+                  </>
+                )}
+              </>
+            )}
+
+            {permission === 'denied' && (
+              <div className="space-y-3">
+                <div className="text-sm text-muted-foreground">
+                  Notifications are blocked. To enable them:
                 </div>
-              )}
-            </ScrollArea>
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <div>1. Click the lock icon in your browser's address bar</div>
+                  <div>2. Set "Notifications" to "Allow"</div>
+                  <div>3. Refresh this page</div>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
-      )}
-    </div>
+      </PopoverContent>
+    </Popover>
   );
 };
-
-export default NotificationCenter;

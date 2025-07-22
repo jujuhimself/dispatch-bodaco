@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { notificationService } from './notification-service';
 import { Emergency, Responder, Hospital, EmergencyAssignment, Communication } from '@/types/emergency-types';
 import { toast } from 'sonner';
 
@@ -179,6 +180,9 @@ export const createEmergency = async (emergencyData: Partial<Emergency>): Promis
       coordinates: transformCoordinates(data.coordinates)
     };
 
+    // Trigger emergency notification
+    notificationService.notifyEmergencyCreated(emergency);
+    
     toast.success('Emergency created successfully');
     return emergency;
   } catch (error: any) {

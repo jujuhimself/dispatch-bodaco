@@ -14,6 +14,7 @@ import {
   Shield,
   Plus
 } from 'lucide-react';
+import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 
 const Layout = ({ children }: { children: ReactNode }) => {
   const { user, signOut } = useAuth();
@@ -75,6 +76,9 @@ const Layout = ({ children }: { children: ReactNode }) => {
                   New Emergency
                 </Button>
               </Link>
+
+              {/* Notification Center */}
+              <NotificationCenter />
 
               {/* User Info */}
               <div className="flex items-center space-x-2">
