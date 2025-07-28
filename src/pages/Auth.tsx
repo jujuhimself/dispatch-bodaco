@@ -8,15 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Ambulance, AlertCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
-import { UserRole } from '@/types/auth-types';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import RegistrationForm from '@/components/auth/RegistrationForm';
 
 const Auth = () => {
   const { user, loading, signIn, signUp } = useAuth();
@@ -28,15 +21,7 @@ const Auth = () => {
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   
-  // Register form state
-  const [registerEmail, setRegisterEmail] = useState('');
-  const [registerPassword, setRegisterPassword] = useState('');
-  const [registerName, setRegisterName] = useState('');
-  const [registerPhone, setRegisterPhone] = useState('');
-  const [registerRole, setRegisterRole] = useState<UserRole>('user');
   const [activeTab, setActiveTab] = useState('login');
-  
-  // Error handling
   const [error, setError] = useState('');
   
   // Check if user is already authenticated and handle redirects
@@ -76,41 +61,9 @@ const Auth = () => {
     }
   };
   
-  const handleRegister = async (e: FormEvent) => {
-    e.preventDefault();
-    clearError();
-    
-    if (registerPassword.length < 6) {
-      setError('Password should be at least 6 characters');
-      return;
-    }
-    
-    setIsLoading(true);
-    
-    try {
-      const userData = {
-        role: registerRole,
-        name: registerName,
-        phone_number: registerPhone,
-      };
-      
-      await signUp(registerEmail, registerPassword, userData);
-      
-      // Reset form
-      setRegisterEmail('');
-      setRegisterPassword('');
-      setRegisterName('');
-      setRegisterPhone('');
-      setRegisterRole('user');
-      
-      setActiveTab('login');
-      toast.success('Registration successful! Please check your email to verify your account.');
-      
-    } catch (error: any) {
-      setError(error.message || 'Error during registration');
-    } finally {
-      setIsLoading(false);
-    }
+  const handleRegisterSuccess = () => {
+    setActiveTab('login');
+    toast.success('Registration successful! Please check your email to verify your account.');
   };
 
   // Show pending approval message if user is pending
@@ -145,7 +98,7 @@ const Auth = () => {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
             <Ambulance className="h-8 w-8 text-red-600 mr-2" />
-            <h1 className="text-2xl font-bold text-red-600">Boda & Co®</h1>
+            <h1 className="text-2xl font-bold text-red-600">Boda & Co</h1>
           </div>
           <h2 className="text-3xl font-semibold text-purple-600 mb-2">Welcome</h2>
           <p className="text-gray-600">Emergency Response Management System</p>
@@ -231,110 +184,10 @@ const Auth = () => {
               </TabsContent>
 
               <TabsContent value="register" className="space-y-4">
-                <form onSubmit={handleRegister} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="registerName" className="text-gray-700">Full Name</Label>
-                    <Input
-                      id="registerName"
-                      type="text"
-                      placeholder="Enter your full name"
-                      value={registerName}
-                      onChange={(e) => {
-                        setRegisterName(e.target.value);
-                        clearError();
-                      }}
-                      className="h-12 bg-gray-50 border-gray-200"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="registerEmail" className="text-gray-700">Email Address</Label>
-                    <Input
-                      id="registerEmail"
-                      type="email"
-                      placeholder="you@example.com"
-                      value={registerEmail}
-                      onChange={(e) => {
-                        setRegisterEmail(e.target.value);
-                        clearError();
-                      }}
-                      className="h-12 bg-gray-50 border-gray-200"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="registerPhone" className="text-gray-700">Phone Number (Optional)</Label>
-                    <Input
-                      id="registerPhone"
-                      type="tel"
-                      placeholder="Enter your phone number"
-                      value={registerPhone}
-                      onChange={(e) => {
-                        setRegisterPhone(e.target.value);
-                        clearError();
-                      }}
-                      className="h-12 bg-gray-50 border-gray-200"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="registerRole" className="text-gray-700">Role</Label>
-                    <Select value={registerRole} onValueChange={(value) => setRegisterRole(value as UserRole)}>
-                      <SelectTrigger className="h-12 bg-gray-50 border-gray-200">
-                        <SelectValue placeholder="Select your role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="user">User</SelectItem>
-                        <SelectItem value="responder">Responder</SelectItem>
-                        <SelectItem value="dispatcher">Dispatcher</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="registerPassword" className="text-gray-700">Password</Label>
-                    <Input
-                      id="registerPassword"
-                      type="password"
-                      placeholder="Create a password (min 6 characters)"
-                      value={registerPassword}
-                      onChange={(e) => {
-                        setRegisterPassword(e.target.value);
-                        clearError();
-                      }}
-                      className="h-12 bg-gray-50 border-gray-200"
-                      required
-                    />
-                  </div>
-
-                  {error && (
-                    <Alert variant="destructive">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                  )}
-
-                  <Button 
-                    type="submit" 
-                    className="w-full h-12 bg-gradient-to-r from-red-500 to-blue-600 hover:from-red-600 hover:to-blue-700 text-white font-medium" 
-                    disabled={loading || isLoading}
-                  >
-                    {loading || isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Creating account...
-                      </>
-                    ) : (
-                      'Create Account'
-                    )}
-                  </Button>
-
-                  <div className="text-center text-sm text-gray-600">
-                    Boda & Co Emergency Response — Create new account
-                  </div>
-                </form>
+                <RegistrationForm 
+                  onSuccess={handleRegisterSuccess} 
+                  onTabChange={setActiveTab}
+                />
               </TabsContent>
             </Tabs>
           </CardContent>

@@ -51,11 +51,11 @@ export function AppHeader({ className }: AppHeaderProps) {
   const handleLogout = async () => {
     try {
       await signOut();
-      navigate('/auth');
+      navigate('/');
     } catch (error) {
       console.error('Error signing out:', error);
       // Fallback - redirect anyway
-      window.location.href = '/auth';
+      window.location.href = '/';
     }
   };
 

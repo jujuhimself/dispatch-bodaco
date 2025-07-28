@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useAuth } from '@/contexts/AuthContext';
@@ -21,6 +21,7 @@ import {
 export const MobileNavigation = () => {
   const { user, signOut } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
 
   const isActive = (path: string) => location.pathname === path;
@@ -116,9 +117,16 @@ export const MobileNavigation = () => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => {
-                    signOut();
-                    closeSheet();
+                  onClick={async () => {
+                    try {
+                      await signOut();
+                      navigate('/');
+                    } catch (error) {
+                      console.error('Error signing out:', error);
+                      window.location.href = '/';
+                    } finally {
+                      closeSheet();
+                    }
                   }}
                   className="text-gray-600 hover:text-gray-900"
                 >

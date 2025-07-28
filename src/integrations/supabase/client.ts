@@ -2,10 +2,91 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
+// Configuration - These should ideally come from environment variables in production
 const SUPABASE_URL = "https://avkbfpzmqgrffhdnfewv.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF2a2JmcHptcWdyZmZoZG5mZXd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY1MjM2MjgsImV4cCI6MjA2MjA5OTYyOH0.LSsW8XuhqrnJK3etsHqbPir7BIwXvxZnY6jenvUSiQ8";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF2a2JmcHptcWdyZmZoZG5mZXd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY1MjM2MjgsImV4cCI6MjA2MjA5OTYyOH0.LSsW8XuhqrnJK3etsHqbPir7BIwXvxZnY6jenvUSiQ8";
 
-// Import the supabase client like this:
-// import { supabase } from "@/integrations/supabase/client";
+// Validate configuration
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  throw new Error('Missing Supabase configuration. Please check your environment variables.');
+}
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+console.log('Initializing Supabase client with URL:', SUPABASE_URL);
+
+// Create a single supabase client for interacting with your database
+const createSupabaseClient = () => {
+  try {
+    const client = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true,
+        storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+        storageKey: 'sb-auth-token',
+        flowType: 'pkce',
+      },
+      global: {
+        headers: {
+          'X-Client-Info': 'dispatch-bodaco/1.0.0',
+        },
+      },
+      realtime: {
+        params: {
+          eventsPerSecond: 10,
+        },
+      },
+    });
+    
+    console.log('Supabase client initialized successfully');
+    return client;
+  } catch (error) {
+    console.error('Failed to initialize Supabase client:', error);
+    throw error;
+  }
+};
+
+export const supabase = createSupabaseClient();
+
+// Function to completely reset auth state
+export const resetAuthState = async () => {
+  try {
+    // Clear all auth-related data from localStorage
+    if (typeof window !== 'undefined') {
+      const keys = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key?.startsWith('sb-') || key?.startsWith('supabase.auth.token')) {
+          keys.push(key);
+        }
+      }
+      keys.forEach(key => localStorage.removeItem(key));
+      
+      // Clear session storage too
+      sessionStorage.clear();
+    }
+    
+    // Sign out from Supabase
+    await supabase.auth.signOut({ scope: 'global' });
+    
+    console.log('Auth state has been completely reset');
+    return true;
+  } catch (error) {
+    console.error('Error resetting auth state:', error);
+    return false;
+  }
+};
+
+// Add auth state change listener for debugging
+if (typeof window !== 'undefined') {
+  console.log('Setting up auth state change listener...');
+  const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    (event, session) => {
+      console.log('Supabase Auth State Changed:', event, session);
+    }
+  );
+  
+  // Cleanup subscription on unmount
+  window.addEventListener('beforeunload', () => {
+    subscription?.unsubscribe();
+  });
+}

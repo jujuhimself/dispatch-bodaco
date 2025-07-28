@@ -1,6 +1,15 @@
 import { supabase } from '@/integrations/supabase/client';
 import { notificationService } from './notification-service';
-import { Emergency, Responder, Hospital, EmergencyAssignment, Communication } from '@/types/emergency-types';
+import { 
+  Emergency, 
+  Responder, 
+  Hospital, 
+  EmergencyAssignment, 
+  Communication, 
+  EmergencyCategory, 
+  EmergencyType,
+  Coordinates
+} from '@/types/emergency-types';
 import { toast } from 'sonner';
 
 export interface EmergencyStatistics {
@@ -13,11 +22,16 @@ export interface EmergencyStatistics {
 }
 
 // Helper function to transform coordinates
-const transformCoordinates = (coordinates: any): { x: number; y: number } | null => {
+const transformCoordinates = (coordinates: any): Coordinates | null => {
   if (!coordinates) return null;
   
   if (typeof coordinates === 'string') {
     try {
+      if (coordinates.startsWith('(') && coordinates.endsWith(')')) {
+        // Handle PostGIS point format: (x,y)
+        const [x, y] = coordinates.slice(1, -1).split(',').map(Number);
+        return { x, y };
+      }
       const parsed = JSON.parse(coordinates);
       return { x: parsed.x || parsed.longitude || 0, y: parsed.y || parsed.latitude || 0 };
     } catch {
@@ -26,16 +40,86 @@ const transformCoordinates = (coordinates: any): { x: number; y: number } | null
   }
   
   if (typeof coordinates === 'object' && coordinates !== null) {
-    return { x: coordinates.x || coordinates.longitude || 0, y: coordinates.y || coordinates.latitude || 0 };
+    return { 
+      x: coordinates.x || coordinates.longitude || 0, 
+      y: coordinates.y || coordinates.latitude || 0 
+    };
   }
   
   return null;
 };
 
+// Helper to format coordinates for database storage
+const formatCoordinatesForDb = (coordinates: Coordinates | null): string | null => {
+  if (!coordinates) return null;
+  return `(${coordinates.x},${coordinates.y})`;
+};
+
+// Emergency Categories
+
+export const fetchEmergencyCategories = async (): Promise<EmergencyCategory[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('emergency_categories')
+      .select('*')
+      .order('priority_level', { ascending: true });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching emergency categories:', error);
+    toast.error('Failed to fetch emergency categories');
+    return [];
+  }
+};
+
+// Emergency Types
+
+export const fetchEmergencyTypes = async (categoryId?: string): Promise<EmergencyType[]> => {
+  try {
+    let query = supabase
+      .from('emergency_types')
+      .select('*');
+    
+    if (categoryId) {
+      query = query.eq('category_id', categoryId);
+    }
+    
+    query = query.order('name', { ascending: true });
+    
+    const { data, error } = await query;
+    
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching emergency types:', error);
+    toast.error('Failed to fetch emergency types');
+    return [];
+  }
+};
+
+export const getEmergencyType = async (typeId: string): Promise<EmergencyType | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('emergency_types')
+      .select('*')
+      .eq('id', typeId)
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error(`Error fetching emergency type ${typeId}:`, error);
+    return null;
+  }
+};
+
+// Emergency Operations
+
 export const fetchActiveEmergencies = async (): Promise<Emergency[]> => {
   try {
     const { data, error } = await supabase
-      .from('emergencies')
+      .from('emergency_details')
       .select('*')
       .in('status', ['pending', 'assigned', 'in_transit', 'on_site'])
       .order('priority', { ascending: true })
@@ -57,7 +141,7 @@ export const fetchActiveEmergencies = async (): Promise<Emergency[]> => {
 export const fetchAllEmergencies = async (): Promise<Emergency[]> => {
   try {
     const { data, error } = await supabase
-      .from('emergencies')
+      .from('emergency_details')
       .select('*')
       .order('reported_at', { ascending: false });
 
@@ -160,24 +244,43 @@ export const getEmergencyStatistics = async (): Promise<EmergencyStatistics> => 
 
 export const createEmergency = async (emergencyData: Partial<Emergency>): Promise<Emergency> => {
   try {
+    // If we have a type_id, fetch its details to set default values
+    let typeDetails: EmergencyType | null = null;
+    if (emergencyData.type_id) {
+      typeDetails = await getEmergencyType(emergencyData.type_id);
+    }
+
     const { data, error } = await supabase
       .from('emergencies')
       .insert({
-        type: emergencyData.type,
+        type: emergencyData.type || typeDetails?.name || 'Unspecified Emergency',
+        type_id: emergencyData.type_id || null,
+        category_id: emergencyData.category_id || typeDetails?.category_id || null,
         description: emergencyData.description,
         location: emergencyData.location,
-        coordinates: emergencyData.coordinates ? `(${emergencyData.coordinates.x},${emergencyData.coordinates.y})` : null,
-        priority: emergencyData.priority || 3,
-        status: 'pending'
+        coordinates: formatCoordinatesForDb(emergencyData.coordinates || null),
+        priority: emergencyData.priority || typeDetails?.default_priority || 3,
+        status: 'pending',
+        notes: emergencyData.notes || null,
+        device_alert_id: emergencyData.device_alert_id || null
       })
-      .select()
+      .select('*')
       .single();
 
     if (error) throw error;
     
+    // Fetch the full emergency details with joined data
+    const { data: fullEmergency, error: fetchError } = await supabase
+      .from('emergency_details')
+      .select('*')
+      .eq('id', data.id)
+      .single();
+    
+    if (fetchError) throw fetchError;
+    
     const emergency = {
-      ...data,
-      coordinates: transformCoordinates(data.coordinates)
+      ...fullEmergency,
+      coordinates: transformCoordinates(fullEmergency.coordinates)
     };
 
     // Trigger emergency notification
@@ -195,7 +298,7 @@ export const createEmergency = async (emergencyData: Partial<Emergency>): Promis
 export const getEmergencyById = async (id: string): Promise<Emergency | null> => {
   try {
     const { data, error } = await supabase
-      .from('emergencies')
+      .from('emergency_details')
       .select('*')
       .eq('id', id)
       .single();
@@ -467,4 +570,13 @@ export const updateHospitalCapacity = async (
 };
 
 // Re-export types for compatibility
-export type { Emergency, Responder, Hospital, Communication, EmergencyAssignment } from '@/types/emergency-types';
+export type { 
+  Emergency, 
+  Responder, 
+  Hospital, 
+  Communication, 
+  EmergencyAssignment,
+  EmergencyCategory,
+  EmergencyType,
+  Coordinates
+} from '@/types/emergency-types';

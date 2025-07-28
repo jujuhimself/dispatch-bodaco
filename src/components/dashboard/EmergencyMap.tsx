@@ -1,15 +1,117 @@
 
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MapPin, Navigation, Zap } from 'lucide-react';
+import { MapPin, Zap, AlertCircle } from 'lucide-react';
+import { useGoogleMaps } from '@/hooks/use-google-maps';
+
+// Define the type that matches the actual return type of useGoogleMaps
+type UseGoogleMapsResult = {
+  isLoaded: boolean;
+  loadError: Error | null;
+  map: google.maps.Map | null;
+  mapRef: React.RefObject<HTMLDivElement>;
+  createMap?: (element: HTMLDivElement, options: google.maps.MapOptions) => google.maps.Map | null;
+};
+
+// Default map center (Addis Ababa coordinates)
+const DEFAULT_CENTER = { lat: 9.032, lng: 38.75 };
+const DEFAULT_ZOOM = 12;
+
+// Emergency locations with coordinates
+const mockEmergencies = [
+  { 
+    id: '1', 
+    type: 'Medical Emergency', 
+    location: 'Bole Road', 
+    position: { lat: 9.0227, lng: 38.7897 },
+    priority: 1, 
+    status: 'pending' 
+  },
+  { 
+    id: '2', 
+    type: 'Vehicle Crash', 
+    location: 'Mexico Square', 
+    position: { lat: 9.0307, lng: 38.7612 },
+    priority: 2, 
+    status: 'assigned' 
+  },
+  { 
+    id: '3', 
+    type: 'Fire Emergency', 
+    location: 'Piazza', 
+    position: { lat: 9.0408, lng: 38.7636 },
+    priority: 1, 
+    status: 'in_transit' 
+  },
+];
 
 const EmergencyMap = () => {
-  // Mock emergency locations for demonstration
-  const mockEmergencies = [
-    { id: '1', type: 'Medical Emergency', location: 'Bole Road', priority: 1, status: 'pending' },
-    { id: '2', type: 'Vehicle Crash', location: 'Mexico Square', priority: 2, status: 'assigned' },
-    { id: '3', type: 'Fire Emergency', location: 'Piazza', priority: 1, status: 'in_transit' },
-  ];
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const { isLoaded, loadError } = useGoogleMaps();
+  const mapInitialized = useRef(false);
+  const [mapError, setMapError] = useState<string | null>(null);
+
+  // Initialize the map when Google Maps is loaded
+  useEffect(() => {
+    if (!isLoaded || !mapContainerRef.current || mapInitialized.current) return;
+    
+    const initMap = () => {
+      try {
+        // Check if Google Maps API is available
+        if (!window.google || !window.google.maps) {
+          setMapError('Google Maps API is not available');
+          return;
+        }
+        
+        // Check if the container element exists
+        if (!mapContainerRef.current) {
+          setMapError('Map container not found');
+          return;
+        }
+        
+        // Create the map instance
+        const map = new window.google.maps.Map(mapContainerRef.current, {
+          center: DEFAULT_CENTER,
+          zoom: DEFAULT_ZOOM,
+          mapTypeControl: false,
+          streetViewControl: false,
+          fullscreenControl: true,
+          styles: [
+            {
+              featureType: 'poi',
+              elementType: 'labels',
+              stylers: [{ visibility: 'off' }]
+            }
+          ]
+        });
+        
+        mapInitialized.current = true;
+        
+        // Add markers for mock emergencies
+        mockEmergencies.forEach(emergency => {
+          new window.google.maps.Marker({
+            position: emergency.position,
+            map: map,
+            title: `${emergency.type} - ${emergency.location}`,
+            icon: {
+              path: window.google.maps.SymbolPath.CIRCLE,
+              fillColor: emergency.priority === 1 ? '#ef4444' : emergency.priority === 2 ? '#f59e0b' : '#10b981',
+              fillOpacity: 0.8,
+              strokeWeight: 0,
+              scale: 10,
+            }
+          });
+        });
+      } catch (error) {
+        console.error('Error initializing map:', error);
+        setMapError('Failed to initialize map. Please try again later.');
+      }
+    };
+
+    // Small delay to ensure the container is fully rendered
+    const timer = setTimeout(initMap, 100);
+    return () => clearTimeout(timer);
+  }, [isLoaded]);
 
   const getPriorityColor = (priority: number) => {
     switch (priority) {
@@ -39,24 +141,24 @@ const EmergencyMap = () => {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {/* Map Placeholder */}
-        <div className="relative bg-gray-100 rounded-lg h-64 mb-4 flex items-center justify-center">
-          <div className="text-center">
-            <Navigation className="h-12 w-12 mx-auto mb-2 text-gray-400" />
-            <p className="text-gray-600 mb-2">Interactive Map</p>
-            <p className="text-sm text-gray-500">Real-time emergency locations</p>
-          </div>
-          
-          {/* Mock emergency markers */}
-          <div className="absolute top-4 left-4">
-            <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse"></div>
-          </div>
-          <div className="absolute top-8 right-6">
-            <div className="w-4 h-4 bg-orange-500 rounded-full animate-pulse"></div>
-          </div>
-          <div className="absolute bottom-6 left-1/3">
-            <div className="w-4 h-4 bg-yellow-500 rounded-full animate-pulse"></div>
-          </div>
+        {/* Map Container */}
+        <div 
+          ref={mapContainerRef} 
+          className="relative bg-gray-100 rounded-lg h-64 mb-4 overflow-hidden"
+        >
+          {loadError && (
+            <div className="h-full flex flex-col items-center justify-center p-4 text-center">
+              <AlertCircle className="h-8 w-8 text-red-500 mb-2" />
+              <p className="text-red-600 font-medium">Failed to load map</p>
+              <p className="text-sm text-gray-600 mt-1">Please check your internet connection</p>
+            </div>
+          )}
+          {!isLoaded && !loadError && (
+            <div className="h-full flex flex-col items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
+              <p className="text-gray-600">Loading map...</p>
+            </div>
+          )}
         </div>
 
         {/* Emergency List */}

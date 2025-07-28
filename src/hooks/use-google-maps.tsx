@@ -1,19 +1,56 @@
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 
-interface UseGoogleMapsResult {
+declare global {
+  interface Window {
+    google: typeof google;
+  }
+}
+
+export interface UseGoogleMapsResult {
   isLoaded: boolean;
   loadError: Error | null;
+  map: google.maps.Map | null;
+  mapRef: React.RefObject<HTMLDivElement>;
+  createMap: (element: HTMLDivElement, options: google.maps.MapOptions) => google.maps.Map | null;
 }
 
 export function useGoogleMaps(): UseGoogleMapsResult {
   const [isLoaded, setIsLoaded] = useState(false);
   const [loadError, setLoadError] = useState<Error | null>(null);
+  const [map, setMap] = useState<google.maps.Map | null>(null);
+  const mapRef = useRef<HTMLDivElement>(null);
+  const googleMapsScriptId = 'google-maps-script';
+
+  // Function to create a map instance
+  const createMap = useCallback((element: HTMLDivElement, options: google.maps.MapOptions): google.maps.Map | null => {
+    if (!window.google || !window.google.maps) {
+      console.error('Google Maps not loaded');
+      setLoadError(new Error('Google Maps not loaded'));
+      return null;
+    }
+    try {
+      const newMap = new window.google.maps.Map(element, options);
+      setMap(newMap);
+      return newMap;
+    } catch (error) {
+      console.error('Error creating map:', error);
+      setLoadError(error instanceof Error ? error : new Error('Failed to create map'));
+      return null;
+    }
+  }, []);
 
   useEffect(() => {
     // Check if Google Maps is already loaded
     if (window.google && window.google.maps) {
       setIsLoaded(true);
+      return;
+    }
+
+    // Get API key from environment variables
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    if (!apiKey) {
+      setLoadError(new Error('Google Maps API key is not configured'));
       return;
     }
 
@@ -24,7 +61,6 @@ export function useGoogleMaps(): UseGoogleMapsResult {
         setLoadError(new Error('Google Maps failed to load'));
         return;
       }
-
       setIsLoaded(true);
     };
 
@@ -44,7 +80,7 @@ export function useGoogleMaps(): UseGoogleMapsResult {
       // Script doesn't exist yet, let's create it
       const googleScript = document.createElement('script');
       googleScript.id = 'google-maps-script';
-      googleScript.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyDN8Pf0Gn5Z-hKAn-STdYCxrmIU2ECmcf0&libraries=places&loading=async`;
+      googleScript.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
       googleScript.async = true;
       googleScript.defer = true;
       
@@ -70,5 +106,11 @@ export function useGoogleMaps(): UseGoogleMapsResult {
     };
   }, []);
 
-  return { isLoaded, loadError };
+  return {
+    isLoaded,
+    loadError,
+    map,
+    mapRef,
+    createMap
+  };
 }

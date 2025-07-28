@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Users, UserCheck, UserX, Shield, Activity, AlertTriangle } from 'lucide-react';
+import { Users, UserCheck, UserX, Shield, Activity, AlertTriangle, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
@@ -27,6 +27,7 @@ const AdminPanel = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
 
@@ -114,6 +115,44 @@ const AdminPanel = () => {
       userId: selectedUser.id, 
       reason: rejectionReason || 'No reason provided' 
     });
+  };
+
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      // First delete the user from auth
+      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
+      if (authError) throw authError;
+      
+      // Then delete the profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
+      
+      if (profileError) throw profileError;
+      
+      return { success: true };
+    },
+    onSuccess: () => {
+      toast.success('User deleted successfully');
+      queryClient.invalidateQueries({ queryKey: ['pending-users'] });
+      queryClient.invalidateQueries({ queryKey: ['all-users'] });
+      setShowDeleteDialog(false);
+      setSelectedUser(null);
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to delete user');
+    }
+  });
+
+  const handleDelete = (user: UserProfile) => {
+    setSelectedUser(user);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDelete = () => {
+    if (!selectedUser) return;
+    deleteUserMutation.mutate(selectedUser.id);
   };
 
   const getStatusBadge = (status: string) => {
@@ -264,11 +303,27 @@ const AdminPanel = () => {
                         <span className="text-sm text-gray-500">
                           Registered: {new Date(user.created_at).toLocaleDateString()}
                         </span>
-                        {user.rejection_reason && (
-                          <span className="text-sm text-red-600">
-                            Reason: {user.rejection_reason}
-                          </span>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {user.rejection_reason && (
+                            <span className="text-sm text-red-600">
+                              Reason: {user.rejection_reason}
+                            </span>
+                          )}
+                          {user.id !== user?.id && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-red-500 hover:bg-red-50"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(user);
+                              }}
+                              disabled={deleteUserMutation.isPending}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -305,6 +360,29 @@ const AdminPanel = () => {
               disabled={rejectMutation.isPending}
             >
               Reject User
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete User</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete {selectedUser?.name}? This action cannot be undone and will permanently remove the user's account and all associated data.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+              disabled={deleteUserMutation.isPending}
+            >
+              {deleteUserMutation.isPending ? 'Deleting...' : 'Delete User'}
             </Button>
           </DialogFooter>
         </DialogContent>
