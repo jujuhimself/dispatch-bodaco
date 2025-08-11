@@ -118,7 +118,7 @@ export const getEmergencyType = async (typeId: string): Promise<EmergencyType | 
 
 export const fetchActiveEmergencies = async (): Promise<Emergency[]> => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('emergency_details')
       .select('*')
       .in('status', ['pending', 'assigned', 'in_transit', 'on_site'])
@@ -127,10 +127,10 @@ export const fetchActiveEmergencies = async (): Promise<Emergency[]> => {
 
     if (error) throw error;
     
-    return (data || []).map(emergency => ({
+    return ((data || []) as any[]).map((emergency: any) => ({
       ...emergency,
       coordinates: transformCoordinates(emergency.coordinates)
-    }));
+    })) as Emergency[];
   } catch (error) {
     console.error('Error fetching active emergencies:', error);
     toast.error('Failed to fetch active emergencies');
@@ -140,17 +140,17 @@ export const fetchActiveEmergencies = async (): Promise<Emergency[]> => {
 
 export const fetchAllEmergencies = async (): Promise<Emergency[]> => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('emergency_details')
       .select('*')
       .order('reported_at', { ascending: false });
 
     if (error) throw error;
     
-    return (data || []).map(emergency => ({
+    return ((data || []) as any[]).map((emergency: any) => ({
       ...emergency,
       coordinates: transformCoordinates(emergency.coordinates)
-    }));
+    })) as Emergency[];
   } catch (error) {
     console.error('Error fetching emergencies:', error);
     toast.error('Failed to fetch emergencies');
@@ -270,7 +270,7 @@ export const createEmergency = async (emergencyData: Partial<Emergency>): Promis
     if (error) throw error;
     
     // Fetch the full emergency details with joined data
-    const { data: fullEmergency, error: fetchError } = await supabase
+    const { data: fullEmergency, error: fetchError } = await (supabase as any)
       .from('emergency_details')
       .select('*')
       .eq('id', data.id)
@@ -297,7 +297,7 @@ export const createEmergency = async (emergencyData: Partial<Emergency>): Promis
 
 export const getEmergencyById = async (id: string): Promise<Emergency | null> => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('emergency_details')
       .select('*')
       .eq('id', id)
@@ -305,10 +305,8 @@ export const getEmergencyById = async (id: string): Promise<Emergency | null> =>
 
     if (error) throw error;
     
-    return {
-      ...data,
-      coordinates: transformCoordinates(data.coordinates)
-    };
+    const emergency = { ...data, coordinates: transformCoordinates(data.coordinates) } as any;
+    return emergency as Emergency;
   } catch (error) {
     console.error('Error fetching emergency by ID:', error);
     return null;
@@ -423,10 +421,10 @@ export const updateEmergencyStatus = async (
     if (error) throw error;
     
     toast.success('Emergency status updated');
-    return {
+    return ({
       ...data,
       coordinates: transformCoordinates(data.coordinates)
-    };
+    } as unknown) as Emergency;
   } catch (error: any) {
     console.error('Error updating emergency status:', error);
     toast.error(error.message || 'Failed to update emergency status');
@@ -469,7 +467,7 @@ export const fetchRecentCommunications = async (emergencyId?: string): Promise<C
     const { data, error } = await query;
     if (error) throw error;
 
-    return data || [];
+    return (data || []) as unknown as Communication[];
   } catch (error) {
     console.error('Error fetching communications:', error);
     return [];
@@ -497,7 +495,7 @@ export const sendCommunication = async (
       .single();
 
     if (error) throw error;
-    return data;
+    return (data as unknown) as Communication;
   } catch (error: any) {
     console.error('Error sending communication:', error);
     toast.error('Failed to send message');

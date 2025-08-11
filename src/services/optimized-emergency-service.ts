@@ -75,10 +75,10 @@ class OptimizedEmergencyService {
 
     if (error) throw error;
 
-    const result = data.map(item => ({
+    const result = (data.map(item => ({
       ...item,
       coordinates: this.transformCoordinates(item.coordinates)
-    })) as Emergency[];
+    })) as unknown) as Emergency[];
 
     this.setCachedData(cacheKey, result, 15000); // 15s cache
     return result;
