@@ -43,13 +43,15 @@ const ApprovalGuard: React.FC<ApprovalGuardProps> = ({ children }) => {
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center space-y-4">
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <Mail className="h-8 w-8 mx-auto mb-2 text-blue-600" />
-              <p className="text-blue-800 font-medium">Check Your Email</p>
-              <p className="text-blue-600 text-sm">
-                Please verify your email address if you haven't already done so.
-              </p>
-            </div>
+            {user?.role !== 'admin' && (
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <Mail className="h-8 w-8 mx-auto mb-2 text-blue-600" />
+                <p className="text-blue-800 font-medium">Check Your Email</p>
+                <p className="text-blue-600 text-sm">
+                  Please verify your email address if you haven't already done so.
+                </p>
+              </div>
+            )}
             <p className="text-slate-600">
               Thank you for registering with Boda & Co Emergency Response Platform. 
               Your account is currently pending approval from our admin team.

@@ -64,8 +64,9 @@ const ProtectedRoute = ({
   const location = useLocation();
   const navigate = useNavigate();
 
-    // Check if email needs verification
-  const needsVerification = requireVerifiedEmail && user && !user.email_confirmed_at;
+  // Check if email needs verification (skip for admins)
+  const needsVerification =
+    requireVerifiedEmail && user && user.role !== 'admin' && !user.email_confirmed;
   
   // Check if user has the required role based on hierarchy
   const hasRequiredRole = user && 
