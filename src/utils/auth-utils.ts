@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { UserProfile } from '@/types/auth-types';
+import { UserProfile, UserRole } from '@/types/auth-types';
 
 export interface UserVerificationStatus {
   isVerified: boolean;
@@ -25,7 +25,7 @@ export const checkUserVerification = async (userId: string): Promise<UserVerific
       return { isVerified: false, isApproved: false, user: null };
     }
 
-    const isVerified = !!profile.email_confirmed_at;
+    const isVerified = Boolean((profile as any).email_confirmed ?? (profile as any).email_confirmed_at);
     const isApproved = profile.approval_status === 'approved';
 
     return {
@@ -34,10 +34,14 @@ export const checkUserVerification = async (userId: string): Promise<UserVerific
       user: {
         id: profile.id,
         email: profile.email,
-        role: profile.role,
+        role: (profile.role as unknown) as UserRole,
         name: profile.name || '',
         phone_number: profile.phone_number || '',
-        approval_status: profile.approval_status,
+        approval_status: (profile.approval_status as 'pending' | 'approved' | 'rejected'),
+        created_at: (profile as any).created_at ?? new Date().toISOString(),
+        updated_at: (profile as any).updated_at ?? null,
+        last_sign_in_at: (profile as any).last_sign_in_at ?? null,
+        email_confirmed: isVerified,
       },
     };
   } catch (error) {

@@ -111,10 +111,10 @@ class OptimizedEmergencyService {
     this.cache.delete('emergency-stats');
     this.cache.delete('active-emergencies');
 
-    return {
+    return ({
       ...data,
       coordinates: this.transformCoordinates(data.coordinates)
-    } as Emergency;
+    } as unknown) as Emergency;
   }
 
   async assignResponder(emergencyId: string, responderId: string) {

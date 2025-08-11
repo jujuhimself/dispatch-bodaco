@@ -79,10 +79,10 @@ export class SafeEmergencyService {
         return null;
       }
 
-      const emergency = {
+      const emergency = ({
         ...data,
         coordinates: this.transformCoordinates(data.coordinates)
-      } as Emergency;
+      } as unknown) as Emergency;
       
       const deviceAlert = data.device_alerts ? {
         ...data.device_alerts,
@@ -129,7 +129,7 @@ export class SafeEmergencyService {
           notes: item.notes,
           responders
         };
-      }) as EmergencyAssignment[];
+      }) as unknown as EmergencyAssignment[];
     } catch (error) {
       console.error('Unexpected error fetching assignments:', error);
       toast.error('Unexpected error occurred');
@@ -158,10 +158,10 @@ export class SafeEmergencyService {
         return null;
       }
 
-      return {
+      return ({
         ...data,
         coordinates: this.transformCoordinates(data.coordinates)
-      } as Emergency;
+      } as unknown) as Emergency;
     } catch (error) {
       console.error('Unexpected error updating emergency:', error);
       toast.error('Unexpected error occurred');
