@@ -39,11 +39,11 @@ const EmergencyTimeline: React.FC<EmergencyTimelineProps> = ({
         id: `assignment-${assignment.id}`,
         type: 'responder-assigned',
         title: 'Responder Assigned',
-        description: assignment.responders ? `${assignment.responders.name} assigned` : 'Responder assigned',
+        description: assignment.responder ? `${assignment.responder.name} assigned` : 'Responder assigned',
         timestamp: assignment.assigned_at,
         icon: Ambulance,
         iconColor: 'text-blue-600',
-        responder: assignment.responders?.name,
+        responder: assignment.responder?.name,
         notes: assignment.notes
       });
     });

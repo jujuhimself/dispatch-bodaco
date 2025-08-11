@@ -227,15 +227,15 @@ const EmergencyDetail = () => {
                     {assignments.map((assignment) => (
                       <div key={assignment.id} className="flex items-center justify-between p-3 border rounded">
                         <div>
-                          <h4 className="font-medium">{assignment.responders?.name || 'Unknown Responder'}</h4>
+                          <h4 className="font-medium">{assignment.responder?.name || 'Unknown Responder'}</h4>
                           <div className="flex items-center text-sm text-gray-500 space-x-4">
-                            <span>Type: {assignment.responders?.type || 'Unknown'}</span>
-                            <span>Status: {assignment.responders?.status || 'Unknown'}</span>
+                            <span>Type: {assignment.responder?.type || 'Unknown'}</span>
+                            <span>Status: {assignment.responder?.status || 'Unknown'}</span>
                             {assignment.eta && <span>ETA: {assignment.eta}</span>}
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
-                          {assignment.responders?.phone && (
+                          {assignment.responder?.phone && (
                             <Button variant="outline" size="sm">
                               <Phone className="h-4 w-4" />
                             </Button>

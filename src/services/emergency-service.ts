@@ -59,13 +59,13 @@ const formatCoordinatesForDb = (coordinates: Coordinates | null): string | null 
 
 export const fetchEmergencyCategories = async (): Promise<EmergencyCategory[]> => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('emergency_categories')
       .select('*')
       .order('priority_level', { ascending: true });
 
     if (error) throw error;
-    return data || [];
+    return (data || []) as EmergencyCategory[];
   } catch (error) {
     console.error('Error fetching emergency categories:', error);
     toast.error('Failed to fetch emergency categories');
@@ -77,7 +77,7 @@ export const fetchEmergencyCategories = async (): Promise<EmergencyCategory[]> =
 
 export const fetchEmergencyTypes = async (categoryId?: string): Promise<EmergencyType[]> => {
   try {
-    let query = supabase
+    let query: any = (supabase as any)
       .from('emergency_types')
       .select('*');
     
@@ -90,7 +90,7 @@ export const fetchEmergencyTypes = async (categoryId?: string): Promise<Emergenc
     const { data, error } = await query;
     
     if (error) throw error;
-    return data || [];
+    return (data || []) as EmergencyType[];
   } catch (error) {
     console.error('Error fetching emergency types:', error);
     toast.error('Failed to fetch emergency types');
@@ -100,14 +100,14 @@ export const fetchEmergencyTypes = async (categoryId?: string): Promise<Emergenc
 
 export const getEmergencyType = async (typeId: string): Promise<EmergencyType | null> => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('emergency_types')
       .select('*')
       .eq('id', typeId)
       .single();
 
     if (error) throw error;
-    return data;
+    return data as EmergencyType;
   } catch (error) {
     console.error(`Error fetching emergency type ${typeId}:`, error);
     return null;

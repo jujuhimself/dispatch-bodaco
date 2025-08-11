@@ -82,45 +82,30 @@ export type ResponderStatus = 'available' | 'on_call' | 'on_break' | 'off_duty' 
 
 export interface Responder {
   id: string;
-  user_id?: string | null;
+  agency_id?: string | null;
   name: string;
-  phone: string;
+  phone?: string | null;
   email?: string | null;
   status: ResponderStatus;
+  type: string; // e.g., 'ambulance', 'police', 'traffic', 'bajaj'
+  current_location?: string | null;
+  notes?: string | null;
+  availability_status?: string | null;
   coordinates: Coordinates | null;
-  vehicle_type?: string | null;
-  license_plate?: string | null;
-  is_active: boolean;
-  last_active: string;
-  current_assignment_id?: string | null;
-  created_at: string;
-  updated_at: string;
-  
-  // Relationships
-  current_assignment?: EmergencyAssignment | null;
-  assignments?: EmergencyAssignment[];
+  last_active?: string | null;
+  last_status_change?: string | null;
 }
+
 
 export interface Hospital {
   id: string;
   name: string;
-  address: string;
-  city: string;
-  region: string;
-  country: string;
-  postal_code: string;
-  phone: string;
-  emergency_phone: string | null;
-  email: string | null;
-  website: string | null;
+  location: string;
   coordinates: Coordinates | null;
   available_beds: number;
   total_beds: number;
-  trauma_center_level: number | null;
-  helipad: boolean;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
+  specialist_available?: boolean | null;
+  notes?: string | null;
 }
 
 // Emergency Category - For categorizing emergency types
@@ -165,6 +150,7 @@ export interface EmergencyAssignment {
   emergency_id: string;
   responder_id: string;
   assigned_at: string;
+  eta?: string | null;
   status: AssignmentStatus;
   notes?: string | null;
   accepted_at?: string | null;
