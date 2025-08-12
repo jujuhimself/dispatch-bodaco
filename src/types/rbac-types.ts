@@ -42,9 +42,16 @@ const rolePermissions: RolePermissions = {
     'view_dashboard',
     'manage_users',
     'manage_emergencies',
+    'view_emergencies',
+    'view_emergency_details',
+    'create_emergency',
     'respond_to_emergencies',
     'view_reports',
-    'manage_system_settings'
+    'manage_system_settings',
+    'access_admin_panel',
+    'access_communications',
+    'access_eoc',
+    'manage_responders'
   ],
   dispatcher: [
     'view_dashboard',
