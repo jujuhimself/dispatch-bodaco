@@ -119,11 +119,13 @@ const AdminPanel = () => {
 
   const deleteUserMutation = useMutation({
     mutationFn: async (userId: string) => {
-      // First delete the user from auth
-      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
-      if (authError) throw authError;
-      
-      // Then delete the profile
+      // Call secure edge function to delete auth user (admin-only)
+      const { data, error } = await supabase.functions.invoke('admin-delete-user', {
+        body: { userId }
+      });
+      if (error) throw error;
+
+      // Then delete the profile record
       const { error: profileError } = await supabase
         .from('profiles')
         .delete()
@@ -131,7 +133,7 @@ const AdminPanel = () => {
       
       if (profileError) throw profileError;
       
-      return { success: true };
+      return data;
     },
     onSuccess: () => {
       toast.success('User deleted successfully');

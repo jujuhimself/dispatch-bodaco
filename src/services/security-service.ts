@@ -101,12 +101,25 @@ class SecurityService {
 
   // Two-factor authentication helpers
   generateTOTPSecret(): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-    let result = '';
-    for (let i = 0; i < 32; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    const bytes = new Uint8Array(20);
+    crypto.getRandomValues(bytes);
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+    let out = '';
+    let buffer = 0;
+    let bitsLeft = 0;
+    for (const b of bytes) {
+      buffer = (buffer << 8) | b;
+      bitsLeft += 8;
+      while (bitsLeft >= 5) {
+        const index = (buffer >> (bitsLeft - 5)) & 31;
+        bitsLeft -= 5;
+        out += alphabet[index];
+      }
     }
-    return result;
+    if (bitsLeft > 0) {
+      out += alphabet[(buffer << (5 - bitsLeft)) & 31];
+    }
+    return out.substring(0, 32);
   }
 
   // Input sanitization
@@ -170,10 +183,12 @@ class SecurityService {
       // Log the deletion request for compliance
       await this.logSecurityEvent('data_deletion_request', 'user_data', userId);
       
-      const { error } = await supabase.auth.admin.deleteUser(userId);
+      const { data, error } = await supabase.functions.invoke('admin-delete-user', {
+        body: { userId }
+      });
       if (error) throw error;
 
-      return true;
+      return (data as any)?.success === true;
     } catch (error) {
       console.error('Failed to delete user data:', error);
       throw error;

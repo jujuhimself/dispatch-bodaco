@@ -278,6 +278,13 @@ export type Database = {
             referencedRelation: "emergencies"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "communication_channels_emergency_id_fkey"
+            columns: ["emergency_id"]
+            isOneToOne: false
+            referencedRelation: "emergency_details"
+            referencedColumns: ["id"]
+          },
         ]
       }
       communications: {
@@ -323,6 +330,13 @@ export type Database = {
             columns: ["emergency_id"]
             isOneToOne: false
             referencedRelation: "emergencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "communications_emergency_id_fkey"
+            columns: ["emergency_id"]
+            isOneToOne: false
+            referencedRelation: "emergency_details"
             referencedColumns: ["id"]
           },
           {
@@ -393,6 +407,13 @@ export type Database = {
             referencedRelation: "emergencies"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "device_alerts_emergency_id_fkey"
+            columns: ["emergency_id"]
+            isOneToOne: false
+            referencedRelation: "emergency_details"
+            referencedColumns: ["id"]
+          },
         ]
       }
       email_templates: {
@@ -434,6 +455,7 @@ export type Database = {
       emergencies: {
         Row: {
           assigned_at: string | null
+          category_id: string | null
           coordinates: unknown | null
           description: string | null
           device_alert_id: string | null
@@ -447,9 +469,11 @@ export type Database = {
           resolved_by: string | null
           status: Database["public"]["Enums"]["emergency_status"]
           type: string
+          type_id: string | null
         }
         Insert: {
           assigned_at?: string | null
+          category_id?: string | null
           coordinates?: unknown | null
           description?: string | null
           device_alert_id?: string | null
@@ -463,9 +487,11 @@ export type Database = {
           resolved_by?: string | null
           status?: Database["public"]["Enums"]["emergency_status"]
           type: string
+          type_id?: string | null
         }
         Update: {
           assigned_at?: string | null
+          category_id?: string | null
           coordinates?: unknown | null
           description?: string | null
           device_alert_id?: string | null
@@ -479,8 +505,16 @@ export type Database = {
           resolved_by?: string | null
           status?: Database["public"]["Enums"]["emergency_status"]
           type?: string
+          type_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "emergencies_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "emergency_categories"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "emergencies_device_alert_id_fkey"
             columns: ["device_alert_id"]
@@ -493,6 +527,13 @@ export type Database = {
             columns: ["resolved_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emergencies_type_id_fkey"
+            columns: ["type_id"]
+            isOneToOne: false
+            referencedRelation: "emergency_types"
             referencedColumns: ["id"]
           },
         ]
@@ -543,6 +584,13 @@ export type Database = {
             referencedRelation: "emergencies"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "emergency_agencies_emergency_id_fkey"
+            columns: ["emergency_id"]
+            isOneToOne: false
+            referencedRelation: "emergency_details"
+            referencedColumns: ["id"]
+          },
         ]
       }
       emergency_assignments: {
@@ -582,10 +630,94 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "emergency_assignments_emergency_id_fkey"
+            columns: ["emergency_id"]
+            isOneToOne: false
+            referencedRelation: "emergency_details"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "emergency_assignments_responder_id_fkey"
             columns: ["responder_id"]
             isOneToOne: false
             referencedRelation: "responders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      emergency_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          priority_level: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          priority_level?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          priority_level?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      emergency_types: {
+        Row: {
+          category_id: string | null
+          created_at: string
+          default_priority: number
+          description: string | null
+          id: string
+          name: string
+          requires_ambulance: boolean | null
+          requires_fire_brigade: boolean | null
+          requires_police: boolean | null
+          requires_traffic_control: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string
+          default_priority?: number
+          description?: string | null
+          id?: string
+          name: string
+          requires_ambulance?: boolean | null
+          requires_fire_brigade?: boolean | null
+          requires_police?: boolean | null
+          requires_traffic_control?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string
+          default_priority?: number
+          description?: string | null
+          id?: string
+          name?: string
+          requires_ambulance?: boolean | null
+          requires_fire_brigade?: boolean | null
+          requires_police?: boolean | null
+          requires_traffic_control?: boolean | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emergency_types_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "emergency_categories"
             referencedColumns: ["id"]
           },
         ]
@@ -981,7 +1113,63 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      emergency_details: {
+        Row: {
+          assigned_at: string | null
+          category_id: string | null
+          category_name: string | null
+          coordinates: unknown | null
+          description: string | null
+          device_alert_id: string | null
+          id: string | null
+          location: string | null
+          notes: string | null
+          priority: number | null
+          reported_at: string | null
+          requires_ambulance: boolean | null
+          requires_fire_brigade: boolean | null
+          requires_police: boolean | null
+          requires_traffic_control: boolean | null
+          resolution_details: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: Database["public"]["Enums"]["emergency_status"] | null
+          type: string | null
+          type_default_priority: number | null
+          type_id: string | null
+          type_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emergencies_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "emergency_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emergencies_device_alert_id_fkey"
+            columns: ["device_alert_id"]
+            isOneToOne: false
+            referencedRelation: "device_alerts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emergencies_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emergencies_type_id_fkey"
+            columns: ["type_id"]
+            isOneToOne: false
+            referencedRelation: "emergency_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       approve_user: {
@@ -995,6 +1183,14 @@ export type Database = {
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_recommended_responders: {
+        Args: { emergency_id_param: string }
+        Returns: {
+          responder_type: string
+          required: boolean
+          recommended_count: number
+        }[]
       }
       log_admin_action: {
         Args: {
