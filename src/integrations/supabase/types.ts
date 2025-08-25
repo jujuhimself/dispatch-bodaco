@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -1177,8 +1177,12 @@ export type Database = {
         Returns: boolean
       }
       approve_user_enhanced: {
-        Args: { user_id_param: string; notes_param?: string }
+        Args: { notes_param?: string; user_id_param: string }
         Returns: Json
+      }
+      bootstrap_first_admin: {
+        Args: { admin_email: string }
+        Returns: boolean
       }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
@@ -1187,31 +1191,31 @@ export type Database = {
       get_recommended_responders: {
         Args: { emergency_id_param: string }
         Returns: {
-          responder_type: string
-          required: boolean
           recommended_count: number
+          required: boolean
+          responder_type: string
         }[]
       }
       log_admin_action: {
         Args: {
           action_param: string
-          resource_param: string
-          resource_id_param?: string
-          old_values_param?: Json
-          new_values_param?: Json
           metadata_param?: Json
+          new_values_param?: Json
+          old_values_param?: Json
+          resource_id_param?: string
+          resource_param: string
         }
         Returns: string
       }
       reject_user: {
-        Args: { user_id_param: string; reason_param?: string }
+        Args: { reason_param?: string; user_id_param: string }
         Returns: boolean
       }
       reject_user_enhanced: {
         Args: {
-          user_id_param: string
-          reason_param?: string
           notes_param?: string
+          reason_param?: string
+          user_id_param: string
         }
         Returns: Json
       }

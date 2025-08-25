@@ -26,6 +26,7 @@ import TestAuthFlow from '@/pages/TestAuthFlow';
 import TestPasswordReset from '@/pages/test/TestPasswordReset';
 import TestAuth from '@/pages/test/TestAuth';
 import ResetAuthPage from '@/pages/reset-auth';
+import BootstrapAdmin from '@/pages/BootstrapAdmin';
 import './App.css';
 
 // Create QueryClient outside component to prevent re-creation
@@ -59,6 +60,7 @@ function App() {
             <Route path="/test-auth" element={<TestAuthFlow />} />
             <Route path="/test-password-reset" element={<TestPasswordReset />} />
             <Route path="/test-auth-debug" element={<TestAuth />} />
+            <Route path="/bootstrap-admin" element={<BootstrapAdmin />} />
 
             {/* Protected Routes */}
             <Route element={
