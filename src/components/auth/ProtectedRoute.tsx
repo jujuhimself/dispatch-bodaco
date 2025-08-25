@@ -1,4 +1,3 @@
-
 import { ReactNode, useEffect, useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -64,27 +63,6 @@ const ProtectedRoute = ({
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Check if email needs verification (skip for admins)
-  const needsVerification =
-    requireVerifiedEmail && user && user.role !== 'admin' && !user.email_confirmed;
-  
-  // Check if user has the required role based on hierarchy
-  const hasRequiredRole = user && 
-    (ROLE_HIERARCHY[user.role] >= ROLE_HIERARCHY[requiredRole]);
-
-  // Check if user has all required permissions
-  const hasAllRequiredPerms = requiredPermissions.length === 0 || 
-    (user && requiredPermissions.every(perm => hasPermission(user.role, perm)));
-
-  // Check if user has any of the required permissions
-  const hasAnyRequiredPerms = anyPermissions.length === 0 ||
-    (user && anyPermissions.some(perm => hasPermission(user.role, perm)));
-
-  // Check if account needs approval
-  const needsApproval = requireApprovedAccount && 
-    user && 
-    user.approval_status !== 'approved';
-    
   // Determine dashboard path based on user role
   const getDashboardPath = (role: string) => {
     switch (role) {
@@ -147,48 +125,88 @@ const ProtectedRoute = ({
     return <Navigate to={getDashboardPath(user.role)} replace />;
   }
 
-  // Check if user has the required role and permissions
-  const isAuthorized = hasRequiredRole && hasAllRequiredPerms && hasAnyRequiredPerms;
-  
   // Redirect to appropriate dashboard if trying to access root path
   if (location.pathname === '/' && user) {
     return <Navigate to={getDashboardPath(user.role)} replace />;
   }
 
-  // If not authorized, show unauthorized message or redirect
-  if (!isAuthorized) {
-    if (unauthorizedComponent) {
-      return <>{unauthorizedComponent}</>;
-    }
-
+  // Check if account is rejected
+  if (user.approval_status === 'rejected') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
         <div className="max-w-md w-full space-y-6 bg-white p-8 rounded-lg shadow-md text-center">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
             <ShieldAlert className="h-6 w-6 text-red-600" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900">Access Denied</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Account Rejected</h2>
           <p className="text-gray-600">
-            You don't have permission to access this page.
+            Your account application has been rejected.
           </p>
-          <div className="pt-4">
-            <Button
-              onClick={() => navigate(-1)}
-              variant="outline"
-              className="mr-2"
-            >
-              Go Back
-            </Button>
-            <Button onClick={() => navigate('/')}>
-              Go to Dashboard
-            </Button>
+          <p className="text-sm text-gray-500">
+            Please contact support for more information.
+          </p>
+          <Button 
+            onClick={() => window.location.href = '/auth'} 
+            variant="outline"
+            className="w-full"
+          >
+            Back to Login
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Check if account needs approval (skip for admins)
+  const needsApproval = requireApprovedAccount && 
+    user && 
+    user.role !== 'admin' && 
+    user.approval_status !== 'approved';
+
+  if (needsApproval) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+        <div className="max-w-md w-full space-y-6 bg-white p-8 rounded-lg shadow-md">
+          <div className="text-center">
+            <AlertCircle className="h-12 w-12 mx-auto text-yellow-500" />
+            <h2 className="mt-4 text-2xl font-bold text-gray-900">Account Pending Approval</h2>
+            <p className="mt-2 text-gray-600">
+              Thank you for registering! Your account is currently under review by our team.
+            </p>
+            <p className="mt-2 text-sm text-gray-500">
+              You'll receive an email notification once your account has been approved.
+              This usually takes 24-48 hours.
+            </p>
+            
+            <div className="mt-6">
+              <Button
+                onClick={() => signOut()}
+                variant="outline"
+                className="w-full"
+              >
+                Sign Out
+              </Button>
+              
+              <p className="mt-4 text-sm text-gray-500">
+                Need help?{' '}
+                <a 
+                  href="mailto:support@boda-co.com" 
+                  className="text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  Contact Support
+                </a>
+              </p>
+            </div>
           </div>
         </div>
       </div>
     );
   }
 
-  // Show email verification required screen
+  // Check if email needs verification (skip for admins)
+  const needsVerification =
+    requireVerifiedEmail && user && user.role !== 'admin' && !user.email_confirmed;
+
   if (needsVerification) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
@@ -232,87 +250,60 @@ const ProtectedRoute = ({
     );
   }
 
-  // Show account pending approval screen
-  if (needsApproval) {
+  // Check if user has the required role based on hierarchy
+  const hasRequiredRole = !requiredRole || 
+    (user && ROLE_HIERARCHY[user.role] >= ROLE_HIERARCHY[requiredRole]);
+
+  // Check if user has all required permissions
+  const hasAllRequiredPerms = requiredPermissions.length === 0 || 
+    (user && requiredPermissions.every(perm => hasPermission(user.role, perm)));
+
+  // Check if user has any of the required permissions
+  const hasAnyRequiredPerms = anyPermissions.length === 0 ||
+    (user && anyPermissions.some(perm => hasPermission(user.role, perm)));
+
+  // Check if user is authorized
+  const isAuthorized = hasRequiredRole && hasAllRequiredPerms && hasAnyRequiredPerms;
+  
+  // If not authorized, show unauthorized message or redirect
+  if (!isAuthorized) {
+    if (unauthorizedComponent) {
+      return <>{unauthorizedComponent}</>;
+    }
+
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-        <div className="max-w-md w-full space-y-6 bg-white p-8 rounded-lg shadow-md">
-          <div className="text-center">
-            <AlertCircle className="h-12 w-12 mx-auto text-yellow-500" />
-            <h2 className="mt-4 text-2xl font-bold text-gray-900">Account Pending Approval</h2>
-            <p className="mt-2 text-gray-600">
-              Thank you for registering! Your account is currently under review by our team.
+        <div className="max-w-md w-full space-y-6 bg-white p-8 rounded-lg shadow-md text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+            <ShieldAlert className="h-6 w-6 text-red-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900">Access Denied</h2>
+          <p className="text-gray-600">
+            You don't have permission to access this page.
+          </p>
+          {requiredRole && (
+            <p className="text-sm text-gray-500">
+              Required role: {requiredRole}
             </p>
-            <p className="mt-2 text-sm text-gray-500">
-              You'll receive an email notification once your account has been approved.
-              This usually takes 24-48 hours.
-            </p>
-            
-            <div className="mt-6">
-              <Button
-                onClick={() => signOut()}
-                variant="outline"
-                className="w-full"
-              >
-                Sign Out
-              </Button>
-              
-              <p className="mt-4 text-sm text-gray-500">
-                Need help?{' '}
-                <a 
-                  href="mailto:support@boda-co.com" 
-                  className="text-blue-600 hover:text-blue-800 font-medium"
-                >
-                  Contact Support
-                </a>
-              </p>
-            </div>
+          )}
+          <div className="pt-4">
+            <Button
+              onClick={() => navigate(-1)}
+              variant="outline"
+              className="mr-2"
+            >
+              Go Back
+            </Button>
+            <Button onClick={() => navigate(getDashboardPath(user.role))}>
+              Go to Dashboard
+            </Button>
           </div>
         </div>
       </div>
     );
   }
 
-  if (user.approval_status === 'rejected') {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">Account Rejected</h1>
-          <p className="text-gray-600 mb-4">
-            Your account application has been rejected.
-          </p>
-          <p className="text-sm text-gray-500">
-            Please contact support for more information.
-          </p>
-          <Button 
-            onClick={() => window.location.href = '/auth'} 
-            className="mt-4"
-            variant="outline"
-          >
-            Back to Login
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  // Check if user has required role
-  if (requiredRole && user.role !== requiredRole) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">Access Denied</h1>
-          <p className="text-gray-600 mb-4">
-            You don't have permission to access this page.
-          </p>
-          <p className="text-sm text-gray-500">
-            Required role: {requiredRole}
-          </p>
-        </div>
-      </div>
-    );
-  }
-
+  // All checks passed, render the protected content
   return <>{children}</>;
 };
 
